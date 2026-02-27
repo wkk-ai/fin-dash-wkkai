@@ -123,8 +123,8 @@ export default function Settings() {
     return (
         <div className="mx-auto max-w-7xl flex flex-col gap-8 pb-20">
             <div className="animate-in slide-in-from-bottom-2 fade-in duration-500">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Configurações e Banco de Dados</h1>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
+                <h1 className="text-3xl font-bold text-foreground">Configurações e Banco de Dados</h1>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-300 mt-1">
                     Gerencie as opções do sistema e edite os dados brutos da sua base (CSV).
                 </p>
             </div>
@@ -132,14 +132,14 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
 
                 {/* Classifications */}
-                <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Classificações</h3>
+                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
+                    <h3 className="text-lg font-bold text-foreground mb-4">Classificações</h3>
                     <div className="flex gap-2 mb-4">
                         <input
                             value={newClassification}
                             onChange={e => setNewClassification(e.target.value)}
                             placeholder="Ex: Renda Variável BR"
-                            className="flex-1 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <button onClick={addClassification} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors">
                             Adicionar
@@ -147,7 +147,7 @@ export default function Settings() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {settings.classifications?.map(c => (
-                            <div key={c} className="flex items-center gap-1 bg-border-light dark:bg-border-dark text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-full text-sm font-medium">
+                            <div key={c} className="flex items-center gap-1 bg-border text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
                                 {c}
                                 <button onClick={() => removeClassification(c)} className="hover:text-red-500 ml-1">
                                     <span className="material-symbols-outlined text-[16px] leading-none">close</span>
@@ -158,14 +158,14 @@ export default function Settings() {
                 </div>
 
                 {/* Assets */}
-                <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Ativos/Instituições</h3>
+                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
+                    <h3 className="text-lg font-bold text-foreground mb-4">Ativos/Instituições</h3>
                     <div className="flex gap-2 mb-4">
                         <input
                             value={newAsset}
                             onChange={e => setNewAsset(e.target.value)}
                             placeholder="Ex: Rico"
-                            className="flex-1 rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <button onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors">
                             Adicionar
@@ -173,7 +173,7 @@ export default function Settings() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {settings.assets?.map(a => (
-                            <div key={a} className="flex items-center gap-1 bg-border-light dark:bg-border-dark text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-full text-sm font-medium">
+                            <div key={a} className="flex items-center gap-1 bg-border text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
                                 {a}
                                 <button onClick={() => removeAsset(a)} className="hover:text-red-500 ml-1">
                                     <span className="material-symbols-outlined text-[16px] leading-none">close</span>
@@ -185,11 +185,11 @@ export default function Settings() {
             </div>
 
             {/* Database View/Edit */}
-            <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm flex flex-col animate-in slide-in-from-bottom-8 fade-in duration-1000 overflow-hidden">
-                <div className="px-6 py-4 border-b border-border-light dark:border-border-dark flex justify-between items-center bg-background-light/50 dark:bg-background-dark/20">
+            <div className="rounded-xl bg-surface border border-border shadow-sm flex flex-col animate-in slide-in-from-bottom-8 fade-in duration-1000 overflow-hidden">
+                <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-background/50">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Base de Dados Bruta (CSV)</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Edite as células diretamente</p>
+                        <h3 className="text-lg font-bold text-foreground">Base de Dados Bruta (CSV)</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-300">Edite as células diretamente</p>
                     </div>
                     <button
                         onClick={saveDatabase}
@@ -203,16 +203,16 @@ export default function Settings() {
 
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">
                     <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-surface-light dark:bg-surface-dark shadow-sm">
+                        <thead className="sticky top-0 z-10 bg-surface shadow-sm">
                             <tr className="text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                <th className="px-4 py-3 border-b border-border-light dark:border-border-dark">Ações</th>
-                                <th className="px-4 py-3 border-b border-border-light dark:border-border-dark">Date</th>
-                                <th className="px-4 py-3 border-b border-border-light dark:border-border-dark">Classification</th>
-                                <th className="px-4 py-3 border-b border-border-light dark:border-border-dark">Asset</th>
-                                <th className="px-4 py-3 border-b border-border-light dark:border-border-dark">Value</th>
+                                <th className="px-4 py-3 border-b border-border">Ações</th>
+                                <th className="px-4 py-3 border-b border-border">Date</th>
+                                <th className="px-4 py-3 border-b border-border">Classification</th>
+                                <th className="px-4 py-3 border-b border-border">Asset</th>
+                                <th className="px-4 py-3 border-b border-border">Value</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-border-light dark:divide-border-dark text-sm">
+                        <tbody className="divide-y divide-border text-sm">
                             {data.map((row, index) => (
                                 <tr key={index} className="hover:bg-background-light dark:hover:bg-white/5 transition-colors group">
                                     <td className="px-4 py-2 w-16">
@@ -224,14 +224,14 @@ export default function Settings() {
                                         <input
                                             value={row.Date}
                                             onChange={(e) => handleDataChange(index, "Date", e.target.value)}
-                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 dark:text-slate-300"
+                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
                                         />
                                     </td>
                                     <td className="px-4 py-2">
                                         <select
                                             value={row.Classification}
                                             onChange={(e) => handleDataChange(index, "Classification", e.target.value)}
-                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 dark:text-slate-300"
+                                            className="bg-surface w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
                                         >
                                             <option value={row.Classification}>{row.Classification}</option>
                                             {settings.classifications.filter(c => c !== row.Classification).map(c => (
@@ -243,7 +243,7 @@ export default function Settings() {
                                         <select
                                             value={row.Asset}
                                             onChange={(e) => handleDataChange(index, "Asset", e.target.value)}
-                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 dark:text-slate-300"
+                                            className="bg-surface w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
                                         >
                                             <option value={row.Asset}>{row.Asset}</option>
                                             {settings.assets.filter(a => a !== row.Asset).map(a => (
@@ -257,7 +257,7 @@ export default function Settings() {
                                             step="0.01"
                                             value={row.Value}
                                             onChange={(e) => handleDataChange(index, "Value", e.target.value)}
-                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 dark:text-slate-300 font-medium"
+                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground font-medium"
                                         />
                                     </td>
                                 </tr>
