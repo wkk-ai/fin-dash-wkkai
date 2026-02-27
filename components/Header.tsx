@@ -18,7 +18,6 @@ export default function Header() {
 
     const navLinks = [
         { name: "Dashboard", href: "/" },
-        { name: "Projeções", href: "/projections" },
         { name: "Carteira", href: "/portfolio" },
         { name: "Configurações", href: "/settings" },
     ];
