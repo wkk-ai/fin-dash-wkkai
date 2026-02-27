@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Asset Configuration Settings</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#111418",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1c2229",
+                        "border-light": "#e2e8f0",
+                        "border-dark": "#283039",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b4754; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5a6b; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display antialiased min-h-screen transition-colors duration-200">
+<div class="layout-container flex h-full min-h-screen flex-col">
+<header class="sticky top-0 z-50 flex items-center justify-between border-b border-border-light dark:border-border-dark bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md px-6 py-3 lg:px-10">
+<div class="flex items-center gap-4">
+<div class="flex size-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined text-2xl">grid_view</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">FinTrack</h2>
+</div>
+<div class="flex flex-1 justify-end items-center gap-6">
+<nav class="hidden md:flex gap-6 text-sm font-medium text-slate-500 dark:text-slate-400">
+<a class="hover:text-slate-900 dark:hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="hover:text-slate-900 dark:hover:text-white transition-colors" href="#">Portfolio</a>
+<a class="hover:text-slate-900 dark:hover:text-white transition-colors" href="#">Analytics</a>
+<a class="text-primary hover:text-primary transition-colors" href="#">Settings</a>
+</nav>
+<div class="h-6 w-px bg-border-light dark:bg-border-dark mx-2 hidden md:block"></div>
+<div class="flex items-center gap-3">
+<button class="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="truncate">Add Investment</span>
+</button>
+<button class="flex size-10 items-center justify-center rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 hover:text-primary transition-colors" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined dark:hidden">dark_mode</span>
+<span class="material-symbols-outlined hidden dark:block">light_mode</span>
+</button>
+<button class="flex size-10 items-center justify-center rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 hover:text-primary transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2.5 right-2.5 size-2 rounded-full bg-red-500 border border-surface-light dark:border-surface-dark"></span>
+</button>
+<div class="h-10 w-10 overflow-hidden rounded-full border-2 border-border-light dark:border-border-dark bg-cover bg-center cursor-pointer" data-alt="User profile picture showing a young man" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-rJfng0KyhGkJiCWmIJvB9HlLPnESXefXH1bippWZMNaRWP2jFbFMqd3MJTkf9RLxXVok646U5mpE-c5D1KENWG6wDrKTYBa15Y3ULhjGyGdjM1KAdj3WZpXpxr3UNB29dVuWOzupTt0ufvc8PlK7TxnUqKQZQaZ2gmMUxrA-r1u8WzuFk5pDJPViiKH7hVRnVrct7Y4oVJrjdzS4ydHnNcPXVRTbc4cpNR49DSJ4GOpk9QiZoOy0sc1lUvB9pszM3wPzB4fWXCGp');"></div>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto px-4 py-8 lg:px-40">
+<div class="mx-auto max-w-7xl flex flex-col gap-8">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-1">
+<span class="cursor-pointer hover:text-primary">Settings</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Asset Configuration</span>
+</div>
+<h1 class="text-3xl font-bold text-slate-900 dark:text-white">Asset Configuration</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Manage the options available in your investment dropdowns.</p>
+</div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 rounded-lg bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+                        View Audit Log
+                    </button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="hidden lg:block lg:col-span-3">
+<nav class="flex flex-col gap-1 sticky top-24">
+<a class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+                            Profile Settings
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined">category</span>
+                            Asset Configuration
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                            Notifications
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors" href="#">
+<span class="material-symbols-outlined">integration_instructions</span>
+                            Integrations
+                        </a>
+<a class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-400 hover:bg-surface-light dark:hover:bg-surface-dark transition-colors" href="#">
+<span class="material-symbols-outlined">security</span>
+                            Security
+                        </a>
+</nav>
+</div>
+<div class="lg:col-span-9 flex flex-col gap-8">
+<div class="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+<div class="px-6 py-5 border-b border-border-light dark:border-border-dark flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/20">
+<div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Manage Asset Types</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">Define the broad categories for your portfolio (e.g., Stocks, Crypto, Real Estate).</p>
+</div>
+<button class="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                                New Type
+                            </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-background-light dark:bg-background-dark/50 text-xs uppercase text-slate-500 font-bold tracking-wider">
+<th class="px-6 py-3 w-1/3">Category Name</th>
+<th class="px-6 py-3 w-1/3">Code/Tag</th>
+<th class="px-6 py-3 w-1/6 text-center">Color</th>
+<th class="px-6 py-3 w-1/6 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark text-sm">
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white">Stocks</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400"><code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">EQUITY</code></td>
+<td class="px-6 py-4 text-center">
+<div class="size-4 rounded-full bg-primary mx-auto ring-2 ring-offset-2 ring-offset-surface-light dark:ring-offset-surface-dark ring-primary/30"></div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white">Bonds</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400"><code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">FIXED_INC</code></td>
+<td class="px-6 py-4 text-center">
+<div class="size-4 rounded-full bg-purple-500 mx-auto ring-2 ring-offset-2 ring-offset-surface-light dark:ring-offset-surface-dark ring-purple-500/30"></div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white">Cryptocurrency</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400"><code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">CRYPTO</code></td>
+<td class="px-6 py-4 text-center">
+<div class="size-4 rounded-full bg-emerald-400 mx-auto ring-2 ring-offset-2 ring-offset-surface-light dark:ring-offset-surface-dark ring-emerald-400/30"></div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white">Real Estate</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400"><code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono">REAL_EST</code></td>
+<td class="px-6 py-4 text-center">
+<div class="size-4 rounded-full bg-orange-400 mx-auto ring-2 ring-offset-2 ring-offset-surface-light dark:ring-offset-surface-dark ring-orange-400/30"></div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+<div class="px-6 py-5 border-b border-border-light dark:border-border-dark flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-900/20">
+<div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Watchlist &amp; Preferred Assets</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400">These assets will appear first in your "Add Investment" dropdown search.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[18px]">search</span>
+<input class="pl-9 pr-4 py-1.5 text-sm bg-white dark:bg-background-dark border border-border-light dark:border-border-dark rounded-lg focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary w-full sm:w-48 placeholder-slate-400 dark:placeholder-slate-600 text-slate-900 dark:text-white" placeholder="Search assets..." type="text"/>
+</div>
+<button class="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                                    Add Asset
+                                </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-background-light dark:bg-background-dark/50 text-xs uppercase text-slate-500 font-bold tracking-wider">
+<th class="px-6 py-3">Asset Name</th>
+<th class="px-6 py-3">Ticker / Symbol</th>
+<th class="px-6 py-3">Type</th>
+<th class="px-6 py-3">Market</th>
+<th class="px-6 py-3 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-light dark:divide-border-dark text-sm">
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-xs border border-border-light dark:border-border-dark">AAPL</div>
+                                            Apple Inc.
+                                        </td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">AAPL</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">Stocks</span>
+</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">NASDAQ</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-xs border border-border-light dark:border-border-dark">MSFT</div>
+                                            Microsoft Corp.
+                                        </td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">MSFT</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">Stocks</span>
+</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">NASDAQ</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-orange-100 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-xs border border-orange-200 dark:border-orange-900/50">BTC</div>
+                                            Bitcoin
+                                        </td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">BTC</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">Crypto</span>
+</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">Global</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-xs border border-border-light dark:border-border-dark">VTI</div>
+                                            Vanguard Total Stock Market
+                                        </td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">VTI</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">ETF</span>
+</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">NYSE</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-background-light dark:hover:bg-white/5 transition-colors">
+<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold text-xs border border-border-light dark:border-border-dark">TSLA</div>
+                                            Tesla Inc.
+                                        </td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">TSLA</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">Stocks</span>
+</td>
+<td class="px-6 py-4 text-slate-500 dark:text-slate-400">NASDAQ</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary transition-colors rounded hover:bg-primary/10" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded hover:bg-red-500/10" title="Delete">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 border-t border-border-light dark:border-border-dark flex items-center justify-between">
+<span class="text-xs text-slate-500 dark:text-slate-400">Showing 1 to 5 of 124 entries</span>
+<div class="flex gap-1">
+<button class="px-2 py-1 border border-border-light dark:border-border-dark rounded bg-white dark:bg-surface-dark text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<button class="px-3 py-1 border border-primary bg-primary text-white rounded text-xs font-medium">1</button>
+<button class="px-3 py-1 border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-slate-600 dark:text-slate-300 rounded text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800">2</button>
+<button class="px-3 py-1 border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-slate-600 dark:text-slate-300 rounded text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800">3</button>
+<span class="px-1 py-1 text-slate-400">...</span>
+<button class="px-2 py-1 border border-border-light dark:border-border-dark rounded bg-white dark:bg-surface-dark text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>
