@@ -65,9 +65,9 @@ export default function AddAssetModal({ onClose }: Props) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "append", data: newRow }),
             });
-            // Fire the event BEFORE closing the modal so the dashboard listener is still mounted
-            window.dispatchEvent(new Event("asset-added"));
-            // Small delay to let the re-fetch start before modal unmounts
+            // Fire the event with the new data BEFORE closing
+            window.dispatchEvent(new CustomEvent("asset-added", { detail: newRow }));
+            // Small delay to let listeners react before unmount
             await new Promise((r) => setTimeout(r, 50));
             onClose();
         } catch (err) {
