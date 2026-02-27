@@ -6,7 +6,7 @@ import { AssetEntry } from "@/types/database";
 
 const databasePath = path.resolve(
     process.cwd(),
-    "../1. Database/Net Worth Database.csv"
+    "data/net-worth.csv"
 );
 
 // Force this route to never be cached by Next.js
