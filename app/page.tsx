@@ -1,0 +1,259 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { AssetEntry } from "@/types/database";
+import { parseCustomDate, formatCurrency } from "@/lib/utils";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+
+export default function Dashboard() {
+  const [data, setData] = useState<AssetEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = () =>
+      fetch("/api/database", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((json: AssetEntry[]) => {
+          setData(json);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Failed to load data", err);
+          setLoading(false);
+        });
+
+    loadData();
+
+    // Handle updates from AddAssetModal (client-side event)
+    const handleAdd = () => {
+      fetch("/api/database", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((json) => setData(json));
+    };
+    window.addEventListener("asset-added", handleAdd);
+    return () => window.removeEventListener("asset-added", handleAdd);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!data?.length) {
+    return <div className="text-center py-20 text-slate-500">Nenhum dado encontrado no banco de dados.</div>;
+  }
+
+  // --- Data Processing ---
+  // 1. Group by specific Date string first to find unique dates in chronological order
+  const dateValues: Record<string, number> = {};
+  const dateObjects: Record<string, Date> = {};
+
+  data.forEach((entry) => {
+    if (!dateValues[entry.Date]) {
+      dateValues[entry.Date] = 0;
+      dateObjects[entry.Date] = parseCustomDate(entry.Date);
+    }
+    dateValues[entry.Date] += entry.Value;
+  });
+
+  const uniqueDates = Object.keys(dateValues).sort((a, b) => dateObjects[a].getTime() - dateObjects[b].getTime());
+
+  // Wealth Evolution history for chart
+  const history = uniqueDates.map(dateStr => ({
+    name: dateObjects[dateStr].toLocaleString('default', { month: 'short', year: '2-digit' }),
+    value: dateValues[dateStr]
+  }));
+
+  // Latest stats
+  const latestDateStr = uniqueDates[uniqueDates.length - 1];
+  const prevDateStr = uniqueDates.length > 1 ? uniqueDates[uniqueDates.length - 2] : null;
+
+  const currentWealth = dateValues[latestDateStr] || 0;
+  const prevWealth = prevDateStr ? dateValues[prevDateStr] : 0;
+
+  const momVariation = currentWealth - prevWealth;
+  const momGrowthRate = prevWealth !== 0 ? (momVariation / prevWealth) * 100 : 0;
+  const isPositiveGrowth = momVariation >= 0;
+
+  // Asset Allocation (from the latest month)
+  const currentAssets = data.filter(d => d.Date === latestDateStr);
+  const allocationMap: Record<string, number> = {};
+  currentAssets.forEach(a => {
+    allocationMap[a.Classification] = (allocationMap[a.Classification] || 0) + a.Value;
+  });
+
+  const allocationChartData = Object.entries(allocationMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  const COLORS = ['#137fec', '#a855f7', '#34d399', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+
+  return (
+    <div className="mx-auto max-w-7xl flex flex-col gap-8">
+      {/* Welcome Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
+        <div>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Bem-vindo de volta</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Panorama Financeiro</h1>
+        </div>
+        <div className="flex gap-2">
+          <span className="text-xs font-medium px-2 py-1 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">trending_up</span> Mercado Aberto
+          </span>
+          <span className="text-xs font-medium px-2 py-1 rounded bg-border-light dark:bg-border-dark text-slate-500 dark:text-slate-400 border border-transparent">
+            Última atu.: {latestDateStr}
+          </span>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
+
+        {/* Card 1: Total Wealth */}
+        <div className="group relative overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark p-6 shadow-sm border border-border-light dark:border-border-dark hover:border-primary/50 transition-all">
+          <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <span className="material-symbols-outlined text-8xl">account_balance_wallet</span>
+          </div>
+          <div className="flex flex-col gap-1 relative z-10">
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Patrimônio Total</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{formatCurrency(currentWealth)}</h3>
+            </div>
+            {prevWealth > 0 && (
+              <div className={`mt-2 flex items-center gap-1 text-sm font-medium ${isPositiveGrowth ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                <span className="material-symbols-outlined text-[18px]">
+                  {isPositiveGrowth ? 'arrow_upward' : 'arrow_downward'}
+                </span>
+                <span>{Math.abs(momGrowthRate).toFixed(1)}%</span>
+                <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">vs mês passado</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card 2: MoM Variation */}
+        <div className="group relative overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark p-6 shadow-sm border border-border-light dark:border-border-dark hover:border-primary/50 transition-all">
+          <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <span className="material-symbols-outlined text-8xl">show_chart</span>
+          </div>
+          <div className="flex flex-col gap-1 relative z-10">
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Variação Mensal</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {isPositiveGrowth ? '+' : ''}{formatCurrency(momVariation)}
+              </h3>
+            </div>
+            <div className={`mt-2 flex items-center gap-1 text-sm font-medium ${isPositiveGrowth ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+              <span className="material-symbols-outlined text-[18px]">
+                {isPositiveGrowth ? 'trending_up' : 'trending_down'}
+              </span>
+              <span>{Math.abs(momGrowthRate).toFixed(1)}%</span>
+              <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">evolução</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8 fade-in duration-1000">
+
+        {/* Wealth Evolution Chart (Line) - Spans 2 columns */}
+        <div className="lg:col-span-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Evolução do Patrimônio</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Valor ao longo do tempo</p>
+            </div>
+          </div>
+          <div className="flex-1 min-h-[300px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700/50" />
+                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke="#94a3b8" />
+                <YAxis
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  stroke="#94a3b8"
+                />
+                <RechartsTooltip
+                  formatter={(value: any) => [formatCurrency(value as number), "Patrimônio"]}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  labelStyle={{ color: '#64748b' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#137fec"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorValue)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Asset Allocation (Doughnut) */}
+        <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Alocação Atual</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Distribuição em {latestDateStr}</p>
+
+          <div className="flex-1 min-h-[200px] w-full relative -mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={allocationChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={2}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {allocationChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  formatter={(value: any) => formatCurrency(value as number)}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+              <span className="text-xl font-bold text-slate-900 dark:text-white">
+                ${(currentWealth / 1000).toFixed(1)}k
+              </span>
+              <span className="text-xs text-slate-500">Total</span>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {allocationChartData.map((entry, index) => {
+              const percentage = ((entry.value / currentWealth) * 100).toFixed(1);
+              return (
+                <div key={entry.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="size-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{entry.name}</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white">{percentage}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}

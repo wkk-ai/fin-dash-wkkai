@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #137fec;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #111418;
+  --color-surface-light: #ffffff;
+  --color-surface-dark: #1c2229;
+  --color-border-light: #e2e8f0;
+  --color-border-dark: #283039;
+  --font-display: "Manrope", sans-serif;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+:root {
+  --background: var(--color-background-light);
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: var(--color-background-dark);
+  --foreground: #f1f5f9;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-display);
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3b4754;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5a6b;
+}
+
+/* Base styles to remove outlines on focus, basic resets if needed */
