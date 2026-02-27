@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { AssetEntry } from "@/types/database";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, parseCustomDate } from "@/lib/utils";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 export default function Settings() {
     const [data, setData] = useState<AssetEntry[]>([]);
@@ -13,6 +14,21 @@ export default function Settings() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    // Modal state
+    const [modalConfig, setModalConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        confirmLabel?: string;
+        onConfirm: () => void;
+        variant?: "danger" | "primary";
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        onConfirm: () => { },
+    });
 
     // New option states
     const [newClassification, setNewClassification] = useState("");
@@ -25,10 +41,19 @@ export default function Settings() {
                 fetch("/api/database"),
                 fetch("/api/settings")
             ]);
-            const dbData = await dbRes.json();
-            const setData = await setRes.json();
-            setData(dbData);
-            setSettings(setData);
+            const dbJson = await dbRes.json() as AssetEntry[];
+            const setJson = await setRes.json();
+
+            // Sort: Date DESC, then Value DESC
+            const sortedData = [...dbJson].sort((a, b) => {
+                const dateA = parseCustomDate(a.Date).getTime();
+                const dateB = parseCustomDate(b.Date).getTime();
+                if (dateA !== dateB) return dateB - dateA;
+                return b.Value - a.Value;
+            });
+
+            setData(sortedData);
+            setSettings(setJson);
         } catch (e) {
             console.error(e);
         } finally {
@@ -38,7 +63,30 @@ export default function Settings() {
 
     useEffect(() => {
         fetchData();
-    }, []);
+
+        // Handle updates from AddAssetModal non-destructively
+        const handleAdd = (e: any) => {
+            const newRow = e.detail;
+            if (newRow) {
+                setData(prevData => {
+                    const updated = [newRow, ...prevData];
+                    // Sort locally: Date DESC, then Value DESC
+                    return updated.sort((a, b) => {
+                        const dateA = parseCustomDate(a.Date).getTime();
+                        const dateB = parseCustomDate(b.Date).getTime();
+                        if (dateA !== dateB) return dateB - dateA;
+                        return b.Value - a.Value;
+                    });
+                });
+            } else {
+                fetchData(); // Fallback to full fetch if data is missing
+            }
+        };
+
+        window.addEventListener("asset-added", handleAdd);
+        return () => window.removeEventListener("asset-added", handleAdd);
+    }, []); // Removed settings.classifications to fix infinite loop
+
 
     const handleSaveSettings = async (updatedSettings: typeof settings) => {
         setSettings(updatedSettings);
@@ -88,29 +136,77 @@ export default function Settings() {
     };
 
     const saveDatabase = async () => {
-        setSaving(true);
-        try {
-            await fetch("/api/database", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "updateAll", data }),
+        if (!data || data.length === 0) {
+            setModalConfig({
+                isOpen: true,
+                title: "Atenção",
+                message: "A base de dados não pode ser salva vazia. Isso deletaria todos os seus ativos.",
+                confirmLabel: "Entendido",
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+                variant: "primary"
             });
-            alert("Base de dados salva com sucesso!");
-        } catch (e) {
-            console.error(e);
-            alert("Erro ao salvar base de dados");
-        } finally {
-            setSaving(false);
+            return;
         }
+
+        setModalConfig({
+            isOpen: true,
+            title: "Salvar Alterações",
+            message: `Deseja salvar as alterações em ${data.length} registros no banco de dados? Isso sobrescreverá o arquivo CSV.`,
+            confirmLabel: "Salvar",
+            variant: "primary",
+            onConfirm: async () => {
+                setModalConfig(prev => ({ ...prev, isOpen: false }));
+                setSaving(true);
+                try {
+                    await fetch("/api/database", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "updateAll", data }),
+                    });
+                    setModalConfig({
+                        isOpen: true,
+                        title: "Sucesso",
+                        message: "Base de dados salva com sucesso!",
+                        confirmLabel: "OK",
+                        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+                        variant: "primary"
+                    });
+                } catch (e) {
+                    console.error(e);
+                    setModalConfig({
+                        isOpen: true,
+                        title: "Erro",
+                        message: "Ocorreu um erro ao salvar a base de dados.",
+                        confirmLabel: "OK",
+                        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+                        variant: "danger"
+                    });
+                } finally {
+                    setSaving(false);
+                }
+            }
+        });
     };
 
-    const deleteRow = (index: number) => {
-        if (confirm("Tem certeza que deseja deletar esta linha?")) {
-            const newData = [...data];
-            newData.splice(index, 1);
-            setData(newData);
-        }
+    const deleteRow = (e: React.MouseEvent, index: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        setModalConfig({
+            isOpen: true,
+            title: "Deletar Registro",
+            message: "Tem certeza que deseja deletar esta linha? Esta ação só será permanente após clicar em 'Salvar Alterações'.",
+            confirmLabel: "Deletar",
+            variant: "danger",
+            onConfirm: () => {
+                const newData = [...data];
+                newData.splice(index, 1);
+                setData(newData);
+                setModalConfig(prev => ({ ...prev, isOpen: false }));
+            }
+        });
     };
+
 
     if (loading) {
         return (
@@ -139,9 +235,9 @@ export default function Settings() {
                             value={newClassification}
                             onChange={e => setNewClassification(e.target.value)}
                             placeholder="Ex: Renda Variável BR"
-                            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
-                        <button onClick={addClassification} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors">
+                        <button type="button" onClick={addClassification} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
                             Adicionar
                         </button>
                     </div>
@@ -149,7 +245,7 @@ export default function Settings() {
                         {settings.classifications?.map(c => (
                             <div key={c} className="flex items-center gap-1 bg-border text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
                                 {c}
-                                <button onClick={() => removeClassification(c)} className="hover:text-red-500 ml-1">
+                                <button type="button" onClick={() => removeClassification(c)} className="hover:text-red-500 ml-1 cursor-pointer">
                                     <span className="material-symbols-outlined text-[16px] leading-none">close</span>
                                 </button>
                             </div>
@@ -165,9 +261,9 @@ export default function Settings() {
                             value={newAsset}
                             onChange={e => setNewAsset(e.target.value)}
                             placeholder="Ex: Rico"
-                            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
-                        <button onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors">
+                        <button type="button" onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
                             Adicionar
                         </button>
                     </div>
@@ -175,7 +271,7 @@ export default function Settings() {
                         {settings.assets?.map(a => (
                             <div key={a} className="flex items-center gap-1 bg-border text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
                                 {a}
-                                <button onClick={() => removeAsset(a)} className="hover:text-red-500 ml-1">
+                                <button type="button" onClick={() => removeAsset(a)} className="hover:text-red-500 ml-1 cursor-pointer">
                                     <span className="material-symbols-outlined text-[16px] leading-none">close</span>
                                 </button>
                             </div>
@@ -192,9 +288,10 @@ export default function Settings() {
                         <p className="text-xs text-slate-500 dark:text-slate-300">Edite as células diretamente</p>
                     </div>
                     <button
+                        type="button"
                         onClick={saveDatabase}
                         disabled={saving}
-                        className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors"
+                        className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[18px]">save</span>
                         {saving ? "Salvando..." : "Salvar Alterações"}
@@ -203,20 +300,24 @@ export default function Settings() {
 
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">
                     <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-10 bg-surface shadow-sm">
+                        <thead className="sticky top-0 z-20 bg-surface shadow-sm">
                             <tr className="text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                <th className="px-4 py-3 border-b border-border">Ações</th>
-                                <th className="px-4 py-3 border-b border-border">Date</th>
-                                <th className="px-4 py-3 border-b border-border">Classification</th>
-                                <th className="px-4 py-3 border-b border-border">Asset</th>
-                                <th className="px-4 py-3 border-b border-border">Value</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">Ações</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">Date</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">Classification</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">Asset</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">Value</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
                             {data.map((row, index) => (
-                                <tr key={index} className="hover:bg-background-light dark:hover:bg-white/5 transition-colors group">
+                                <tr key={`${row.Date}-${row.Asset}-${index}`} className="hover:bg-background-light dark:hover:bg-white/5 transition-colors group">
                                     <td className="px-4 py-2 w-16">
-                                        <button onClick={() => deleteRow(index)} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-500/10">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => deleteRow(e, index)}
+                                            className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-500/10 cursor-pointer"
+                                        >
                                             <span className="material-symbols-outlined text-[18px]">delete</span>
                                         </button>
                                     </td>
@@ -266,6 +367,16 @@ export default function Settings() {
                     </table>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={modalConfig.isOpen}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmLabel={modalConfig.confirmLabel}
+                variant={modalConfig.variant}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 }
