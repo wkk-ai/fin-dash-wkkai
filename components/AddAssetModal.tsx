@@ -80,9 +80,9 @@ export default function AddAssetModal({ onClose }: Props) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="px-6 py-4 border-b border-border-light dark:border-border-dark flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Adicionar Patrimônio</h3>
+            <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="px-6 py-4 border-b border-border flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-foreground">Adicionar Patrimônio</h3>
                     <button
                         onClick={onClose}
                         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
@@ -93,25 +93,25 @@ export default function AddAssetModal({ onClose }: Props) {
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Data</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Data</label>
                         <input
                             type="date"
                             name="Date"
                             required
                             value={formData.Date}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Classificação</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Classificação</label>
                         <select
                             name="Classification"
                             required
                             value={formData.Classification}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         >
                             {classifications.map((c) => (
                                 <option key={c} value={c}>{c}</option>
@@ -120,13 +120,13 @@ export default function AddAssetModal({ onClose }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ativo/Instituição</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Ativo/Instituição</label>
                         <select
                             name="Asset"
                             required
                             value={formData.Asset}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         >
                             {assets.map((a) => (
                                 <option key={a} value={a}>{a}</option>
@@ -135,7 +135,7 @@ export default function AddAssetModal({ onClose }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Valor (R$)</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Valor (R$)</label>
                         <input
                             type="number"
                             name="Value"
@@ -144,7 +144,7 @@ export default function AddAssetModal({ onClose }: Props) {
                             value={formData.Value}
                             onChange={handleChange}
                             placeholder="Ex: 350000"
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 

@@ -25,7 +25,7 @@ export default function Header() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border-light dark:border-border-dark bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md px-6 py-3 lg:px-10">
+            <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-surface/80 backdrop-blur-md px-6 py-3 lg:px-10">
                 <div className="flex items-center gap-4">
                     <div className="flex size-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
                         <span className="material-symbols-outlined text-2xl">grid_view</span>
@@ -44,8 +44,8 @@ export default function Header() {
                                     key={link.name}
                                     href={link.href}
                                     className={`transition-colors ${isActive
-                                            ? "text-primary hover:text-primary"
-                                            : "hover:text-slate-900 dark:hover:text-white"
+                                        ? "text-primary hover:text-primary"
+                                        : "hover:text-slate-900 dark:hover:text-white"
                                         }`}
                                 >
                                     {link.name}
@@ -67,7 +67,7 @@ export default function Header() {
 
                         <button
                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                            className="flex size-10 items-center justify-center rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 hover:text-primary transition-colors cursor-pointer"
+                            className="flex size-10 items-center justify-center rounded-full bg-border text-foreground hover:text-primary transition-colors cursor-pointer"
                         >
                             {mounted && theme === "dark" ? (
                                 <span className="material-symbols-outlined">light_mode</span>
@@ -76,13 +76,13 @@ export default function Header() {
                             )}
                         </button>
 
-                        <button className="flex size-10 items-center justify-center rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 hover:text-primary transition-colors cursor-pointer relative">
+                        <button className="flex size-10 items-center justify-center rounded-full bg-border text-foreground hover:text-primary transition-colors cursor-pointer relative">
                             <span className="material-symbols-outlined">notifications</span>
-                            <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-red-500 border border-surface-light dark:border-surface-dark"></span>
+                            <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-red-500 border border-surface"></span>
                         </button>
 
                         <div
-                            className="h-10 w-10 overflow-hidden rounded-full border-2 border-border-light dark:border-border-dark bg-cover bg-center cursor-pointer"
+                            className="h-10 w-10 overflow-hidden rounded-full border-2 border-border bg-cover bg-center cursor-pointer"
                             style={{
                                 backgroundImage:
                                     "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-rJfng0KyhGkJiCWmIJvB9HlLPnESXefXH1bippWZMNaRWP2jFbFMqd3MJTkf9RLxXVok646U5mpE-c5D1KENWG6wDrKTYBa15Y3ULhjGyGdjM1KAdj3WZpXpxr3UNB29dVuWOzupTt0ufvc8PlK7TxnUqKQZQaZ2gmMUxrA-r1u8WzuFk5pDJPViiKH7hVRnVrct7Y4oVJrjdzS4ydHnNcPXVRTbc4cpNR49DSJ4GOpk9QiZoOy0sc1lUvB9pszM3wPzB4fWXCGp')",
