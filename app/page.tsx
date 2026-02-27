@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { AssetEntry } from "@/types/database";
 import { parseCustomDate, formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
@@ -8,6 +9,16 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCo
 export default function Dashboard() {
   const [data, setData] = useState<AssetEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  // Theme-aware chart colors
+  const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
+  const chartTickColor = isDark ? "#64748b" : "#94a3b8";
+  const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
+  const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
+  const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
+  const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
 
   useEffect(() => {
     const loadData = () =>
@@ -94,13 +105,13 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Bem-vindo de volta</p>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Panorama Financeiro</h1>
+          <h1 className="text-3xl font-bold text-foreground">Panorama Financeiro</h1>
         </div>
         <div className="flex gap-2">
           <span className="text-xs font-medium px-2 py-1 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px]">trending_up</span> Mercado Aberto
           </span>
-          <span className="text-xs font-medium px-2 py-1 rounded bg-border-light dark:bg-border-dark text-slate-500 dark:text-slate-400 border border-transparent">
+          <span className="text-xs font-medium px-2 py-1 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent">
             Última atu.: {latestDateStr}
           </span>
         </div>
@@ -110,14 +121,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
 
         {/* Card 1: Total Wealth */}
-        <div className="group relative overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark p-6 shadow-sm border border-border-light dark:border-border-dark hover:border-primary/50 transition-all">
+        <div className="group relative overflow-hidden rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all">
           <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <span className="material-symbols-outlined text-8xl">account_balance_wallet</span>
           </div>
           <div className="flex flex-col gap-1 relative z-10">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Patrimônio Total</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{formatCurrency(currentWealth)}</h3>
+              <h3 className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(currentWealth)}</h3>
             </div>
             {prevWealth > 0 && (
               <div className={`mt-2 flex items-center gap-1 text-sm font-medium ${isPositiveGrowth ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
@@ -132,14 +143,14 @@ export default function Dashboard() {
         </div>
 
         {/* Card 2: MoM Variation */}
-        <div className="group relative overflow-hidden rounded-xl bg-surface-light dark:bg-surface-dark p-6 shadow-sm border border-border-light dark:border-border-dark hover:border-primary/50 transition-all">
+        <div className="group relative overflow-hidden rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all">
           <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <span className="material-symbols-outlined text-8xl">show_chart</span>
           </div>
           <div className="flex flex-col gap-1 relative z-10">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Variação Mensal</p>
             <div className="flex items-baseline gap-2">
-              <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <h3 className="text-3xl font-bold text-foreground tracking-tight">
                 {isPositiveGrowth ? '+' : ''}{formatCurrency(momVariation)}
               </h3>
             </div>
@@ -158,10 +169,10 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-8 fade-in duration-1000">
 
         {/* Wealth Evolution Chart (Line) - Spans 2 columns */}
-        <div className="lg:col-span-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
+        <div className="lg:col-span-2 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Evolução do Patrimônio</h3>
+              <h3 className="text-lg font-bold text-foreground">Evolução do Patrimônio</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400">Valor ao longo do tempo</p>
             </div>
           </div>
@@ -174,19 +185,19 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700/50" />
-                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke="#94a3b8" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
                 <YAxis
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  stroke="#94a3b8"
+                  stroke={chartTickColor}
                 />
                 <RechartsTooltip
                   formatter={(value: any) => [formatCurrency(value as number), "Patrimônio"]}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  labelStyle={{ color: '#64748b' }}
+                  contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
+                  labelStyle={{ color: tooltipLabelColor }}
                 />
                 <Area
                   type="monotone"
@@ -202,8 +213,8 @@ export default function Dashboard() {
         </div>
 
         {/* Asset Allocation (Doughnut) */}
-        <div className="rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Alocação Atual</h3>
+        <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
+          <h3 className="text-lg font-bold text-foreground mb-1">Alocação Atual</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Distribuição em {latestDateStr}</p>
 
           <div className="flex-1 min-h-[200px] w-full relative -mt-4">
@@ -225,12 +236,13 @@ export default function Dashboard() {
                 </Pie>
                 <RechartsTooltip
                   formatter={(value: any) => formatCurrency(value as number)}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
+                  labelStyle={{ color: tooltipLabelColor }}
                 />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
-              <span className="text-xl font-bold text-slate-900 dark:text-white">
+              <span className="text-xl font-bold text-foreground">
                 ${(currentWealth / 1000).toFixed(1)}k
               </span>
               <span className="text-xs text-slate-500">Total</span>
@@ -246,7 +258,7 @@ export default function Dashboard() {
                     <div className="size-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                     <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{entry.name}</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">{percentage}%</span>
+                  <span className="text-sm font-bold text-foreground">{percentage}%</span>
                 </div>
               );
             })}

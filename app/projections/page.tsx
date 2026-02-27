@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { AssetEntry } from "@/types/database";
 import { parseCustomDate, formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -8,6 +9,16 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCo
 export default function Projections() {
     const [data, setData] = useState<AssetEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === "dark";
+
+    // Theme-aware chart colors
+    const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
+    const chartTickColor = isDark ? "#64748b" : "#94a3b8";
+    const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
+    const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
+    const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
+    const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
 
     // Projection settings
     const [monthlyAddition, setMonthlyAddition] = useState<string>("5000");
@@ -94,7 +105,7 @@ export default function Projections() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Projeções Financeiras</h1>
+                    <h1 className="text-3xl font-bold text-foreground">Projeções Financeiras</h1>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                         Simule o crescimento do seu patrimônio atual ({formatCurrency(currentWealth)})
                     </p>
@@ -104,37 +115,37 @@ export default function Projections() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
 
                 {/* Settings Panel */}
-                <div className="lg:col-span-1 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col gap-4">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Parâmetros</h3>
+                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col gap-4">
+                    <h3 className="text-lg font-bold text-foreground">Parâmetros</h3>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Aporte Mensal (R$)</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Aporte Mensal (R$)</label>
                         <input
                             type="number"
                             value={monthlyAddition}
                             onChange={e => setMonthlyAddition(e.target.value)}
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Taxa de Juros Mensal (%)</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Taxa de Juros Mensal (%)</label>
                         <input
                             type="number"
                             step="0.1"
                             value={monthlyRate}
                             onChange={e => setMonthlyRate(e.target.value)}
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Anos para Projetar</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">Anos para Projetar</label>
                         <input
                             type="number"
                             value={yearsToProject}
                             onChange={e => setYearsToProject(e.target.value)}
-                            className="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark px-3 py-2 text-sm text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
 
@@ -153,10 +164,10 @@ export default function Projections() {
                 </div>
 
                 {/* Chart Panel */}
-                <div className="lg:col-span-2 rounded-xl bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark shadow-sm p-6 flex flex-col">
+                <div className="lg:col-span-2 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Crescimento Projetado</h3>
+                            <h3 className="text-lg font-bold text-foreground">Crescimento Projetado</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">Juros Compostos + Aportes Mensais</p>
                         </div>
                     </div>
@@ -173,19 +184,19 @@ export default function Projections() {
                                         <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-700/50" />
-                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke="#94a3b8" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
                                 <YAxis
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
                                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                                    stroke="#94a3b8"
+                                    stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
                                     formatter={(value: any, name: any) => [formatCurrency(value as number), name === "value" ? "Patrimônio" : "Investido"]}
-                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                    labelStyle={{ color: '#64748b' }}
+                                    contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
+                                    labelStyle={{ color: tooltipLabelColor }}
                                 />
                                 <Area
                                     type="monotone"
