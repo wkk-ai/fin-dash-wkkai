@@ -2,12 +2,10 @@
 
 @theme {
   --color-primary: #137fec;
-  --color-background-light: #f6f7f8;
-  --color-background-dark: #111418;
-  --color-surface-light: #ffffff;
-  --color-surface-dark: #1c2229;
-  --color-border-light: #e2e8f0;
-  --color-border-dark: #283039;
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
   --font-display: "Manrope", sans-serif;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
@@ -15,12 +13,16 @@
 }
 
 :root {
-  --background: var(--color-background-light);
+  --background: #f6f7f8;
+  --surface: #ffffff;
+  --border: #e2e8f0;
   --foreground: #0f172a;
 }
 
 .dark {
-  --background: var(--color-background-dark);
+  --background: #111418;
+  --surface: #1c2229;
+  --border: #283039;
   --foreground: #f1f5f9;
 }
 
