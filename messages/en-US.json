@@ -72,7 +72,14 @@
     "error": "Error",
     "saveError": "An error occurred while saving the database.",
     "deleteRecord": "Delete Record",
-    "deleteConfirm": "Are you sure you want to delete this row? This action will only be permanent after clicking 'Save Changes'."
+    "deleteConfirm": "Are you sure you want to delete this row? This action will only be permanent after clicking 'Save Changes'.",
+    "exportPdf": "Export PDF",
+    "selectTabsToExport": "Select tabs to export:",
+    "exportDashboard": "Dashboard",
+    "exportPortfolio": "Net Worth",
+    "confirmExportPdf": "Confirm",
+    "exportingPdf": "Exporting...",
+    "exportPdfError": "Could not generate PDF."
   },
   "addAsset": {
     "title": "Add Asset",
