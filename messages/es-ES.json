@@ -71,6 +71,8 @@
     "dbSaved": "¡Base de datos guardada correctamente!",
     "error": "Error",
     "saveError": "Ocurrió un error al guardar la base de datos.",
+    "classificationsSaved": "¡Clasificaciones guardadas con éxito!",
+    "assetsSaved": "¡Activos/Instituciones guardados con éxito!",
     "deleteRecord": "Eliminar Registro",
     "deleteConfirm": "¿Estás seguro de que deseas eliminar esta fila? Esta acción solo será permanente después de hacer clic en 'Guardar Cambios'.",
     "exportPdf": "Exportar PDF",
