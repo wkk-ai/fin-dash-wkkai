@@ -23,6 +23,7 @@ export default function Settings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [savingSettings, setSavingSettings] = useState<{ type: "class" | "asset" | null }>({ type: null });
+    const [importingFile, setImportingFile] = useState(false);
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [exportDashboard, setExportDashboard] = useState(true);
     const [exportPortfolio, setExportPortfolio] = useState(false);
@@ -47,6 +48,7 @@ export default function Settings() {
     const [newClassification, setNewClassification] = useState("");
     const [newAsset, setNewAsset] = useState("");
     const hasUserEditedRef = useRef(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const csvDateToInputDate = (csvDate: string): string => {
         const d = parseCustomDate(csvDate);
@@ -473,6 +475,66 @@ export default function Settings() {
         }
     };
 
+    const importDatabaseFile = async (file: File) => {
+        setImportingFile(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch("/api/database", {
+                method: "POST",
+                body: formData,
+            });
+            const payload = await res.json();
+            if (!res.ok) {
+                let message: string;
+                if (payload.errorCode === "COLUMN_COUNT") {
+                    message = t("settings.importErrorColumnCount", { expected: payload.expected, received: payload.received });
+                } else if (payload.errorCode === "COLUMN_NAMES") {
+                    message = t("settings.importErrorColumnNames", { expected: payload.expected, received: payload.received });
+                } else if (payload.errorCode === "CSV_FORMAT") {
+                    message = t("settings.importErrorCsvFormat");
+                } else if (payload.errorCode === "UNSUPPORTED_FILE_TYPE") {
+                    message = t("settings.importErrorUnsupportedType");
+                } else if (payload.errorCode === "NO_FILE") {
+                    message = t("settings.importErrorNoFile");
+                } else {
+                    message = payload.error || t("settings.importError");
+                }
+                setModalConfig({
+                    isOpen: true,
+                    title: t("settings.error"),
+                    message,
+                    confirmLabel: t("common.ok"),
+                    onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+                    variant: "danger"
+                });
+                return;
+            }
+
+            hasUserEditedRef.current = false;
+            clearPendingData();
+            fetchData();
+            window.dispatchEvent(
+                new CustomEvent("show-success-toast", {
+                    detail: { message: t("settings.importSuccess") }
+                })
+            );
+        } catch (e) {
+            console.error(e);
+            setModalConfig({
+                isOpen: true,
+                title: t("settings.error"),
+                message: t("settings.importError"),
+                confirmLabel: t("common.ok"),
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+                variant: "danger"
+            });
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            setImportingFile(false);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -587,15 +649,36 @@ export default function Settings() {
                         <h3 className="text-lg font-bold text-foreground">{t("settings.rawDatabase")}</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-300">{t("settings.editCells")}</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={saveDatabase}
-                        disabled={saving}
-                        className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">save</span>
-                        {saving ? t("settings.saving") : t("settings.saveChanges")}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={saveDatabase}
+                            disabled={saving || importingFile}
+                            className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">save</span>
+                            {saving ? t("settings.saving") : t("settings.saveChanges")}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={saving || importingFile}
+                            className="flex items-center gap-2 bg-surface border border-border hover:bg-border disabled:opacity-50 text-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                            {importingFile ? t("settings.importing") : t("settings.importFile")}
+                        </button>
+                    </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".csv,.xlsx,.xls"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) importDatabaseFile(file);
+                        }}
+                    />
                 </div>
 
                 <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">

@@ -81,7 +81,16 @@
     "exportPortfolio": "Carteira",
     "confirmExportPdf": "Confirmar",
     "exportingPdf": "Exportando...",
-    "exportPdfError": "Não foi possível gerar o PDF."
+    "exportPdfError": "Não foi possível gerar o PDF.",
+    "importFile": "Importar Arquivo",
+    "importing": "Importando...",
+    "importSuccess": "Base importada com sucesso.",
+    "importError": "Não foi possível importar o arquivo.",
+    "importErrorColumnCount": "O arquivo deve ter exatamente 4 colunas (Data, Classificação, Ativo, Valor). Sua planilha tem {received} colunas — remova colunas extras ou use apenas as 4 exigidas.",
+    "importErrorColumnNames": "As colunas devem ser exatamente: {expected}. Encontrado: {received}.",
+    "importErrorCsvFormat": "O formato do CSV está inválido. Verifique se todas as linhas têm exatamente 4 colunas e se não há vírgulas ou quebras de linha dentro dos valores.",
+    "importErrorUnsupportedType": "Tipo de arquivo não suportado. Use um arquivo .csv, .xlsx ou .xls.",
+    "importErrorNoFile": "Nenhum arquivo foi enviado."
   },
   "addAsset": {
     "title": "Adicionar Patrimônio",
