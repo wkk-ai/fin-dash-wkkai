@@ -41,3 +41,21 @@ export function formatCurrency(value: number) {
         currency: "USD",
     }).format(value);
 }
+
+export type Locale = "pt-BR" | "en-US" | "es-ES";
+
+export function formatNumber(value: number, locale: Locale): string {
+    const opts: Intl.NumberFormatOptions = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    return new Intl.NumberFormat(locale === "pt-BR" || locale === "es-ES" ? "pt-BR" : "en-US", opts).format(value);
+}
+
+export function parseFormattedNumber(str: string, locale: Locale): number {
+    const s = str.trim().replace(/\s/g, "");
+    if (!s) return NaN;
+    if (locale === "pt-BR" || locale === "es-ES") {
+        const cleaned = s.replace(/\./g, "").replace(",", ".");
+        return parseFloat(cleaned) || NaN;
+    }
+    const cleaned = s.replace(/,/g, "");
+    return parseFloat(cleaned) || NaN;
+}

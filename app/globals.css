@@ -48,4 +48,38 @@ body {
   background: #4b5a6b;
 }
 
+/* Toast timer bar - shrinks from full to empty */
+@keyframes toast-timer-shrink {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.toast-timer-bar {
+  transform-origin: left;
+}
+
+/* Toast enter - subtle fade + slide up */
+@keyframes pending-toast-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Toast exit - smooth fade out + slide down */
+@keyframes pending-toast-exit {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+
 /* Base styles to remove outlines on focus, basic resets if needed */

@@ -3,6 +3,10 @@ import { Manrope } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { LanguageProvider } from "@/lib/language-context";
+import PendingChangesToast from "@/components/PendingChangesToast";
+import DocumentTitle from "@/components/DocumentTitle";
+import AddAssetSuccessToast from "@/components/AddAssetSuccessToast";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
@@ -26,12 +30,17 @@ export default function RootLayout({
       </head>
       <body className={`${manrope.variable} antialiased min-h-screen transition-colors duration-200`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <LanguageProvider>
+          <DocumentTitle />
           <div className="layout-container flex h-full min-h-screen flex-col">
             <Header />
             <main className="flex-1 overflow-y-auto px-4 py-8 lg:px-40">
               {children}
             </main>
+            <AddAssetSuccessToast />
+            <PendingChangesToast />
           </div>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>
