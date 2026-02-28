@@ -1,8 +1,8 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { useTranslation } from "@/lib/i18n";
 import { AssetEntry } from "@/types/database";
-import { formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
 interface DashboardSectionProps {
@@ -13,12 +13,13 @@ interface DashboardSectionProps {
     projectionResult: number;
     projectionParams: {
         monthlyAddition: number;
-        monthlyRate: number;
+        annualRate: number;
         years: number;
     };
 }
 
 export default function DashboardSection({ data, uniqueDates, dateValues, dateObjects, projectionResult, projectionParams }: DashboardSectionProps) {
+    const { t, formatCurrency } = useTranslation();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
 
@@ -62,15 +63,15 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
             {/* Welcome Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Bem-vindo de volta</p>
-                    <h1 className="text-3xl font-bold text-foreground">Panorama Financeiro</h1>
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("dashboard.welcome")}</p>
+                    <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
                 </div>
                 <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
-                        <span className="material-symbols-outlined text-[14px]">trending_up</span> Mercado Aberto
+                        <span className="material-symbols-outlined text-[14px]">trending_up</span> {t("dashboard.marketOpen")}
                     </span>
                     <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 min-w-[120px]">
-                        Última atu.: {latestDateStr}
+                        {t("dashboard.lastUpdate", { date: latestDateStr })}
                     </span>
                 </div>
             </div>
@@ -79,11 +80,11 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Card 1: Total Wealth */}
                 <div className="group relative overflow-hidden rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <div className="absolute right-0 top-0 p-4 opacity-20 group-hover:opacity-35 transition-opacity text-primary">
                         <span className="material-symbols-outlined text-8xl">account_balance_wallet</span>
                     </div>
                     <div className="flex flex-col gap-1 relative z-10">
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Patrimônio Total</p>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("dashboard.totalWealth")}</p>
                         <div className="flex items-baseline gap-2">
                             <h3 className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(currentWealth)}</h3>
                         </div>
@@ -93,7 +94,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     {isPositiveGrowth ? 'arrow_upward' : 'arrow_downward'}
                                 </span>
                                 <span>{Math.abs(momGrowthRate).toFixed(1)}%</span>
-                                <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">vs mês passado</span>
+                                <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">{t("dashboard.vsLastMonth")}</span>
                             </div>
                         )}
                     </div>
@@ -101,11 +102,11 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
 
                 {/* Card 2: Variation */}
                 <div className="group relative overflow-hidden rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <div className="absolute right-0 top-0 p-4 opacity-20 group-hover:opacity-35 transition-opacity text-primary">
                         <span className="material-symbols-outlined text-8xl">show_chart</span>
                     </div>
                     <div className="flex flex-col gap-1 relative z-10">
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Variação Mensal</p>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("dashboard.monthlyVariation")}</p>
                         <div className="flex items-baseline gap-2">
                             <h3 className="text-3xl font-bold text-foreground tracking-tight">
                                 {isPositiveGrowth ? '+' : ''}{formatCurrency(momVariation)}
@@ -116,26 +117,30 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                 {isPositiveGrowth ? 'trending_up' : 'trending_down'}
                             </span>
                             <span>{Math.abs(momGrowthRate).toFixed(1)}%</span>
-                            <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">evolução</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">{t("dashboard.evolution")}</span>
                         </div>
                     </div>
                 </div>
 
                 {/* Card 3: Projection */}
                 <div className="group relative overflow-hidden rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <div className="absolute right-0 top-0 p-4 opacity-20 group-hover:opacity-35 transition-opacity text-primary">
                         <span className="material-symbols-outlined text-8xl">rocket_launch</span>
                     </div>
                     <div className="flex flex-col gap-1 relative z-10">
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 line-clamp-2 pr-8">
-                            Valor projetado p/ {projectionParams.years} anos c/ {projectionParams.monthlyRate}% a.m. e aportes de R$ {(projectionParams.monthlyAddition / 1000).toFixed(0)}k
+                            {t("dashboard.projectedLabel", {
+                                years: projectionParams.years,
+                                rate: projectionParams.annualRate,
+                                addition: (projectionParams.monthlyAddition / 1000).toFixed(0)
+                            })}
                         </p>
                         <div className="flex items-baseline gap-2">
                             <h3 className="text-3xl font-bold text-primary tracking-tight">{formatCurrency(projectionResult)}</h3>
                         </div>
                         <div className="mt-2 flex items-center gap-1 text-sm font-medium text-slate-400 dark:text-slate-500">
                             <span className="material-symbols-outlined text-[18px]">update</span>
-                            <span>Simulação dinâmica</span>
+                            <span>{t("dashboard.dynamicSimulation")}</span>
                         </div>
                     </div>
                 </div>
@@ -146,8 +151,8 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                 <div className="lg:col-span-2 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-bold text-foreground">Evolução do Patrimônio</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Valor ao longo do tempo</p>
+                            <h3 className="text-lg font-bold text-foreground">{t("dashboard.wealthEvolution")}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t("dashboard.valueOverTime")}</p>
                         </div>
                     </div>
                     <div className="flex-1 min-h-[300px] w-full relative">
@@ -169,7 +174,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
-                                    formatter={(value: any) => [formatCurrency(value as number), "Patrimônio"]}
+                                    formatter={(value: any) => [formatCurrency(value as number), t("dashboard.wealth")]}
                                     contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
                                     labelStyle={{ color: tooltipLabelColor }}
                                 />
@@ -187,8 +192,8 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                 </div>
 
                 <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
-                    <h3 className="text-lg font-bold text-foreground mb-1">Alocação Atual</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Distribuição em {latestDateStr}</p>
+                    <h3 className="text-lg font-bold text-foreground mb-1">{t("dashboard.currentAllocation")}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t("dashboard.distributionIn", { date: latestDateStr })}</p>
 
                     <div className="flex-1 min-h-[200px] w-full relative -mt-4">
                         <ResponsiveContainer width="100%" height="100%">
@@ -208,9 +213,27 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     ))}
                                 </Pie>
                                 <RechartsTooltip
-                                    formatter={(value: any) => formatCurrency(value as number)}
-                                    contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
-                                    labelStyle={{ color: tooltipLabelColor }}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const { name, value } = payload[0].payload;
+                                        const idx = allocationChartData.findIndex((d) => d.name === name);
+                                        const segmentColor = idx >= 0 ? COLORS[idx % COLORS.length] : tooltipTextColor;
+                                        return (
+                                            <div
+                                                className="rounded-lg px-3 py-2 shadow-lg border"
+                                                style={{
+                                                    zIndex: 9999,
+                                                    backgroundColor: tooltipBg,
+                                                    borderColor: tooltipBorder,
+                                                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.2)",
+                                                }}
+                                            >
+                                                <span style={{ color: segmentColor, fontWeight: 600 }}>{name}</span>
+                                                <span style={{ color: tooltipTextColor }}> : {formatCurrency(value)}</span>
+                                            </div>
+                                        );
+                                    }}
+                                    wrapperStyle={{ zIndex: 9999 }}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -218,7 +241,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                             <span className="text-xl font-bold text-foreground">
                                 ${(currentWealth / 1000).toFixed(1)}k
                             </span>
-                            <span className="text-xs text-slate-500">Total</span>
+                            <span className="text-xs text-slate-500">{t("dashboard.total")}</span>
                         </div>
                     </div>
 

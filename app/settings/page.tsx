@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AssetEntry } from "@/types/database";
+import { useTranslation } from "@/lib/i18n";
 import { formatCurrency, parseCustomDate, cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import { loadPendingData, savePendingData, clearPendingData } from "@/lib/pending-storage";
 
 export default function Settings() {
+    const { t } = useTranslation();
     const [data, setData] = useState<AssetEntry[]>([]);
     const [settings, setSettings] = useState<{ classifications: string[]; assets: string[] }>({
         classifications: [],
@@ -38,6 +42,26 @@ export default function Settings() {
     // New option states
     const [newClassification, setNewClassification] = useState("");
     const [newAsset, setNewAsset] = useState("");
+    const hasUserEditedRef = useRef(false);
+
+    const csvDateToInputDate = (csvDate: string): string => {
+        const d = parseCustomDate(csvDate);
+        if (Number.isNaN(d.getTime())) return "";
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    const inputDateToCsvDate = (inputDate: string): string => {
+        if (!inputDate) return "";
+        const d = new Date(`${inputDate}T00:00:00`);
+        if (Number.isNaN(d.getTime())) return "";
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = d.toLocaleString("en-US", { month: "short" });
+        const year = String(d.getFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -73,15 +97,40 @@ export default function Settings() {
     };
 
     useEffect(() => {
-        fetchData();
+        const pending = loadPendingData();
+        if (pending && pending.length > 0) {
+            // Restore unsaved changes from previous session (e.g. after switching tabs)
+            hasUserEditedRef.current = true;
+            const sorted = [...pending].sort((a, b) => {
+                const dateA = parseCustomDate(a.Date).getTime();
+                const dateB = parseCustomDate(b.Date).getTime();
+                if (dateA !== dateB) return dateB - dateA;
+                return b.Value - a.Value;
+            });
+            setData(sorted);
+            const usedClasses = Array.from(new Set(pending.map(r => r.Classification))).filter(Boolean);
+            const usedAssets = Array.from(new Set(pending.map(r => r.Asset))).filter(Boolean);
+            setDbClassifications(usedClasses);
+            setDbAssets(usedAssets);
+            // Still need settings (classifications, assets) from API
+            fetch("/api/settings")
+                .then(res => res.json())
+                .then(setSettings)
+                .catch(console.error);
+            setLoading(false);
+        } else {
+            hasUserEditedRef.current = false;
+            clearPendingData();
+            fetchData();
+        }
 
         // Handle updates from AddAssetModal non-destructively
         const handleAdd = (e: any) => {
             const newRow = e.detail;
             if (newRow) {
+                hasUserEditedRef.current = true;
                 setData(prevData => {
                     const updated = [newRow, ...prevData];
-                    // Sort locally: Date DESC, then Value DESC
                     return updated.sort((a, b) => {
                         const dateA = parseCustomDate(a.Date).getTime();
                         const dateB = parseCustomDate(b.Date).getTime();
@@ -89,17 +138,24 @@ export default function Settings() {
                         return b.Value - a.Value;
                     });
                 });
-                // Also update used lists locally if needed
                 if (newRow.Classification) setDbClassifications(prev => Array.from(new Set([...prev, newRow.Classification])));
                 if (newRow.Asset) setDbAssets(prev => Array.from(new Set([...prev, newRow.Asset])));
             } else {
-                fetchData(); // Fallback to full fetch if data is missing
+                clearPendingData();
+                fetchData();
             }
         };
 
         window.addEventListener("asset-added", handleAdd);
         return () => window.removeEventListener("asset-added", handleAdd);
     }, []);
+
+    // Persist data to sessionStorage ONLY when user has explicitly edited (delete, edit, add)
+    useEffect(() => {
+        if (hasUserEditedRef.current && data.length > 0) {
+            savePendingData(data);
+        }
+    }, [data]);
 
     const saveSettingsSection = async (type: "class" | "asset") => {
         const isClass = type === "class";
@@ -112,9 +168,9 @@ export default function Settings() {
         if (missing.length > 0) {
             setModalConfig({
                 isOpen: true,
-                title: "Não é possível salvar",
-                message: `As seguintes opções estão em uso no seu CSV principal e não podem ser removidas: ${missing.join(", ")}. Por favor, adicione-as de volta antes de salvar.`,
-                confirmLabel: "Entendido",
+                title: t("settings.cannotSave"),
+                message: t("settings.missingInUse", { missing: missing.join(", ") }),
+                confirmLabel: t("common.understood"),
                 onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
             });
             return;
@@ -149,9 +205,9 @@ export default function Settings() {
         if (dbClassifications.includes(c)) {
             setModalConfig({
                 isOpen: true,
-                title: "Não é possível excluir",
-                message: `A classificação "${c}" está em uso no seu CSV principal e não pode ser removida.`,
-                confirmLabel: "Entendido",
+                title: t("settings.cannotDelete"),
+                message: t("settings.classInUse", { name: c }),
+                confirmLabel: t("common.understood"),
                 onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
             });
             return;
@@ -173,9 +229,9 @@ export default function Settings() {
         if (dbAssets.includes(a)) {
             setModalConfig({
                 isOpen: true,
-                title: "Não é possível excluir",
-                message: `O ativo/instituição "${a}" está em uso no seu CSV principal e não pode ser removido.`,
-                confirmLabel: "Entendido",
+                title: t("settings.cannotDelete"),
+                message: t("settings.assetInUse", { name: a }),
+                confirmLabel: t("common.understood"),
                 onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
             });
             return;
@@ -184,6 +240,7 @@ export default function Settings() {
     };
 
     const handleDataChange = (index: number, field: keyof AssetEntry, value: string) => {
+        hasUserEditedRef.current = true;
         const newData = [...data];
         if (field === "Value") {
             newData[index][field] = Number(value);
@@ -197,9 +254,9 @@ export default function Settings() {
         if (!data || data.length === 0) {
             setModalConfig({
                 isOpen: true,
-                title: "Atenção",
-                message: "A base de dados não pode ser salva vazia. Isso deletaria todos os seus ativos.",
-                confirmLabel: "Entendido",
+                title: t("settings.attention"),
+                message: t("settings.emptyDbWarning"),
+                confirmLabel: t("common.understood"),
                 onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
                 variant: "primary"
             });
@@ -208,9 +265,9 @@ export default function Settings() {
 
         setModalConfig({
             isOpen: true,
-            title: "Salvar Alterações",
-            message: `Deseja salvar as alterações em ${data.length} registros no banco de dados? Isso sobrescreverá o arquivo CSV.`,
-            confirmLabel: "Salvar",
+            title: t("settings.saveChangesConfirm"),
+            message: t("settings.saveConfirmMessage", { count: data.length }),
+            confirmLabel: t("common.save"),
             variant: "primary",
             onConfirm: async () => {
                 setModalConfig(prev => ({ ...prev, isOpen: false }));
@@ -221,11 +278,14 @@ export default function Settings() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ action: "updateAll", data }),
                     });
+                    hasUserEditedRef.current = false;
+                    clearPendingData();
+                    window.dispatchEvent(new CustomEvent("pending-saved"));
                     setModalConfig({
                         isOpen: true,
-                        title: "Sucesso",
-                        message: "Base de dados salva com sucesso!",
-                        confirmLabel: "OK",
+                        title: t("settings.success"),
+                        message: t("settings.dbSaved"),
+                        confirmLabel: t("common.ok"),
                         onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
                         variant: "primary"
                     });
@@ -233,9 +293,9 @@ export default function Settings() {
                     console.error(e);
                     setModalConfig({
                         isOpen: true,
-                        title: "Erro",
-                        message: "Ocorreu um erro ao salvar a base de dados.",
-                        confirmLabel: "OK",
+                        title: t("settings.error"),
+                        message: t("settings.saveError"),
+                        confirmLabel: t("common.ok"),
                         onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
                         variant: "danger"
                     });
@@ -252,11 +312,12 @@ export default function Settings() {
 
         setModalConfig({
             isOpen: true,
-            title: "Deletar Registro",
-            message: "Tem certeza que deseja deletar esta linha? Esta ação só será permanente após clicar em 'Salvar Alterações'.",
-            confirmLabel: "Deletar",
+            title: t("settings.deleteRecord"),
+            message: t("settings.deleteConfirm"),
+            confirmLabel: t("common.delete"),
             variant: "danger",
             onConfirm: () => {
+                hasUserEditedRef.current = true;
                 const newData = [...data];
                 newData.splice(index, 1);
                 setData(newData);
@@ -277,9 +338,9 @@ export default function Settings() {
     return (
         <div className="mx-auto max-w-7xl flex flex-col gap-8 pb-20">
             <div className="animate-in slide-in-from-bottom-2 fade-in duration-500">
-                <h1 className="text-3xl font-bold text-foreground">Configurações e Banco de Dados</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t("settings.title")}</h1>
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-300 mt-1">
-                    Gerencie as opções do sistema e edite os dados brutos da sua base (CSV).
+                    {t("settings.subtitle")}
                 </p>
             </div>
 
@@ -288,11 +349,11 @@ export default function Settings() {
                 {/* Classifications */}
                 <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-foreground">Classificações</h3>
+                        <h3 className="text-lg font-bold text-foreground">{t("settings.classifications")}</h3>
                         <button
                             type="button"
                             onClick={() => saveSettingsSection("class")}
-                            title="salvar"
+                            title={t("common.save")}
                             className="p-2 rounded-lg hover:bg-border text-slate-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
                             disabled={savingSettings.type === "class"}
                         >
@@ -309,11 +370,11 @@ export default function Settings() {
                             value={newClassification}
                             onChange={e => setNewClassification(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && addClassification()}
-                            placeholder="Ex: Renda Variável BR"
+                            placeholder={t("settings.classPlaceholder")}
                             className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <button type="button" onClick={addClassification} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
-                            Adicionar
+                            {t("common.add")}
                         </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -331,11 +392,11 @@ export default function Settings() {
                 {/* Assets */}
                 <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-foreground">Ativos/Instituições</h3>
+                        <h3 className="text-lg font-bold text-foreground">{t("settings.assets")}</h3>
                         <button
                             type="button"
                             onClick={() => saveSettingsSection("asset")}
-                            title="salvar"
+                            title={t("common.save")}
                             className="p-2 rounded-lg hover:bg-border text-slate-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
                             disabled={savingSettings.type === "asset"}
                         >
@@ -352,11 +413,11 @@ export default function Settings() {
                             value={newAsset}
                             onChange={e => setNewAsset(e.target.value)}
                             onKeyDown={e => e.key === "Enter" && addAsset()}
-                            placeholder="Ex: Rico"
+                            placeholder={t("settings.assetPlaceholder")}
                             className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                         <button type="button" onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
-                            Adicionar
+                            {t("common.add")}
                         </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -376,8 +437,8 @@ export default function Settings() {
             <div className="rounded-xl bg-surface border border-border shadow-sm flex flex-col animate-in slide-in-from-bottom-8 fade-in duration-1000 overflow-hidden">
                 <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-background/50">
                     <div>
-                        <h3 className="text-lg font-bold text-foreground">Base de Dados Bruta (CSV)</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-300">Edite as células diretamente</p>
+                        <h3 className="text-lg font-bold text-foreground">{t("settings.rawDatabase")}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-300">{t("settings.editCells")}</p>
                     </div>
                     <button
                         type="button"
@@ -386,7 +447,7 @@ export default function Settings() {
                         className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[18px]">save</span>
-                        {saving ? "Salvando..." : "Salvar Alterações"}
+                        {saving ? t("settings.saving") : t("settings.saveChanges")}
                     </button>
                 </div>
 
@@ -394,11 +455,11 @@ export default function Settings() {
                     <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 z-20 bg-surface shadow-sm">
                             <tr className="text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                <th className="px-4 py-3 border-b border-border bg-surface">Ações</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">Date</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">Classification</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">Asset</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">Value</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">{t("common.actions")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.date")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.classification")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.asset")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.value")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
@@ -415,8 +476,9 @@ export default function Settings() {
                                     </td>
                                     <td className="px-4 py-2">
                                         <input
-                                            value={row.Date}
-                                            onChange={(e) => handleDataChange(index, "Date", e.target.value)}
+                                            type="date"
+                                            value={csvDateToInputDate(row.Date)}
+                                            onChange={(e) => handleDataChange(index, "Date", inputDateToCsvDate(e.target.value))}
                                             className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
                                         />
                                     </td>
@@ -451,11 +513,10 @@ export default function Settings() {
                                         </select>
                                     </td>
                                     <td className="px-4 py-2">
-                                        <input
-                                            type="number"
-                                            step="0.01"
+                                        <FormattedNumberInput
                                             value={row.Value}
-                                            onChange={(e) => handleDataChange(index, "Value", e.target.value)}
+                                            onChange={n => handleDataChange(index, "Value", String(n))}
+                                            compactSpinner
                                             className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground font-medium"
                                         />
                                     </td>

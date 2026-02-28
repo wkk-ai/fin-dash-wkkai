@@ -3,23 +3,45 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AddAssetModal from "./AddAssetModal";
+import LanguageSelector from "./LanguageSelector";
+import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 export default function Header() {
+    const { t } = useTranslation();
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isNavOpen, setIsNavOpen] = useState(false);
+    const navMenuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
+    useEffect(() => {
+        setIsNavOpen(false);
+    }, [pathname]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (navMenuRef.current && !navMenuRef.current.contains(e.target as Node)) {
+                setIsNavOpen(false);
+            }
+        };
+        if (isNavOpen) {
+            document.addEventListener("click", handleClickOutside);
+        }
+        return () => document.removeEventListener("click", handleClickOutside);
+    }, [isNavOpen]);
+
     const navLinks = [
-        { name: "Dashboard", href: "/" },
-        { name: "Carteira", href: "/portfolio" },
-        { name: "Configurações", href: "/settings" },
+        { name: t("nav.dashboard"), href: "/" },
+        { name: t("nav.portfolio"), href: "/portfolio" },
+        { name: t("nav.settings"), href: "/settings" },
     ];
 
     return (
@@ -30,7 +52,7 @@ export default function Header() {
                         <span className="material-symbols-outlined text-2xl">grid_view</span>
                     </div>
                     <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">
-                        FinTrack
+                        {t("app.name")}
                     </h2>
                 </div>
 
@@ -53,6 +75,43 @@ export default function Header() {
                         })}
                     </nav>
 
+                    {/* Menu hamburger para telas estreitas */}
+                    <div className="relative md:hidden" ref={navMenuRef}>
+                        <button
+                            type="button"
+                            onClick={() => setIsNavOpen((v) => !v)}
+                            className="flex size-10 items-center justify-center rounded-lg bg-border text-foreground hover:text-primary transition-colors cursor-pointer"
+                            aria-label={isNavOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+                            aria-expanded={isNavOpen}
+                        >
+                            <span className="material-symbols-outlined text-2xl">
+                                {isNavOpen ? "close" : "menu"}
+                            </span>
+                        </button>
+                        {isNavOpen && (
+                            <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-surface shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                                {navLinks.map((link) => {
+                                    const isActive = pathname === link.href;
+                                    return (
+                                        <Link
+                                            key={link.name}
+                                            href={link.href}
+                                            onClick={() => setIsNavOpen(false)}
+                                            className={cn(
+                                                "block px-4 py-2.5 text-sm font-medium transition-colors",
+                                                isActive
+                                                    ? "text-primary bg-primary/10"
+                                                    : "text-slate-600 dark:text-slate-400 hover:bg-border hover:text-foreground"
+                                            )}
+                                        >
+                                            {link.name}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="h-6 w-px bg-border-light dark:bg-border-dark mx-2 hidden md:block"></div>
 
                     <div className="flex items-center gap-3">
@@ -61,7 +120,7 @@ export default function Header() {
                             className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all cursor-pointer"
                         >
                             <span className="material-symbols-outlined text-[20px]">add</span>
-                            <span className="truncate">Adicionar Patrimônio</span>
+                            <span className="truncate">{t("nav.addAsset")}</span>
                         </button>
 
                         <button
@@ -75,10 +134,7 @@ export default function Header() {
                             )}
                         </button>
 
-                        <button className="flex size-10 items-center justify-center rounded-full bg-border text-foreground hover:text-primary transition-colors cursor-pointer relative">
-                            <span className="material-symbols-outlined">notifications</span>
-                            <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-red-500 border border-surface"></span>
-                        </button>
+                        <LanguageSelector />
 
                         <div
                             className="h-10 w-10 overflow-hidden rounded-full border-2 border-border bg-cover bg-center cursor-pointer"
