@@ -72,7 +72,14 @@
     "error": "Error",
     "saveError": "Ocurrió un error al guardar la base de datos.",
     "deleteRecord": "Eliminar Registro",
-    "deleteConfirm": "¿Estás seguro de que deseas eliminar esta fila? Esta acción solo será permanente después de hacer clic en 'Guardar Cambios'."
+    "deleteConfirm": "¿Estás seguro de que deseas eliminar esta fila? Esta acción solo será permanente después de hacer clic en 'Guardar Cambios'.",
+    "exportPdf": "Exportar PDF",
+    "selectTabsToExport": "Selecciona qué pestañas deseas exportar:",
+    "exportDashboard": "Panel",
+    "exportPortfolio": "Portafolio",
+    "confirmExportPdf": "Confirmar",
+    "exportingPdf": "Exportando...",
+    "exportPdfError": "No se pudo generar el PDF."
   },
   "addAsset": {
     "title": "Añadir Patrimonio",
