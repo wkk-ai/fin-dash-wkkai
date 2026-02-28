@@ -10,6 +10,11 @@ export default function Home() {
   const [data, setData] = useState<AssetEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // --- Projection Logic (Lifted) ---
+  const [monthlyAddition, setMonthlyAddition] = useState<string>("5000");
+  const [monthlyRate, setMonthlyRate] = useState<string>("0.8");
+  const [yearsToProject, setYearsToProject] = useState<string>("10");
+
   const fetchData = () => {
     fetch("/api/database", { cache: "no-store" })
       .then((res) => res.json())
@@ -44,21 +49,14 @@ export default function Home() {
     return <div className="text-center py-20 text-slate-500 font-medium">Nenhum dado encontrado no banco de dados.</div>;
   }
 
-  // --- Data Processing (Centralized) ---
-  const dateValues: Record<string, number> = {};
-  const dateObjects: Record<string, Date> = {};
+  const months = Number(yearsToProject) * 12;
+  const rate = Number(monthlyRate) / 100;
+  const addition = Number(monthlyAddition);
 
-  data.forEach((entry) => {
-    if (!dateValues[entry.Date]) {
-      dateValues[entry.Date] = 0;
-      dateObjects[entry.Date] = parseCustomDate(entry.Date);
-    }
-    dateValues[entry.Date] += entry.Value;
-  });
-
-  const uniqueDates = Object.keys(dateValues).sort((a, b) => dateObjects[a].getTime() - dateObjects[b].getTime());
-  const latestDateStr = uniqueDates[uniqueDates.length - 1];
-  const currentWealth = dateValues[latestDateStr] || 0;
+  let simulatedWealth = currentWealth;
+  for (let i = 1; i <= months; i++) {
+    simulatedWealth = simulatedWealth * (1 + rate) + addition;
+  }
 
   return (
     <div className="space-y-16 pb-20">
@@ -69,6 +67,12 @@ export default function Home() {
           uniqueDates={uniqueDates}
           dateValues={dateValues}
           dateObjects={dateObjects}
+          projectionResult={simulatedWealth}
+          projectionParams={{
+            monthlyAddition: addition,
+            monthlyRate: Number(monthlyRate),
+            years: Number(yearsToProject)
+          }}
         />
       </section>
 
@@ -77,7 +81,11 @@ export default function Home() {
 
       {/* Projections Section */}
       <section id="projections" className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
-        <ProjectionsSection currentWealth={currentWealth} />
+        <ProjectionsSection
+          currentWealth={currentWealth}
+          params={{ monthlyAddition, monthlyRate, yearsToProject }}
+          setParams={{ setMonthlyAddition, setMonthlyRate, setYearsToProject }}
+        />
       </section>
     </div>
   );
