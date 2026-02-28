@@ -97,7 +97,7 @@
     "lastUpdate": "Last update: {date}",
     "totalWealth": "Total Wealth",
     "monthlyVariation": "Monthly Variation",
-    "vsLastMonth": "vs last month",
+    "vsLastMonth": "vs. last month",
     "evolution": "evolution",
     "projectedLabel": "Projected value for {years} years at {rate}% p.a. with ${addition}k monthly contributions",
     "dynamicSimulation": "Dynamic simulation",
@@ -106,7 +106,9 @@
     "wealth": "Wealth",
     "currentAllocation": "Current Allocation",
     "distributionIn": "Distribution as of {date}",
-    "total": "Total"
+    "total": "Total",
+    "monthsToNextMillion": "Months to next million",
+    "topAssetLabel": "Top Asset"
   },
   "projections": {
     "title": "Financial Projections",
