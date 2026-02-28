@@ -97,7 +97,7 @@
     "lastUpdate": "Última atu.: {date}",
     "totalWealth": "Patrimônio Total",
     "monthlyVariation": "Variação Mensal",
-    "vsLastMonth": "vs mês passado",
+    "vsLastMonth": "vs. último mês",
     "evolution": "evolução",
     "projectedLabel": "Valor projetado p/ {years} anos c/ {rate}% a.a. e aportes de R$ {addition}k",
     "dynamicSimulation": "Simulação dinâmica",
@@ -106,7 +106,9 @@
     "wealth": "Patrimônio",
     "currentAllocation": "Alocação Atual",
     "distributionIn": "Distribuição em {date}",
-    "total": "Total"
+    "total": "Total",
+    "monthsToNextMillion": "Meses até próximo milhão",
+    "topAssetLabel": "Maior Ativo"
   },
   "projections": {
     "title": "Projeções Financeiras",
