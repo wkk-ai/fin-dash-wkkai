@@ -8,11 +8,24 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCo
 
 interface ProjectionsSectionProps {
     currentWealth: number;
+    params: {
+        monthlyAddition: string;
+        monthlyRate: string;
+        yearsToProject: string;
+    };
+    setParams: {
+        setMonthlyAddition: (val: string) => void;
+        setMonthlyRate: (val: string) => void;
+        setYearsToProject: (val: string) => void;
+    };
 }
 
-export default function ProjectionsSection({ currentWealth }: ProjectionsSectionProps) {
+export default function ProjectionsSection({ currentWealth, params, setParams }: ProjectionsSectionProps) {
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
+
+    const { monthlyAddition, monthlyRate, yearsToProject } = params;
+    const { setMonthlyAddition, setMonthlyRate, setYearsToProject } = setParams;
 
     // Theme-aware chart colors
     const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
@@ -21,11 +34,6 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
     const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
     const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
     const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
-
-    const [monthlyAddition, setMonthlyAddition] = useState<string>("5000");
-    const [monthlyRate, setMonthlyRate] = useState<string>("0.8");
-    const [yearsToProject, setYearsToProject] = useState<string>("10");
-
     const months = Number(yearsToProject) * 12;
     const rate = Number(monthlyRate) / 100;
     const addition = Number(monthlyAddition);
