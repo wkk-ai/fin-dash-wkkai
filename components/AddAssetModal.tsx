@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { AssetEntry } from "@/types/database";
+import { useTranslation } from "@/lib/i18n";
+import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 
 interface Props {
     onClose: () => void;
 }
 
 export default function AddAssetModal({ onClose }: Props) {
-    const router = useRouter();
+    const { t } = useTranslation();
     const [classifications, setClassifications] = useState<string[]>([]);
     const [assets, setAssets] = useState<string[]>([]);
 
@@ -69,6 +70,7 @@ export default function AddAssetModal({ onClose }: Props) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ action: "append", data: newRow }),
             });
+            window.dispatchEvent(new CustomEvent("asset-added-success"));
             // Fire the event with the new data BEFORE closing
             window.dispatchEvent(new CustomEvent("asset-added", { detail: newRow }));
             // Small delay to let listeners react before unmount
@@ -86,7 +88,7 @@ export default function AddAssetModal({ onClose }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-border flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-foreground">Adicionar Patrimônio</h3>
+                    <h3 className="text-lg font-bold text-foreground">{t("addAsset.title")}</h3>
                     <button
                         onClick={onClose}
                         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
@@ -97,7 +99,7 @@ export default function AddAssetModal({ onClose }: Props) {
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Data</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.date")}</label>
                         <input
                             type="date"
                             name="Date"
@@ -109,7 +111,7 @@ export default function AddAssetModal({ onClose }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Classificação</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.classification")}</label>
                         <select
                             name="Classification"
                             required
@@ -124,7 +126,7 @@ export default function AddAssetModal({ onClose }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Ativo/Instituição</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.assetInstitution")}</label>
                         <select
                             name="Asset"
                             required
@@ -139,15 +141,12 @@ export default function AddAssetModal({ onClose }: Props) {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Valor (R$)</label>
-                        <input
-                            type="number"
-                            name="Value"
-                            step="0.01"
+                        <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.valueBRL")}</label>
+                        <FormattedNumberInput
+                            value={Number(formData.Value) || 0}
+                            onChange={n => setFormData(prev => ({ ...prev, Value: n === 0 ? "" : String(n) }))}
+                            placeholder={t("addAsset.valuePlaceholder")}
                             required
-                            value={formData.Value}
-                            onChange={handleChange}
-                            placeholder="Ex: 350000"
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
@@ -158,14 +157,14 @@ export default function AddAssetModal({ onClose }: Props) {
                             onClick={onClose}
                             className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
                         >
-                            Cancelar
+                            {t("common.cancel")}
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
                             className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
                         >
-                            {loading ? "Salvando..." : "Adicionar"}
+                            {loading ? t("addAsset.saving") : t("common.add")}
                         </button>
                     </div>
                 </form>

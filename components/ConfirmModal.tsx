@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -18,13 +19,16 @@ export function ConfirmModal({
     isOpen,
     title,
     message,
-    confirmLabel = "Confirmar",
-    cancelLabel = "Cancelar",
+    confirmLabel,
+    cancelLabel,
     onConfirm,
     onCancel,
     variant = "primary",
 }: ConfirmModalProps) {
+    const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
+    const finalConfirm = confirmLabel ?? t("common.confirm");
+    const finalCancel = cancelLabel ?? t("common.cancel");
 
     useEffect(() => {
         setMounted(true);
@@ -43,7 +47,7 @@ export function ConfirmModal({
             {/* Modal Content */}
             <div className="relative w-full max-w-sm rounded-2xl bg-surface border border-border shadow-2xl p-6 animate-in zoom-in-95 duration-200">
                 <h3 className="text-xl font-bold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-300 mb-6">{message}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300 mb-6">{message}</p>
 
                 <div className="flex gap-3 justify-end">
                     <button
@@ -51,7 +55,7 @@ export function ConfirmModal({
                         onClick={onCancel}
                         className="px-4 py-2 rounded-lg text-sm font-bold text-foreground hover:bg-border transition-colors cursor-pointer"
                     >
-                        {cancelLabel}
+                        {finalCancel}
                     </button>
                     <button
                         type="button"
@@ -61,7 +65,7 @@ export function ConfirmModal({
                             variant === "danger" ? "bg-red-500" : "bg-primary"
                         )}
                     >
-                        {confirmLabel}
+                        {finalConfirm}
                     </button>
                 </div>
             </div>
