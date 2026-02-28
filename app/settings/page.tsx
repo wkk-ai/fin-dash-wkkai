@@ -23,6 +23,10 @@ export default function Settings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [savingSettings, setSavingSettings] = useState<{ type: "class" | "asset" | null }>({ type: null });
+    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+    const [exportDashboard, setExportDashboard] = useState(true);
+    const [exportPortfolio, setExportPortfolio] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
 
     // Modal state
     const [modalConfig, setModalConfig] = useState<{
@@ -326,6 +330,145 @@ export default function Settings() {
         });
     };
 
+    const captureRouteAsImage = async (route: string) => {
+        const { toPng } = await import("html-to-image");
+        return await new Promise<{ imgData: string; width: number; height: number }>((resolve, reject) => {
+            const iframe = document.createElement("iframe");
+            iframe.src = route;
+            iframe.style.position = "fixed";
+            iframe.style.left = "-99999px";
+            iframe.style.top = "0";
+            iframe.style.width = "1440px";
+            iframe.style.height = "2400px";
+            iframe.style.opacity = "0";
+            iframe.style.pointerEvents = "none";
+
+            const cleanUp = () => {
+                if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            };
+
+            iframe.onload = async () => {
+                try {
+                    const doc = iframe.contentDocument;
+                    if (!doc) throw new Error("Failed to access iframe document");
+                    await new Promise((r) => setTimeout(r, 1200));
+
+                    // Prevent cross-origin stylesheet access errors during DOM-to-image conversion,
+                    // while keeping app styles loaded from the same origin.
+                    const currentOrigin = window.location.origin;
+                    Array.from(doc.querySelectorAll('link[rel="stylesheet"]')).forEach((linkEl) => {
+                        const href = (linkEl as HTMLLinkElement).href || "";
+                        if (!href) return;
+                        let isCrossOrigin = false;
+                        try {
+                            const parsed = new URL(href, currentOrigin);
+                            isCrossOrigin = parsed.origin !== currentOrigin;
+                        } catch {
+                            isCrossOrigin = false;
+                        }
+                        if (isCrossOrigin) {
+                            linkEl.remove();
+                        }
+                    });
+
+                    const fonts = (doc as Document & { fonts?: { ready?: Promise<unknown> } }).fonts;
+                    if (fonts?.ready) await fonts.ready;
+
+                    // If icon font ligatures are unavailable in the iframe snapshot,
+                    // hide ligature text tokens (e.g. "grid_view", "trending_up").
+                    doc.querySelectorAll(".material-symbols-outlined").forEach((el) => {
+                        const iconEl = el as HTMLElement;
+                        iconEl.textContent = "";
+                        iconEl.style.fontSize = "0";
+                        iconEl.style.lineHeight = "0";
+                    });
+
+                    const target = doc.body as HTMLElement;
+                    const width = Math.max(
+                        doc.documentElement.scrollWidth,
+                        doc.body.scrollWidth,
+                        1440
+                    );
+                    const height = Math.max(
+                        doc.documentElement.scrollHeight,
+                        doc.body.scrollHeight,
+                        1200
+                    );
+                    const pageBg = doc.defaultView
+                        ? doc.defaultView.getComputedStyle(doc.body).backgroundColor
+                        : "#ffffff";
+
+                    const imgData = await toPng(target, {
+                        cacheBust: true,
+                        pixelRatio: 2,
+                        backgroundColor: pageBg,
+                        width,
+                        height,
+                    });
+                    resolve({ imgData, width, height });
+                } catch (err) {
+                    reject(err);
+                } finally {
+                    cleanUp();
+                }
+            };
+
+            iframe.onerror = () => {
+                cleanUp();
+                reject(new Error(`Failed loading route: ${route}`));
+            };
+
+            document.body.appendChild(iframe);
+        });
+    };
+
+    const exportSelectedTabsAsPdf = async () => {
+        const selectedRoutes: string[] = [];
+        if (exportDashboard) selectedRoutes.push("/");
+        if (exportPortfolio) selectedRoutes.push("/portfolio");
+        if (!selectedRoutes.length) return;
+
+        setExportingPdf(true);
+        try {
+            const { jsPDF } = await import("jspdf");
+            const pdf = new jsPDF("p", "pt", "a4");
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 24;
+            const printableWidth = pageWidth - margin * 2;
+            const printableHeight = pageHeight - margin * 2;
+
+            for (let i = 0; i < selectedRoutes.length; i++) {
+                const capture = await captureRouteAsImage(selectedRoutes[i]);
+
+                if (i > 0) pdf.addPage();
+
+                const ratio = Math.min(printableWidth / capture.width, printableHeight / capture.height);
+                const renderWidth = capture.width * ratio;
+                const renderHeight = capture.height * ratio;
+                const x = (pageWidth - renderWidth) / 2;
+                const y = margin;
+
+                pdf.addImage(capture.imgData, "PNG", x, y, renderWidth, renderHeight);
+            }
+
+            pdf.save(`fintrack-export-${new Date().toISOString().slice(0, 10)}.pdf`);
+            setIsExportDialogOpen(false);
+        } catch (e) {
+            console.error(e);
+            setModalConfig({
+                isOpen: true,
+                title: t("settings.error"),
+                message: t("settings.exportPdfError"),
+                confirmLabel: t("common.ok"),
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+                variant: "danger"
+            });
+        } finally {
+            setExportingPdf(false);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -526,6 +669,70 @@ export default function Settings() {
                     </table>
                 </div>
             </div>
+
+            <div className="flex justify-end animate-in slide-in-from-bottom-8 fade-in duration-1000">
+                <button
+                    type="button"
+                    onClick={() => setIsExportDialogOpen(true)}
+                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                >
+                    <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                    {t("settings.exportPdf")}
+                </button>
+            </div>
+
+            {isExportDialogOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+                        onClick={() => !exportingPdf && setIsExportDialogOpen(false)}
+                    />
+                    <div className="relative w-full max-w-md rounded-2xl bg-surface border border-border shadow-2xl p-6">
+                        <h3 className="text-xl font-bold text-foreground mb-2">{t("settings.exportPdf")}</h3>
+                        <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">{t("settings.selectTabsToExport")}</p>
+
+                        <div className="space-y-3 mb-6">
+                            <label className="flex items-center gap-3 text-sm text-foreground">
+                                <input
+                                    type="checkbox"
+                                    checked={exportDashboard}
+                                    onChange={(e) => setExportDashboard(e.target.checked)}
+                                    className="h-4 w-4 accent-primary"
+                                />
+                                {t("settings.exportDashboard")}
+                            </label>
+                            <label className="flex items-center gap-3 text-sm text-foreground">
+                                <input
+                                    type="checkbox"
+                                    checked={exportPortfolio}
+                                    onChange={(e) => setExportPortfolio(e.target.checked)}
+                                    className="h-4 w-4 accent-primary"
+                                />
+                                {t("settings.exportPortfolio")}
+                            </label>
+                        </div>
+
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => setIsExportDialogOpen(false)}
+                                disabled={exportingPdf}
+                                className="px-4 py-2 rounded-lg text-sm font-bold text-foreground hover:bg-border transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                                {t("common.cancel")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={exportSelectedTabsAsPdf}
+                                disabled={exportingPdf || (!exportDashboard && !exportPortfolio)}
+                                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                                {exportingPdf ? t("settings.exportingPdf") : t("settings.confirmExportPdf")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <ConfirmModal
                 isOpen={modalConfig.isOpen}
