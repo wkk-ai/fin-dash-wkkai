@@ -2,17 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { AssetEntry } from "@/types/database";
+import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate } from "@/lib/utils";
 import DashboardSection from "@/components/DashboardSection";
 import ProjectionsSection from "@/components/ProjectionsSection";
 
 export default function Home() {
+  const { t } = useTranslation();
   const [data, setData] = useState<AssetEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   // --- Projection Logic (Lifted) ---
   const [monthlyAddition, setMonthlyAddition] = useState<string>("5000");
-  const [monthlyRate, setMonthlyRate] = useState<string>("0.8");
+  const [annualRate, setAnnualRate] = useState<string>("10");
   const [yearsToProject, setYearsToProject] = useState<string>("10");
 
   const fetchData = () => {
@@ -46,16 +48,33 @@ export default function Home() {
   }
 
   if (!data?.length) {
-    return <div className="text-center py-20 text-slate-500 font-medium">Nenhum dado encontrado no banco de dados.</div>;
+    return <div className="text-center py-20 text-slate-500 font-medium">{t("home.noData")}</div>;
   }
 
+  // Build date aggregates from data
+  const uniqueDates = Array.from(new Set(data.map((d) => d.Date)));
+  uniqueDates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
+
+  const dateValues: Record<string, number> = {};
+  data.forEach((d) => {
+    dateValues[d.Date] = (dateValues[d.Date] || 0) + d.Value;
+  });
+
+  const dateObjects: Record<string, Date> = {};
+  uniqueDates.forEach((dateStr) => {
+    dateObjects[dateStr] = parseCustomDate(dateStr);
+  });
+
+  const latestDateStr = uniqueDates[uniqueDates.length - 1];
+  const currentWealth = dateValues[latestDateStr] || 0;
+
   const months = Number(yearsToProject) * 12;
-  const rate = Number(monthlyRate) / 100;
+  const monthlyRate = Math.pow(1 + Number(annualRate) / 100, 1 / 12) - 1;
   const addition = Number(monthlyAddition);
 
   let simulatedWealth = currentWealth;
   for (let i = 1; i <= months; i++) {
-    simulatedWealth = simulatedWealth * (1 + rate) + addition;
+    simulatedWealth = simulatedWealth * (1 + monthlyRate) + addition;
   }
 
   return (
@@ -70,7 +89,7 @@ export default function Home() {
           projectionResult={simulatedWealth}
           projectionParams={{
             monthlyAddition: addition,
-            monthlyRate: Number(monthlyRate),
+            annualRate: Number(annualRate),
             years: Number(yearsToProject)
           }}
         />
@@ -83,8 +102,8 @@ export default function Home() {
       <section id="projections" className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <ProjectionsSection
           currentWealth={currentWealth}
-          params={{ monthlyAddition, monthlyRate, yearsToProject }}
-          setParams={{ setMonthlyAddition, setMonthlyRate, setYearsToProject }}
+          params={{ monthlyAddition, annualRate, yearsToProject }}
+          setParams={{ setMonthlyAddition, setAnnualRate, setYearsToProject }}
         />
       </section>
     </div>
