@@ -81,7 +81,16 @@
     "exportPortfolio": "Portafolio",
     "confirmExportPdf": "Confirmar",
     "exportingPdf": "Exportando...",
-    "exportPdfError": "No se pudo generar el PDF."
+    "exportPdfError": "No se pudo generar el PDF.",
+    "importFile": "Importar Archivo",
+    "importing": "Importando...",
+    "importSuccess": "Base importada con éxito.",
+    "importError": "No se pudo importar el archivo.",
+    "importErrorColumnCount": "El archivo debe tener exactamente 4 columnas (Fecha, Clasificación, Activo, Valor). Tu hoja tiene {received} columnas — elimina columnas extra o usa solo las 4 requeridas.",
+    "importErrorColumnNames": "Los nombres de columnas deben ser exactamente: {expected}. Encontrado: {received}.",
+    "importErrorCsvFormat": "El formato del CSV no es válido. Comprueba que cada fila tenga exactamente 4 columnas y que no haya comas o saltos de línea dentro de los valores.",
+    "importErrorUnsupportedType": "Tipo de archivo no admitido. Usa un archivo .csv, .xlsx o .xls.",
+    "importErrorNoFile": "No se ha subido ningún archivo."
   },
   "addAsset": {
     "title": "Añadir Patrimonio",

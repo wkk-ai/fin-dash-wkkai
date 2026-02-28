@@ -81,7 +81,16 @@
     "exportPortfolio": "Net Worth",
     "confirmExportPdf": "Confirm",
     "exportingPdf": "Exporting...",
-    "exportPdfError": "Could not generate PDF."
+    "exportPdfError": "Could not generate PDF.",
+    "importFile": "Import File",
+    "importing": "Importing...",
+    "importSuccess": "Database imported successfully.",
+    "importError": "Could not import file.",
+    "importErrorColumnCount": "The file must have exactly 4 columns (Date, Classification, Asset, Value). Your sheet has {received} columns — remove extra columns or use only the 4 required.",
+    "importErrorColumnNames": "Column names must be exactly: {expected}. Found: {received}.",
+    "importErrorCsvFormat": "The CSV format is invalid. Make sure every row has exactly 4 columns and there are no commas or line breaks inside values.",
+    "importErrorUnsupportedType": "Unsupported file type. Use a .csv, .xlsx or .xls file.",
+    "importErrorNoFile": "No file was uploaded."
   },
   "addAsset": {
     "title": "Add Asset",
