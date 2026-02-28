@@ -71,6 +71,8 @@
     "dbSaved": "Base de dados salva com sucesso!",
     "error": "Erro",
     "saveError": "Ocorreu um erro ao salvar a base de dados.",
+    "classificationsSaved": "Classificações salvas com sucesso!",
+    "assetsSaved": "Ativos/Instituições salvos com sucesso!",
     "deleteRecord": "Deletar Registro",
     "deleteConfirm": "Tem certeza que deseja deletar esta linha? Esta ação só será permanente após clicar em 'Salvar Alterações'.",
     "exportPdf": "Exportar PDF",
