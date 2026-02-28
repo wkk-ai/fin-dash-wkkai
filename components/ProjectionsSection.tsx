@@ -2,17 +2,32 @@
 
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import { useTranslation } from "@/lib/i18n";
+import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { AssetEntry } from "@/types/database";
-import { formatCurrency } from "@/lib/utils";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 interface ProjectionsSectionProps {
     currentWealth: number;
+    params: {
+        monthlyAddition: string;
+        annualRate: string;
+        yearsToProject: string;
+    };
+    setParams: {
+        setMonthlyAddition: (val: string) => void;
+        setAnnualRate: (val: string) => void;
+        setYearsToProject: (val: string) => void;
+    };
 }
 
-export default function ProjectionsSection({ currentWealth }: ProjectionsSectionProps) {
+export default function ProjectionsSection({ currentWealth, params, setParams }: ProjectionsSectionProps) {
+    const { t, formatCurrency } = useTranslation();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
+
+    const { monthlyAddition, annualRate, yearsToProject } = params;
+    const { setMonthlyAddition, setAnnualRate, setYearsToProject } = setParams;
 
     // Theme-aware chart colors
     const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
@@ -21,13 +36,9 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
     const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
     const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
     const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
-
-    const [monthlyAddition, setMonthlyAddition] = useState<string>("5000");
-    const [monthlyRate, setMonthlyRate] = useState<string>("0.8");
-    const [yearsToProject, setYearsToProject] = useState<string>("10");
-
     const months = Number(yearsToProject) * 12;
-    const rate = Number(monthlyRate) / 100;
+    const monthlyRate = Math.pow(1 + Number(annualRate) / 100, 1 / 12) - 1;
+    const monthlyPct = annualRate ? ((monthlyRate * 100).toFixed(1)) : "—";
     const addition = Number(monthlyAddition);
 
     const projectionData = [];
@@ -44,7 +55,7 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
     });
 
     for (let i = 1; i <= months; i++) {
-        simulatedWealth = simulatedWealth * (1 + rate) + addition;
+        simulatedWealth = simulatedWealth * (1 + monthlyRate) + addition;
         totalInvested += addition;
         if (i % 12 === 0 || i <= 12) {
             const futureDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
@@ -61,37 +72,41 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
         <div className="flex flex-col gap-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Projeções Financeiras</h1>
+                    <h1 className="text-3xl font-bold text-foreground">{t("projections.title")}</h1>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                        Simule o crescimento do seu patrimônio atual ({formatCurrency(currentWealth)})
+                        {t("projections.subtitle", { amount: formatCurrency(currentWealth) })}
                     </p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col gap-4">
-                    <h3 className="text-lg font-bold text-foreground">Parâmetros</h3>
+                    <h3 className="text-lg font-bold text-foreground">{t("projections.parameters")}</h3>
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Aporte Mensal (R$)</label>
-                        <input
-                            type="number"
-                            value={monthlyAddition}
-                            onChange={e => setMonthlyAddition(e.target.value)}
+                        <label className="block text-sm font-medium text-foreground mb-1">{t("projections.monthlyAddition")}</label>
+                        <FormattedNumberInput
+                            value={Number(monthlyAddition) || 0}
+                            onChange={n => setMonthlyAddition(String(Math.round(n)))}
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Taxa de Juros Mensal (%)</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                            {t("projections.annualRate")}
+                            <span className="ml-2 font-normal text-slate-500 dark:text-slate-400">
+                                ({monthlyPct}% {t("projections.perMonth")})
+                            </span>
+                        </label>
                         <input
                             type="number"
                             step="0.1"
-                            value={monthlyRate}
-                            onChange={e => setMonthlyRate(e.target.value)}
+                            value={annualRate}
+                            onChange={e => setAnnualRate(e.target.value)}
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">Anos para Projetar</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">{t("projections.yearsToProject")}</label>
                         <input
                             type="number"
                             value={yearsToProject}
@@ -100,15 +115,15 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
                         />
                     </div>
                     <div className="mt-4 pt-4 border-t border-border">
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Resultado Final ({yearsToProject} anos):</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{t("projections.finalResult", { years: yearsToProject })}</p>
                         <h3 className="text-3xl font-bold text-primary mt-1 tracking-tight">
                             {formatCurrency(simulatedWealth)}
                         </h3>
                         <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-2">
-                            Total Investido: {formatCurrency(totalInvested)}
+                            {t("projections.totalInvested", { amount: formatCurrency(totalInvested) })}
                         </p>
                         <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                            Juros Ganhos: {formatCurrency(simulatedWealth - totalInvested)}
+                            {t("projections.interestEarned", { amount: formatCurrency(simulatedWealth - totalInvested) })}
                         </p>
                     </div>
                 </div>
@@ -116,8 +131,8 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
                 <div className="lg:col-span-2 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h3 className="text-lg font-bold text-foreground">Crescimento Projetado</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Juros Compostos + Aportes Mensais</p>
+                            <h3 className="text-lg font-bold text-foreground">{t("projections.projectedGrowth")}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{t("projections.compoundInterest")}</p>
                         </div>
                     </div>
                     <div className="flex-1 min-h-[350px] w-full relative">
@@ -143,7 +158,7 @@ export default function ProjectionsSection({ currentWealth }: ProjectionsSection
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
-                                    formatter={(value: any, name: any) => [formatCurrency(value as number), name === "value" ? "Patrimônio" : "Investido"]}
+                                    formatter={(value: any, name: any) => [formatCurrency(value as number), name === "value" ? t("dashboard.wealth") : t("projections.invested")]}
                                     contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
                                     labelStyle={{ color: tooltipLabelColor }}
                                 />

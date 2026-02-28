@@ -1,11 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { AssetEntry } from "@/types/database";
-import { parseCustomDate, formatCurrency } from "@/lib/utils";
+import { useTranslation } from "@/lib/i18n";
+import { parseCustomDate } from "@/lib/utils";
+import { useTheme } from "next-themes";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export default function Portfolio() {
+    const { t, formatCurrency } = useTranslation();
+    const { resolvedTheme } = useTheme();
     const [data, setData] = useState<AssetEntry[]>([]);
+    const [filterClassification, setFilterClassification] = useState<string>("");
+    const [filterAsset, setFilterAsset] = useState<string>("");
+
+    const setClassification = (v: string) => {
+        setFilterClassification(v);
+        setFilterAsset(""); // reset asset when class changes
+    };
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -21,6 +33,48 @@ export default function Portfolio() {
             });
     }, []);
 
+    // Chart: unique dates + date objects (must run before early return for Rules of Hooks)
+    const uniqueDates = useMemo(() => {
+        const dates = Array.from(new Set(data.map((d) => d.Date)));
+        dates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
+        return dates;
+    }, [data]);
+    const dateObjects = useMemo(() => {
+        const obj: Record<string, Date> = {};
+        uniqueDates.forEach((d) => (obj[d] = parseCustomDate(d)));
+        return obj;
+    }, [uniqueDates]);
+    const chartData = useMemo(() => {
+        return uniqueDates.map((dateStr) => {
+            const filtered = data.filter((d) => {
+                if (d.Date !== dateStr) return false;
+                if (filterClassification && d.Classification !== filterClassification) return false;
+                if (filterAsset && d.Asset !== filterAsset) return false;
+                return true;
+            });
+            const value = filtered.reduce((sum, d) => sum + d.Value, 0);
+            return {
+                name: dateObjects[dateStr]?.toLocaleString("default", { month: "short", year: "2-digit" }) ?? dateStr,
+                value,
+            };
+        });
+    }, [data, uniqueDates, dateObjects, filterClassification, filterAsset]);
+    const classifications = useMemo(() => Array.from(new Set(data.map((d) => d.Classification))).sort(), [data]);
+    const assetsList = useMemo(() => {
+        const filtered = filterClassification
+            ? data.filter((d) => d.Classification === filterClassification)
+            : data;
+        return Array.from(new Set(filtered.map((d) => d.Asset))).sort();
+    }, [data, filterClassification]);
+
+    const isDark = resolvedTheme === "dark";
+    const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
+    const chartTickColor = isDark ? "#64748b" : "#94a3b8";
+    const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
+    const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
+    const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
+    const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
@@ -29,15 +83,25 @@ export default function Portfolio() {
         );
     }
 
-    // Determine latest date to show only current portfolio
+    // Determine latest date and previous date for MoM variation
     let latestDateStr = "";
+    let prevDateStr: string | null = null;
     if (data.length > 0) {
         const dates = Array.from(new Set(data.map(d => d.Date)));
         dates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
         latestDateStr = dates[dates.length - 1];
+        prevDateStr = dates.length > 1 ? dates[dates.length - 2] : null;
     }
 
     const currentAssets = data.filter(d => d.Date === latestDateStr);
+
+    const getPrevValue = (asset: AssetEntry) => {
+        if (!prevDateStr) return null;
+        const prev = data.find(
+            d => d.Date === prevDateStr && d.Asset === asset.Asset && d.Classification === asset.Classification
+        );
+        return prev ? prev.Value : null;
+    };
     const totalWealth = currentAssets.reduce((sum, item) => sum + item.Value, 0);
 
     // Group by classification
@@ -49,22 +113,31 @@ export default function Portfolio() {
         grouped[asset.Classification].push(asset);
     });
 
+    // Sort by class total descending (highest first)
+    const sortedGrouped = Object.entries(grouped)
+        .map(([classification, assets]) => ({
+            classification,
+            assets,
+            classTotal: assets.reduce((sum, item) => sum + item.Value, 0),
+        }))
+        .sort((a, b) => b.classTotal - a.classTotal);
+
     return (
         <div className="mx-auto max-w-7xl flex flex-col gap-8">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Minha Carteira</h1>
+                    <h1 className="text-3xl font-bold text-foreground">{t("portfolio.title")}</h1>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                        Visualização detalhada dos seus ativos em {latestDateStr}
+                        {t("portfolio.subtitle", { date: latestDateStr })}
                     </p>
                 </div>
                 <div className="flex bg-surface border border-border px-4 py-2 rounded-xl shadow-sm items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <div className="flex items-center justify-center p-2 bg-primary/10 rounded-lg text-primary size-10">
                         <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Total Atual</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.totalCurrent")}</p>
                         <p className="text-lg font-bold text-foreground leading-none">
                             {formatCurrency(totalWealth)}
                         </p>
@@ -75,11 +148,10 @@ export default function Portfolio() {
             <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
                 {Object.keys(grouped).length === 0 ? (
                     <div className="text-center py-20 text-slate-500 border border-dashed border-border-light dark:border-border-dark rounded-xl">
-                        Nenhum ativo encontrado no último mês.
+                        {t("portfolio.noAssets")}
                     </div>
                 ) : (
-                    Object.entries(grouped).map(([classification, assets]) => {
-                        const classTotal = assets.reduce((sum, item) => sum + item.Value, 0);
+                    sortedGrouped.map(({ classification, assets, classTotal }) => {
                         const classPercentage = totalWealth > 0 ? (classTotal / totalWealth) * 100 : 0;
 
                         return (
@@ -92,7 +164,7 @@ export default function Portfolio() {
                                     <div className="flex items-center gap-4 text-sm">
                                         <span className="font-bold text-foreground">{formatCurrency(classTotal)}</span>
                                         <span className="px-2 py-0.5 rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                                            {classPercentage.toFixed(1)}% da carteira
+                                            {t("portfolio.ofPortfolio", { pct: classPercentage.toFixed(1) })}
                                         </span>
                                     </div>
                                 </div>
@@ -100,32 +172,56 @@ export default function Portfolio() {
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-surface text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                                <th className="px-6 py-3">Ativo/Instituição</th>
-                                                <th className="px-6 py-3 text-right">Valor Atual</th>
-                                                <th className="px-6 py-3 text-right">Peso na Categoria</th>
-                                                <th className="px-6 py-3 text-right">Peso Total</th>
+                                                <th className="px-6 py-3">{t("portfolio.assetInstitution")}</th>
+                                                <th className="px-6 py-3 text-right">{t("portfolio.currentValue")}</th>
+                                                <th className="px-6 py-3 text-right">{t("portfolio.monthVar")}</th>
+                                                <th className="px-6 py-3 text-right">{t("portfolio.weightInCategory")}</th>
+                                                <th className="px-6 py-3 text-right">{t("portfolio.weightTotal")}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border text-sm">
                                             {assets.sort((a, b) => b.Value - a.Value).map((asset, idx) => {
                                                 const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
                                                 const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
+                                                const prevValue = getPrevValue(asset);
+                                                const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                const variationPct =
+                                                    prevValue !== null && prevValue !== 0
+                                                        ? (variation! / prevValue) * 100
+                                                        : null;
 
+                                                const rowHover = "group-hover:bg-slate-200 dark:group-hover:bg-white/10";
                                                 return (
-                                                    <tr key={`${asset.Asset}-${idx}`} className="hover:bg-background dark:hover:bg-white/5 transition-colors group">
-                                                        <td className="px-6 py-4 font-medium text-foreground flex items-center gap-3">
-                                                            <div className="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold border border-border-light dark:border-border-dark shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">
+                                                    <tr key={`${asset.Asset}-${idx}`} className="group transition-colors">
+                                                        <td className={`px-6 py-4 font-medium text-foreground flex items-center gap-3 ${rowHover}`}>
+                                                            <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors">
                                                                 {asset.Asset.charAt(0).toUpperCase()}
                                                             </div>
                                                             {asset.Asset}
                                                         </td>
-                                                        <td className="px-6 py-4 text-right font-medium text-foreground">
+                                                        <td className={`px-6 py-4 text-right font-medium text-foreground ${rowHover}`}>
                                                             {formatCurrency(asset.Value)}
                                                         </td>
-                                                        <td className="px-6 py-4 text-right text-slate-500 dark:text-slate-400">
+                                                        <td className={`px-6 py-4 text-right ${rowHover}`}>
+                                                            {variationPct !== null ? (
+                                                                <span
+                                                                    className={`font-medium ${
+                                                                        variationPct >= 0
+                                                                            ? "text-green-600 dark:text-green-400"
+                                                                            : "text-red-500 dark:text-red-400"
+                                                                    }`}
+                                                                >
+                                                                    {variationPct >= 0 ? "+" : ""}
+                                                                    {variationPct.toFixed(1)}%
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                            )}
+                                                        </td>
+                                                        <td className={`px-6 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
                                                             {weightInClass.toFixed(1)}%
                                                         </td>
-                                                        <td className="px-6 py-4 text-right text-slate-500 dark:text-slate-400">
+                                                        <td className={`px-6 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
                                                             {weightInTotal.toFixed(1)}%
                                                         </td>
                                                     </tr>
@@ -138,6 +234,65 @@ export default function Portfolio() {
                         );
                     })
                 )}
+
+            {/* Evolution Chart with Filters */}
+            {uniqueDates.length > 0 && (
+                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <h3 className="text-lg font-bold text-foreground">{t("portfolio.evolutionChart")}</h3>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={filterClassification}
+                                onChange={(e) => setClassification(e.target.value)}
+                                className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                            >
+                                <option value="">{t("portfolio.allClassifications")}</option>
+                                {classifications.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                ))}
+                            </select>
+                            <span className="text-slate-400 text-sm">/</span>
+                            <select
+                                value={filterAsset}
+                                onChange={(e) => setFilterAsset(e.target.value)}
+                                className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
+                            >
+                                <option value="">{t("portfolio.allAssets")}</option>
+                                {assetsList.map((a) => (
+                                    <option key={a} value={a}>{a}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="w-full h-[300px] relative">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorPortfolioValue" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
+                                <YAxis
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                                    stroke={chartTickColor}
+                                />
+                                <RechartsTooltip
+                                    formatter={(value: unknown) => [formatCurrency(value as number), t("dashboard.wealth")]}
+                                    contentStyle={{ borderRadius: "8px", border: `1px solid ${tooltipBorder}`, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", backgroundColor: tooltipBg, color: tooltipTextColor }}
+                                    labelStyle={{ color: tooltipLabelColor }}
+                                />
+                                <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorPortfolioValue)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            )}
             </div>
         </div>
     );
