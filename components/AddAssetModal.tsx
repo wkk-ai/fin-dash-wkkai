@@ -26,13 +26,17 @@ export default function AddAssetModal({ onClose }: Props) {
         fetch("/api/settings")
             .then((res) => res.json())
             .then((data) => {
-                setClassifications(data.classifications || []);
-                setAssets(data.assets || []);
-                if (data.classifications?.length > 0) {
-                    setFormData((prev) => ({ ...prev, Classification: data.classifications[0] }));
+                const sortedClasses = (data.classifications || []).sort((a: string, b: string) => a.localeCompare(b));
+                const sortedAssets = (data.assets || []).sort((a: string, b: string) => a.localeCompare(b));
+
+                setClassifications(sortedClasses);
+                setAssets(sortedAssets);
+
+                if (sortedClasses.length > 0) {
+                    setFormData((prev) => ({ ...prev, Classification: sortedClasses[0] }));
                 }
-                if (data.assets?.length > 0) {
-                    setFormData((prev) => ({ ...prev, Asset: data.assets[0] }));
+                if (sortedAssets.length > 0) {
+                    setFormData((prev) => ({ ...prev, Asset: sortedAssets[0] }));
                 }
             });
     }, []);

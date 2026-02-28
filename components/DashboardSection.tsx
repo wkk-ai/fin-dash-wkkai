@@ -10,9 +10,15 @@ interface DashboardSectionProps {
     uniqueDates: string[];
     dateValues: Record<string, number>;
     dateObjects: Record<string, Date>;
+    projectionResult: number;
+    projectionParams: {
+        monthlyAddition: number;
+        monthlyRate: number;
+        years: number;
+    };
 }
 
-export default function DashboardSection({ data, uniqueDates, dateValues, dateObjects }: DashboardSectionProps) {
+export default function DashboardSection({ data, uniqueDates, dateValues, dateObjects, projectionResult, projectionParams }: DashboardSectionProps) {
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
 
@@ -25,7 +31,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
     const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
 
     // Wealth Evolution history for chart
-    const history = uniqueDates.map(dateStr => ({
+    const wealthHistory = uniqueDates.map(dateStr => ({
         name: dateObjects[dateStr].toLocaleString('default', { month: 'short', year: '2-digit' }),
         value: dateValues[dateStr]
     }));
@@ -59,11 +65,11 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Bem-vindo de volta</p>
                     <h1 className="text-3xl font-bold text-foreground">Panorama Financeiro</h1>
                 </div>
-                <div className="flex gap-2">
-                    <span className="text-xs font-medium px-2 py-1 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1">
+                <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
                         <span className="material-symbols-outlined text-[14px]">trending_up</span> Mercado Aberto
                     </span>
-                    <span className="text-xs font-medium px-2 py-1 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent">
+                    <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 min-w-[120px]">
                         Última atu.: {latestDateStr}
                     </span>
                 </div>
@@ -114,6 +120,25 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                         </div>
                     </div>
                 </div>
+
+                {/* Card 3: Projection */}
+                <div className="group relative overflow-hidden rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all">
+                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <span className="material-symbols-outlined text-8xl">rocket_launch</span>
+                    </div>
+                    <div className="flex flex-col gap-1 relative z-10">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 line-clamp-2 pr-8">
+                            Valor projetado p/ {projectionParams.years} anos c/ {projectionParams.monthlyRate}% a.m. e aportes de R$ {(projectionParams.monthlyAddition / 1000).toFixed(0)}k
+                        </p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-3xl font-bold text-primary tracking-tight">{formatCurrency(projectionResult)}</h3>
+                        </div>
+                        <div className="mt-2 flex items-center gap-1 text-sm font-medium text-slate-400 dark:text-slate-500">
+                            <span className="material-symbols-outlined text-[18px]">update</span>
+                            <span>Simulação dinâmica</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Charts Grid */}
@@ -127,7 +152,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                     </div>
                     <div className="flex-1 min-h-[300px] w-full relative">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart data={wealthHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AssetEntry } from "@/types/database";
-import { formatCurrency, parseCustomDate } from "@/lib/utils";
+import { formatCurrency, parseCustomDate, cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ConfirmModal";
 
 export default function Settings() {
@@ -12,8 +12,13 @@ export default function Settings() {
         assets: [],
     });
 
+    // Values currently in the main CSV (cannot be deleted from settings)
+    const [dbClassifications, setDbClassifications] = useState<string[]>([]);
+    const [dbAssets, setDbAssets] = useState<string[]>([]);
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savingSettings, setSavingSettings] = useState<{ type: "class" | "asset" | null }>({ type: null });
 
     // Modal state
     const [modalConfig, setModalConfig] = useState<{
@@ -54,6 +59,12 @@ export default function Settings() {
 
             setData(sortedData);
             setSettings(setJson);
+
+            // Extract what's currently in use in the DB
+            const usedClasses = Array.from(new Set(dbJson.map(r => r.Classification))).filter(Boolean);
+            const usedAssets = Array.from(new Set(dbJson.map(r => r.Asset))).filter(Boolean);
+            setDbClassifications(usedClasses);
+            setDbAssets(usedAssets);
         } catch (e) {
             console.error(e);
         } finally {
@@ -78,6 +89,9 @@ export default function Settings() {
                         return b.Value - a.Value;
                     });
                 });
+                // Also update used lists locally if needed
+                if (newRow.Classification) setDbClassifications(prev => Array.from(new Set([...prev, newRow.Classification])));
+                if (newRow.Asset) setDbAssets(prev => Array.from(new Set([...prev, newRow.Asset])));
             } else {
                 fetchData(); // Fallback to full fetch if data is missing
             }
@@ -85,44 +99,88 @@ export default function Settings() {
 
         window.addEventListener("asset-added", handleAdd);
         return () => window.removeEventListener("asset-added", handleAdd);
-    }, []); // Removed settings.classifications to fix infinite loop
+    }, []);
 
+    const saveSettingsSection = async (type: "class" | "asset") => {
+        const isClass = type === "class";
+        const currentList = isClass ? settings.classifications : settings.assets;
+        const dbList = isClass ? dbClassifications : dbAssets;
 
-    const handleSaveSettings = async (updatedSettings: typeof settings) => {
-        setSettings(updatedSettings);
+        // Safety check: is any item from DB missing in current list?
+        const missing = dbList.filter(item => !currentList.includes(item));
+
+        if (missing.length > 0) {
+            setModalConfig({
+                isOpen: true,
+                title: "Não é possível salvar",
+                message: `As seguintes opções estão em uso no seu CSV principal e não podem ser removidas: ${missing.join(", ")}. Por favor, adicione-as de volta antes de salvar.`,
+                confirmLabel: "Entendido",
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+            });
+            return;
+        }
+
+        setSavingSettings({ type });
         try {
             await fetch("/api/settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updatedSettings),
+                body: JSON.stringify(settings),
             });
+            // Show success briefly or just rely on state
         } catch (e) {
             console.error(e);
+        } finally {
+            setSavingSettings({ type: null });
         }
     };
 
     const addClassification = () => {
         if (!newClassification) return;
-        const updated = { ...settings, classifications: [...settings.classifications, newClassification] };
-        handleSaveSettings(updated);
+        if (settings.classifications.includes(newClassification)) return;
+        setSettings(prev => ({
+            ...prev,
+            classifications: [...prev.classifications, newClassification].sort((a, b) => a.localeCompare(b))
+        }));
         setNewClassification("");
     };
 
     const removeClassification = (c: string) => {
-        const updated = { ...settings, classifications: settings.classifications.filter(x => x !== c) };
-        handleSaveSettings(updated);
+        if (dbClassifications.includes(c)) {
+            setModalConfig({
+                isOpen: true,
+                title: "Não é possível excluir",
+                message: `A classificação "${c}" está em uso no seu CSV principal e não pode ser removida.`,
+                confirmLabel: "Entendido",
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+            });
+            return;
+        }
+        setSettings(prev => ({ ...prev, classifications: prev.classifications.filter(x => x !== c) }));
     };
 
     const addAsset = () => {
         if (!newAsset) return;
-        const updated = { ...settings, assets: [...settings.assets, newAsset] };
-        handleSaveSettings(updated);
+        if (settings.assets.includes(newAsset)) return;
+        setSettings(prev => ({
+            ...prev,
+            assets: [...prev.assets, newAsset].sort((a, b) => a.localeCompare(b))
+        }));
         setNewAsset("");
     };
 
     const removeAsset = (a: string) => {
-        const updated = { ...settings, assets: settings.assets.filter(x => x !== a) };
-        handleSaveSettings(updated);
+        if (dbAssets.includes(a)) {
+            setModalConfig({
+                isOpen: true,
+                title: "Não é possível excluir",
+                message: `O ativo/instituição "${a}" está em uso no seu CSV principal e não pode ser removido.`,
+                confirmLabel: "Entendido",
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+            });
+            return;
+        }
+        setSettings(prev => ({ ...prev, assets: prev.assets.filter(x => x !== a) }));
     };
 
     const handleDataChange = (index: number, field: keyof AssetEntry, value: string) => {
@@ -229,11 +287,28 @@ export default function Settings() {
 
                 {/* Classifications */}
                 <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
-                    <h3 className="text-lg font-bold text-foreground mb-4">Classificações</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-foreground">Classificações</h3>
+                        <button
+                            type="button"
+                            onClick={() => saveSettingsSection("class")}
+                            title="salvar"
+                            className="p-2 rounded-lg hover:bg-border text-slate-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
+                            disabled={savingSettings.type === "class"}
+                        >
+                            <span className={cn(
+                                "material-symbols-outlined text-[20px]",
+                                savingSettings.type === "class" && "animate-pulse"
+                            )}>
+                                save
+                            </span>
+                        </button>
+                    </div>
                     <div className="flex gap-2 mb-4">
                         <input
                             value={newClassification}
                             onChange={e => setNewClassification(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && addClassification()}
                             placeholder="Ex: Renda Variável BR"
                             className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
@@ -255,11 +330,28 @@ export default function Settings() {
 
                 {/* Assets */}
                 <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
-                    <h3 className="text-lg font-bold text-foreground mb-4">Ativos/Instituições</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-foreground">Ativos/Instituições</h3>
+                        <button
+                            type="button"
+                            onClick={() => saveSettingsSection("asset")}
+                            title="salvar"
+                            className="p-2 rounded-lg hover:bg-border text-slate-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
+                            disabled={savingSettings.type === "asset"}
+                        >
+                            <span className={cn(
+                                "material-symbols-outlined text-[20px]",
+                                savingSettings.type === "asset" && "animate-pulse"
+                            )}>
+                                save
+                            </span>
+                        </button>
+                    </div>
                     <div className="flex gap-2 mb-4">
                         <input
                             value={newAsset}
                             onChange={e => setNewAsset(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && addAsset()}
                             placeholder="Ex: Rico"
                             className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         />
@@ -335,9 +427,12 @@ export default function Settings() {
                                             className="bg-surface w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
                                         >
                                             <option value={row.Classification}>{row.Classification}</option>
-                                            {settings.classifications.filter(c => c !== row.Classification).map(c => (
-                                                <option key={c} value={c}>{c}</option>
-                                            ))}
+                                            {settings.classifications
+                                                .filter(c => c !== row.Classification)
+                                                .sort((a, b) => a.localeCompare(b))
+                                                .map(c => (
+                                                    <option key={c} value={c}>{c}</option>
+                                                ))}
                                         </select>
                                     </td>
                                     <td className="px-4 py-2">
@@ -347,9 +442,12 @@ export default function Settings() {
                                             className="bg-surface w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
                                         >
                                             <option value={row.Asset}>{row.Asset}</option>
-                                            {settings.assets.filter(a => a !== row.Asset).map(a => (
-                                                <option key={a} value={a}>{a}</option>
-                                            ))}
+                                            {settings.assets
+                                                .filter(a => a !== row.Asset)
+                                                .sort((a, b) => a.localeCompare(b))
+                                                .map(a => (
+                                                    <option key={a} value={a}>{a}</option>
+                                                ))}
                                         </select>
                                     </td>
                                     <td className="px-4 py-2">
