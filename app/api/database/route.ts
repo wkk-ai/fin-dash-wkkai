@@ -209,6 +209,8 @@ export async function GET() {
                 }));
         }
 
+        data = data.filter((row) => row.Value !== 0);
+
         return NextResponse.json(data, {
             headers: {
                 "Cache-Control": "no-store, max-age=0",
