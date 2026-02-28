@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { AssetEntry } from "@/types/database";
@@ -50,6 +51,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
 
     // Asset Allocation (from the latest month)
     const currentAssets = data.filter(d => d.Date === latestDateStr);
+    const previousAssets = prevDateStr ? data.filter(d => d.Date === prevDateStr) : [];
     const allocationMap: Record<string, number> = {};
     currentAssets.forEach(a => {
         allocationMap[a.Classification] = (allocationMap[a.Classification] || 0) + a.Value;
@@ -57,6 +59,55 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
 
     const allocationChartData = Object.entries(allocationMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     const COLORS = ['#137fec', '#a855f7', '#34d399', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+
+    const topAsset = [...currentAssets].sort((a, b) => b.Value - a.Value)[0];
+    const topAssetPct = currentWealth > 0 && topAsset ? (topAsset.Value / currentWealth) * 100 : 0;
+
+    const nextMillionBase = Math.floor(currentWealth / 1_000_000) * 1_000_000;
+    const nextMillion = (currentWealth % 1_000_000 === 0 ? nextMillionBase + 1_000_000 : nextMillionBase + 1_000_000);
+    const toNextMillion = Math.max(0, nextMillion - currentWealth);
+    const monthsToNextMillion = momVariation > 0 ? Math.ceil(toNextMillion / momVariation) : null;
+
+    const latestByAsset: Record<string, number> = {};
+    const prevByAsset: Record<string, number> = {};
+    currentAssets.forEach((a) => {
+        latestByAsset[a.Asset] = (latestByAsset[a.Asset] || 0) + a.Value;
+    });
+    previousAssets.forEach((a) => {
+        prevByAsset[a.Asset] = (prevByAsset[a.Asset] || 0) + a.Value;
+    });
+
+    const assetGrowth = Object.keys(latestByAsset)
+        .filter((asset) => (prevByAsset[asset] || 0) > 0)
+        .map((asset) => ({
+            asset,
+            pct: ((latestByAsset[asset] - prevByAsset[asset]) / prevByAsset[asset]) * 100,
+        }));
+    const topGainer = [...assetGrowth].sort((a, b) => b.pct - a.pct)[0];
+    const topLoser = [...assetGrowth].sort((a, b) => a.pct - b.pct)[0];
+    const topGainerFullLabel = topGainer?.asset || "—";
+    const topLoserFullLabel = topLoser?.asset || "—";
+    const [shouldAbbreviateAssets, setShouldAbbreviateAssets] = useState(false);
+    const variationLineRef = useRef<HTMLDivElement>(null);
+    const variationProbeRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const measureOverflow = () => {
+            if (!variationLineRef.current || !variationProbeRef.current) return;
+            setShouldAbbreviateAssets(
+                variationProbeRef.current.scrollWidth > variationLineRef.current.clientWidth
+            );
+        };
+
+        measureOverflow();
+        window.addEventListener("resize", measureOverflow);
+        return () => window.removeEventListener("resize", measureOverflow);
+    }, [topGainerFullLabel, topLoserFullLabel]);
+
+    const abbreviateAssetName = (name: string) =>
+        name !== "—" && name.length > 5 ? `${name.slice(0, 5)}.` : name;
+    const topGainerLabel = shouldAbbreviateAssets ? abbreviateAssetName(topGainerFullLabel) : topGainerFullLabel;
+    const topLoserLabel = shouldAbbreviateAssets ? abbreviateAssetName(topLoserFullLabel) : topLoserFullLabel;
 
     return (
         <div className="flex flex-col gap-8">
@@ -88,15 +139,21 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                         <div className="flex items-baseline gap-2">
                             <h3 className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(currentWealth)}</h3>
                         </div>
-                        {prevWealth > 0 && (
-                            <div className={`mt-2 flex items-center gap-1 text-sm font-medium ${isPositiveGrowth ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
-                                <span className="material-symbols-outlined text-[18px]">
-                                    {isPositiveGrowth ? 'arrow_upward' : 'arrow_downward'}
+                        {topAsset && (
+                            <div className="mt-2 flex items-center gap-1 text-sm font-medium text-primary">
+                                <span className="text-slate-500 dark:text-slate-400 font-normal">
+                                    {t("dashboard.topAssetLabel")}:
                                 </span>
-                                <span>{Math.abs(momGrowthRate).toFixed(1)}%</span>
-                                <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">{t("dashboard.vsLastMonth")}</span>
+                                <span>{topAssetPct.toFixed(1)}% {topAsset.Asset}</span>
                             </div>
                         )}
+                        <div className="mt-2 flex items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-400">
+                            <span className="material-symbols-outlined text-[18px]">schedule</span>
+                            <span>
+                                {t("dashboard.monthsToNextMillion")}:{" "}
+                                <span className="font-bold">{monthsToNextMillion === null ? "—" : monthsToNextMillion}</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -117,7 +174,26 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                 {isPositiveGrowth ? 'trending_up' : 'trending_down'}
                             </span>
                             <span>{Math.abs(momGrowthRate).toFixed(1)}%</span>
-                            <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">{t("dashboard.evolution")}</span>
+                            <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">{t("dashboard.vsLastMonth")}</span>
+                        </div>
+                        <div ref={variationLineRef} className="relative mt-2 w-full">
+                            <div
+                                ref={variationProbeRef}
+                                className="absolute invisible pointer-events-none whitespace-nowrap text-sm font-medium"
+                            >
+                                <span className="text-green-600 dark:text-green-400">+{Math.round(Math.abs(topGainer?.pct || 0))}%</span>
+                                <span className="ml-1">{topGainerFullLabel}</span>
+                                <span className="mx-2">|</span>
+                                <span className="text-red-500 dark:text-red-400">-{Math.round(Math.abs(topLoser?.pct || 0))}%</span>
+                                <span className="ml-1">{topLoserFullLabel}</span>
+                            </div>
+                            <div className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+                                <span className="text-green-600 dark:text-green-400">+{Math.round(Math.abs(topGainer?.pct || 0))}%</span>
+                                <span>{topGainerLabel}</span>
+                                <span className="mx-2">|</span>
+                                <span className="text-red-500 dark:text-red-400">-{Math.round(Math.abs(topLoser?.pct || 0))}%</span>
+                                <span>{topLoserLabel}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
