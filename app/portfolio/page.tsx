@@ -94,6 +94,7 @@ export default function Portfolio() {
     }
 
     const currentAssets = data.filter(d => d.Date === latestDateStr);
+    const previousAssets = prevDateStr ? data.filter(d => d.Date === prevDateStr) : [];
 
     const getPrevValue = (asset: AssetEntry) => {
         if (!prevDateStr) return null;
@@ -111,6 +112,11 @@ export default function Portfolio() {
             grouped[asset.Classification] = [];
         }
         grouped[asset.Classification].push(asset);
+    });
+
+    const prevClassTotals: Record<string, number> = {};
+    previousAssets.forEach((asset) => {
+        prevClassTotals[asset.Classification] = (prevClassTotals[asset.Classification] || 0) + asset.Value;
     });
 
     // Sort by class total descending (highest first)
@@ -153,6 +159,8 @@ export default function Portfolio() {
                 ) : (
                     sortedGrouped.map(({ classification, assets, classTotal }) => {
                         const classPercentage = totalWealth > 0 ? (classTotal / totalWealth) * 100 : 0;
+                        const prevClassTotal = prevClassTotals[classification] || 0;
+                        const classVariationPct = prevClassTotal > 0 ? ((classTotal - prevClassTotal) / prevClassTotal) * 100 : null;
 
                         return (
                             <div key={classification} className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
@@ -163,6 +171,21 @@ export default function Portfolio() {
                                     </div>
                                     <div className="flex items-center gap-4 text-sm">
                                         <span className="font-bold text-foreground">{formatCurrency(classTotal)}</span>
+                                        <span className="text-slate-400 dark:text-slate-500">|</span>
+                                        {classVariationPct === null ? (
+                                            <span className="font-semibold text-slate-400 dark:text-slate-500">—</span>
+                                        ) : (
+                                            <span className="font-semibold flex items-center gap-1">
+                                                <span className={`material-symbols-outlined text-[16px] ${classVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                    {classVariationPct >= 0 ? "trending_up" : "trending_down"}
+                                                </span>
+                                                <span className={classVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                                    {classVariationPct >= 0 ? "+" : ""}{classVariationPct.toFixed(1)}%
+                                                </span>
+                                                <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">{t("dashboard.vsLastMonth")}</span>
+                                            </span>
+                                        )}
+                                        <span className="text-slate-400 dark:text-slate-500">|</span>
                                         <span className="px-2 py-0.5 rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 text-xs font-semibold">
                                             {t("portfolio.ofPortfolio", { pct: classPercentage.toFixed(1) })}
                                         </span>
