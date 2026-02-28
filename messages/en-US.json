@@ -71,6 +71,8 @@
     "dbSaved": "Database saved successfully!",
     "error": "Error",
     "saveError": "An error occurred while saving the database.",
+    "classificationsSaved": "Classifications saved successfully!",
+    "assetsSaved": "Assets/Institutions saved successfully!",
     "deleteRecord": "Delete Record",
     "deleteConfirm": "Are you sure you want to delete this row? This action will only be permanent after clicking 'Save Changes'.",
     "exportPdf": "Export PDF",

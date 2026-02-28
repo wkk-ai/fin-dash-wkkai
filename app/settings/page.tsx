@@ -187,7 +187,11 @@ export default function Settings() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings),
             });
-            // Show success briefly or just rely on state
+            window.dispatchEvent(
+                new CustomEvent("show-success-toast", {
+                    detail: { message: t(isClass ? "settings.classificationsSaved" : "settings.assetsSaved") }
+                })
+            );
         } catch (e) {
             console.error(e);
         } finally {

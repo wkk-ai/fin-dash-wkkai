@@ -10,6 +10,7 @@ export default function AddAssetSuccessToast() {
     const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
     const [exiting, setExiting] = useState(false);
+    const [message, setMessage] = useState("");
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const hideToast = () => {
@@ -25,7 +26,9 @@ export default function AddAssetSuccessToast() {
     };
 
     useEffect(() => {
-        const handleShow = () => {
+        const handleShow = (event?: Event) => {
+            const customEvent = event as CustomEvent<{ message?: string }> | undefined;
+            setMessage(customEvent?.detail?.message || t("toast.assetAddedSuccess"));
             setVisible(true);
             setExiting(false);
             if (timerRef.current) clearTimeout(timerRef.current);
@@ -33,11 +36,13 @@ export default function AddAssetSuccessToast() {
         };
 
         window.addEventListener("asset-added-success", handleShow);
+        window.addEventListener("show-success-toast", handleShow);
         return () => {
             window.removeEventListener("asset-added-success", handleShow);
+            window.removeEventListener("show-success-toast", handleShow);
             if (timerRef.current) clearTimeout(timerRef.current);
         };
-    }, []);
+    }, [t]);
 
     if (!visible) return null;
 
@@ -55,7 +60,7 @@ export default function AddAssetSuccessToast() {
             <div className="flex items-center gap-2 px-4 py-3 pr-2">
                 <span className="material-symbols-outlined text-green-500 text-[20px] shrink-0">check_circle</span>
                 <span className="text-sm text-slate-700 dark:text-slate-300 flex-1">
-                    {t("toast.assetAddedSuccess")}
+                    {message}
                 </span>
                 <button
                     type="button"
