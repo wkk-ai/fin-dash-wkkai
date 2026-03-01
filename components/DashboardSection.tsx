@@ -234,8 +234,11 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t("dashboard.valueOverTime")}</p>
                         </div>
                     </div>
-                    <div className="flex-1 min-h-[300px] w-full relative cursor-crosshair select-none">
-                        {wealthBrush.isDragging && wealthBrush.variation !== null && (
+                    <div
+                        className="flex-1 min-h-[300px] w-full relative cursor-crosshair select-none"
+                        {...wealthBrush.containerHandlers}
+                    >
+                        {wealthBrush.variation && (
                             <div
                                 className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
                                 style={{
@@ -255,22 +258,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                             <AreaChart
                                 data={wealthHistory}
                                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                                onMouseDown={(state: any) =>
-                                    wealthBrush.start(
-                                        typeof state?.activeTooltipIndex === "number"
-                                            ? state.activeTooltipIndex
-                                            : null
-                                    )
-                                }
-                                onMouseMove={(state: any) =>
-                                    wealthBrush.update(
-                                        typeof state?.activeTooltipIndex === "number"
-                                            ? state.activeTooltipIndex
-                                            : null
-                                    )
-                                }
-                                onMouseUp={wealthBrush.end}
-                                onMouseLeave={wealthBrush.end}
+                                {...wealthBrush.chartHandlers}
                             >
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -297,10 +285,10 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     ) : null)}
                                     wrapperStyle={{ zIndex: 9999 }}
                                 />
-                                {wealthBrush.startIndex !== null && wealthBrush.endIndex !== null && wealthHistory[wealthBrush.startIndex] && wealthHistory[wealthBrush.endIndex] && (
+                                {wealthBrush.selectionBounds && wealthHistory[wealthBrush.selectionBounds[0]] && wealthHistory[wealthBrush.selectionBounds[1]] && (
                                     <ReferenceArea
-                                        x1={wealthHistory[wealthBrush.startIndex].name}
-                                        x2={wealthHistory[wealthBrush.endIndex].name}
+                                        x1={wealthHistory[wealthBrush.selectionBounds[0]].name}
+                                        x2={wealthHistory[wealthBrush.selectionBounds[1]].name}
                                         fill="#137fec"
                                         fillOpacity={0.15}
                                         strokeOpacity={0}
