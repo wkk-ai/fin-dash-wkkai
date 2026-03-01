@@ -184,17 +184,25 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                 ref={variationProbeRef}
                                 className="absolute invisible pointer-events-none whitespace-nowrap text-sm font-medium"
                             >
-                                <span className="text-green-600 dark:text-green-400">+{Math.round(Math.abs(topGainer?.pct || 0))}%</span>
+                                <span className={topGainer && topGainer.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topGainer && topGainer.pct >= 0 ? "+" : ""}{topGainer?.pct.toFixed(1)}%
+                                </span>
                                 <span className="ml-1">{topGainerFullLabel}</span>
                                 <span className="mx-2">|</span>
-                                <span className="text-red-500 dark:text-red-400">-{Math.round(Math.abs(topLoser?.pct || 0))}%</span>
+                                <span className={topLoser && topLoser.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topLoser && topLoser.pct >= 0 ? "+" : ""}{topLoser?.pct.toFixed(1)}%
+                                </span>
                                 <span className="ml-1">{topLoserFullLabel}</span>
                             </div>
                             <div className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-green-600 dark:text-green-400">+{Math.round(Math.abs(topGainer?.pct || 0))}%</span>
+                                <span className={topGainer && topGainer.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topGainer && topGainer.pct >= 0 ? "+" : ""}{topGainer?.pct.toFixed(1)}%
+                                </span>
                                 <span>{topGainerLabel}</span>
                                 <span className="mx-2">|</span>
-                                <span className="text-red-500 dark:text-red-400">-{Math.round(Math.abs(topLoser?.pct || 0))}%</span>
+                                <span className={topLoser && topLoser.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topLoser && topLoser.pct >= 0 ? "+" : ""}{topLoser?.pct.toFixed(1)}%
+                                </span>
                                 <span>{topLoserLabel}</span>
                             </div>
                         </div>
