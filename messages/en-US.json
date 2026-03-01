@@ -35,7 +35,8 @@
     "assetInstitution": "Asset/Institution",
     "currentValue": "Current Value",
     "monthVar": "MoM Change",
-    "weightInCategory": "Weight in Category",
+    "monthAbsVar": "Abs Change",
+    "weightInCategory": "Categ. Weight",
     "weightTotal": "Total Weight",
     "ofPortfolio": "{pct}% of portfolio",
     "evolutionChart": "Detailed Evolution",
@@ -90,7 +91,10 @@
     "importErrorColumnNames": "Column names must be exactly: {expected}. Found: {received}.",
     "importErrorCsvFormat": "The CSV format is invalid. Make sure every row has exactly 4 columns and there are no commas or line breaks inside values.",
     "importErrorUnsupportedType": "Unsupported file type. Use a .csv, .xlsx or .xls file.",
-    "importErrorNoFile": "No file was uploaded."
+    "importErrorNoFile": "No file was uploaded.",
+    "downloadData": "Download Data",
+    "downloadCsv": "Download as CSV",
+    "downloadExcel": "Download as Excel"
   },
   "addAsset": {
     "title": "Add Asset",

@@ -105,6 +105,18 @@ export default function Portfolio() {
         );
         return prev ? prev.Value : null;
     };
+
+    const formatAbbreviated = (num: number) => {
+        const absNum = Math.abs(num);
+        if (absNum >= 1_000_000) {
+            return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
+        }
+        if (absNum >= 1_000) {
+            return (num / 1_000).toFixed(1).replace(".", ",") + "k";
+        }
+        return num.toFixed(1).replace(".", ",");
+    };
+
     const totalWealth = currentAssets.reduce((sum, item) => sum + item.Value, 0);
 
     // Group by classification
@@ -163,6 +175,10 @@ export default function Portfolio() {
                         const classPercentage = totalWealth > 0 ? (classTotal / totalWealth) * 100 : 0;
                         const prevClassTotal = prevClassTotals[classification] || 0;
                         const classVariationPct = prevClassTotal > 0 ? ((classTotal - prevClassTotal) / prevClassTotal) * 100 : null;
+                        const classVariationAbs = prevClassTotal > 0 ? classTotal - prevClassTotal : (prevDateStr ? assets.reduce((sum, asset) => {
+                            const prev = getPrevValue(asset);
+                            return sum + (prev !== null ? asset.Value - prev : 0);
+                        }, 0) : null);
 
                         return (
                             <div key={classification} className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
@@ -174,6 +190,14 @@ export default function Portfolio() {
                                     <div className="flex items-center gap-4 text-sm">
                                         <span className="font-bold text-foreground">{formatCurrency(classTotal)}</span>
                                         <span className="text-slate-400 dark:text-slate-500">|</span>
+                                        {classVariationAbs !== null && (
+                                            <>
+                                                <span className={`font-semibold ${classVariationAbs >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                    {classVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(classVariationAbs)}
+                                                </span>
+                                                <span className="text-slate-400 dark:text-slate-500">|</span>
+                                            </>
+                                        )}
                                         {classVariationPct === null ? (
                                             <span className="font-semibold text-slate-400 dark:text-slate-500">—</span>
                                         ) : (
@@ -194,17 +218,18 @@ export default function Portfolio() {
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
+                                    <table className="w-full text-left border-collapse table-fixed">
                                         <thead>
-                                            <tr className="bg-surface text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                                <th className="px-6 py-3">{t("portfolio.assetInstitution")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.currentValue")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.monthVar")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.weightInCategory")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.weightTotal")}</th>
+                                            <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
+                                                <th className="px-4 py-3 w-[25%] sm:w-[30%]">{t("portfolio.assetInstitution")}</th>
+                                                <th className="px-4 py-3 text-right w-[18%] sm:w-[15%]">{t("portfolio.currentValue")}</th>
+                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.monthAbsVar")}</th>
+                                                <th className="px-4 py-3 text-right w-[12%] sm:w-[10%]">{t("portfolio.monthVar")}</th>
+                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.weightInCategory")}</th>
+                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.weightTotal")}</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-border text-sm">
+                                        <tbody className="divide-y divide-border text-xs sm:text-sm">
                                             {assets.sort((a, b) => b.Value - a.Value).map((asset, idx) => {
                                                 const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
                                                 const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
@@ -218,16 +243,25 @@ export default function Portfolio() {
                                                 const rowHover = "group-hover:bg-slate-100 dark:group-hover:bg-slate-800";
                                                 return (
                                                     <tr key={`${asset.Asset}-${idx}`} className="group transition-colors">
-                                                        <td className={`px-6 py-4 font-medium text-foreground flex items-center gap-3 ${rowHover}`}>
-                                                            <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors">
+                                                        <td className={`px-4 py-4 font-medium text-foreground flex items-center gap-2 sm:gap-3 truncate ${rowHover}`}>
+                                                            <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors shrink-0 text-[10px] sm:text-sm">
                                                                 {asset.Asset.charAt(0).toUpperCase()}
                                                             </div>
-                                                            {asset.Asset}
+                                                            <span className="truncate">{asset.Asset}</span>
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right font-medium text-foreground ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right font-medium text-foreground ${rowHover}`}>
                                                             {formatCurrency(asset.Value)}
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right ${rowHover}`}>
+                                                            {variation !== null ? (
+                                                                <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                    {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                            )}
+                                                        </td>
+                                                        <td className={`px-4 py-4 text-right ${rowHover}`}>
                                                             {variationPct !== null ? (
                                                                 <span
                                                                     className={`font-medium ${variationPct >= 0
@@ -242,10 +276,10 @@ export default function Portfolio() {
                                                                 <span className="text-slate-400 dark:text-slate-500">—</span>
                                                             )}
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
                                                             {weightInClass.toFixed(1)}%
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
                                                             {weightInTotal.toFixed(1)}%
                                                         </td>
                                                     </tr>

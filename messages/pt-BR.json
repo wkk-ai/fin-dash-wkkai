@@ -35,7 +35,8 @@
     "assetInstitution": "Ativo/Instituição",
     "currentValue": "Valor Atual",
     "monthVar": "Var. Mês",
-    "weightInCategory": "Peso na Categoria",
+    "monthAbsVar": "Var. Abs",
+    "weightInCategory": "Peso Categ.",
     "weightTotal": "Peso Total",
     "ofPortfolio": "{pct}% da carteira",
     "evolutionChart": "Evolução Detalhada",
@@ -90,7 +91,10 @@
     "importErrorColumnNames": "As colunas devem ser exatamente: {expected}. Encontrado: {received}.",
     "importErrorCsvFormat": "O formato do CSV está inválido. Verifique se todas as linhas têm exatamente 4 colunas e se não há vírgulas ou quebras de linha dentro dos valores.",
     "importErrorUnsupportedType": "Tipo de arquivo não suportado. Use um arquivo .csv, .xlsx ou .xls.",
-    "importErrorNoFile": "Nenhum arquivo foi enviado."
+    "importErrorNoFile": "Nenhum arquivo foi enviado.",
+    "downloadData": "Baixar Dados",
+    "downloadCsv": "Baixar como CSV",
+    "downloadExcel": "Baixar como Excel"
   },
   "addAsset": {
     "title": "Adicionar Patrimônio",
