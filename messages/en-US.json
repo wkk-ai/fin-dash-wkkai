@@ -148,18 +148,22 @@
     "invested": "Invested"
   },
   "movements": {
-    "title": "My Movements",
+    "title": "Movements",
+    "description": "Track your cash flow and optimize your spending",
     "addMovement": "Add Movement",
     "totalIncome": "Total Income",
     "totalExpenses": "Total Expenses",
     "savingsRate": "Savings Rate",
     "remainingBudget": "Remaining Budget",
     "incomeVsExpenses": "Income vs. Expenses",
+    "incomeVsExpensesDesc": "Daily financial activity tracking",
     "spendingByCategory": "Spending by Category",
     "budgetVsActual": "Budget vs. Actual",
-    "topVendors": "Top Expense Vendors",
+    "topVendors": "Top Expenses",
     "netCashFlow": "Net Cash Flow",
-    "description": "Description",
+    "netCashFlowDesc": "Cumulative trend line",
+    "history": "Movements History",
+    "descriptionTable": "Description",
     "category": "Category",
     "value": "Value",
     "type": "Type",
@@ -167,7 +171,10 @@
     "income": "Income",
     "expense": "Expense",
     "noData": "No movements found.",
-    "save": "Save Movement"
+    "save": "Save",
+    "actions": "Actions",
+    "vsLastMonth": "vs last month",
+    "fromLastMonth": "from last month"
   },
   "toast": {
     "pendingChanges": "Pending changes were not saved to the database.",

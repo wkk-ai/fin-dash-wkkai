@@ -141,5 +141,33 @@
     "pendingChanges": "Los cambios pendientes no se guardaron en la base de datos.",
     "assetAddedSuccess": "Patrimonio agregado con éxito.",
     "close": "Cerrar"
+  },
+  "movements": {
+    "title": "Movimentaciones",
+    "description": "Siga su flujo de caja y optimice sus gastos",
+    "addMovement": "Añadir Movimentación",
+    "totalIncome": "Ingresos Totales",
+    "totalExpenses": "Gastos Totales",
+    "savingsRate": "Tasa de Ahorro",
+    "remainingBudget": "Presupuesto Restante",
+    "incomeVsExpenses": "Ingresos vs. Gastos",
+    "incomeVsExpensesDesc": "Seguimiento diario de la actividad financiera",
+    "spendingByCategory": "Gastos por Categoría",
+    "budgetVsActual": "Presupuesto vs. Real",
+    "topVendors": "Principales Gastos",
+    "netCashFlow": "Flujo de Caja Neto",
+    "netCashFlowDesc": "Tendencia acumulativa",
+    "history": "Historial de Movimentaciones",
+    "date": "Fecha",
+    "descriptionTable": "Descripción",
+    "category": "Categoría",
+    "value": "Valor",
+    "type": "Tipo",
+    "income": "Ingreso",
+    "expense": "Gasto",
+    "actions": "Acciones",
+    "save": "Guardar",
+    "vsLastMonth": "vs el mes pasado",
+    "fromLastMonth": "desde el mes pasado"
   }
 }

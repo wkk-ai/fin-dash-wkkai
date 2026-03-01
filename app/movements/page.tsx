@@ -128,7 +128,7 @@ export default function MovementsPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">{t("movements.title")}</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Track your cash flow and optimize your spending</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t("movements.description")}</p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
@@ -147,7 +147,7 @@ export default function MovementsPage() {
                     <h3 className="text-2xl font-bold text-foreground">{formatCurrency(curr.income)}</h3>
                     <div className={`mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold ${incomeVar >= 0 ? "text-green-500" : "text-red-500"}`}>
                         <span className="material-symbols-outlined text-sm">{incomeVar >= 0 ? "trending_up" : "trending_down"}</span>
-                        <span>{incomeVar >= 0 ? "+" : ""}{incomeVar.toFixed(1)}% vs last month</span>
+                        <span>{incomeVar >= 0 ? "+" : ""}{incomeVar.toFixed(1)}% {t("movements.vsLastMonth")}</span>
                     </div>
                 </div>
                 {/* Total Expenses */}
@@ -156,7 +156,7 @@ export default function MovementsPage() {
                     <h3 className="text-2xl font-bold text-foreground">{formatCurrency(curr.expenses)}</h3>
                     <div className={`mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold ${expenseVar <= 0 ? "text-green-500" : "text-red-500"}`}>
                         <span className="material-symbols-outlined text-sm">{expenseVar <= 0 ? "trending_down" : "trending_up"}</span>
-                        <span>{expenseVar >= 0 ? "+" : ""}{expenseVar.toFixed(1)}% vs last month</span>
+                        <span>{expenseVar >= 0 ? "+" : ""}{expenseVar.toFixed(1)}% {t("movements.vsLastMonth")}</span>
                     </div>
                 </div>
                 {/* Savings Rate */}
@@ -165,7 +165,7 @@ export default function MovementsPage() {
                     <h3 className="text-2xl font-bold text-foreground">{savingsRate.toFixed(1)}%</h3>
                     <div className={`mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold ${savingsVar >= 0 ? "text-green-500" : "text-red-500"}`}>
                         <span className="material-symbols-outlined text-sm">{savingsVar >= 0 ? "ads_click" : "trending_down"}</span>
-                        <span>{savingsVar >= 0 ? "+" : ""}{savingsVar.toFixed(1)}% from last month</span>
+                        <span>{savingsVar >= 0 ? "+" : ""}{savingsVar.toFixed(1)}% {t("movements.fromLastMonth")}</span>
                     </div>
                 </div>
                 {/* Remaining Budget */}
@@ -186,14 +186,14 @@ export default function MovementsPage() {
                     <div className="flex justify-between items-center mb-6">
                         <div>
                             <h3 className="text-lg font-bold text-foreground">{t("movements.incomeVsExpenses")}</h3>
-                            <p className="text-xs text-slate-500">Daily financial activity tracking</p>
+                            <p className="text-xs text-slate-500">{t("movements.incomeVsExpensesDesc")}</p>
                         </div>
                         <div className="flex gap-4">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                                <div className="size-2 rounded-full bg-green-400" /> Income
+                                <div className="size-2 rounded-full bg-green-400" /> {t("movements.income")}
                             </div>
                             <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                                <div className="size-2 rounded-full bg-red-400" /> Expenses
+                                <div className="size-2 rounded-full bg-red-400" /> {t("movements.expense")}
                             </div>
                         </div>
                     </div>
@@ -234,7 +234,7 @@ export default function MovementsPage() {
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <span className="text-xl font-bold text-foreground">{formatCurrency(curr.expenses / 1000)}k</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Total Spent</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{t("movements.totalExpenses")}</span>
                             </div>
                         </div>
                         <div className="flex-1 space-y-4 w-full">
@@ -304,7 +304,7 @@ export default function MovementsPage() {
                 {/* Net Cash Flow */}
                 <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col min-h-[300px]">
                     <h3 className="text-lg font-bold text-foreground">{t("movements.netCashFlow")}</h3>
-                    <p className="text-xs text-slate-500 mb-6">Cumulative trend line</p>
+                    <p className="text-xs text-slate-500 mb-6">{t("movements.netCashFlowDesc")}</p>
                     <div className="flex-1">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={cashFlowData}>

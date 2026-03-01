@@ -66,17 +66,17 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
     return (
         <div className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-border">
-                <h3 className="text-lg font-bold text-foreground">Histórico de Movimentações</h3>
+                <h3 className="text-lg font-bold text-foreground">{t("movements.history")}</h3>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-xs font-bold text-slate-500 uppercase tracking-wider">
                             <th className="px-6 py-3 w-32">{t("movements.date")}</th>
-                            <th className="px-6 py-3">{t("movements.description")}</th>
+                            <th className="px-6 py-3">{t("movements.descriptionTable")}</th>
                             <th className="px-6 py-3 w-48">{t("movements.category")}</th>
                             <th className="px-6 py-3 w-40 text-right">{t("movements.value")}</th>
-                            <th className="px-6 py-3 w-32 text-center">Ações</th>
+                            <th className="px-6 py-3 w-32 text-center">{t("movements.actions")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -131,8 +131,8 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                                 value={editData?.Type}
                                                 onChange={e => setEditData(prev => prev ? { ...prev, Type: e.target.value as any } : null)}
                                             >
-                                                <option value="Income">Receita</option>
-                                                <option value="Expense">Despesa</option>
+                                                <option value="Income">{t("movements.income")}</option>
+                                                <option value="Expense">{t("movements.expense")}</option>
                                             </select>
                                             <input
                                                 type="number"
