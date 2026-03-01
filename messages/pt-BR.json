@@ -114,6 +114,7 @@
     "dynamicSimulation": "Simulação dinâmica",
     "wealthEvolution": "Evolução do Patrimônio",
     "valueOverTime": "Valor ao longo do tempo",
+    "periodVariation": "Variação no período",
     "wealth": "Patrimônio",
     "currentAllocation": "Alocação Atual",
     "distributionIn": "Distribuição em {date}",

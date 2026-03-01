@@ -114,6 +114,7 @@
     "dynamicSimulation": "Dynamic simulation",
     "wealthEvolution": "Wealth Evolution",
     "valueOverTime": "Value over time",
+    "periodVariation": "Period variation",
     "wealth": "Wealth",
     "currentAllocation": "Current Allocation",
     "distributionIn": "Distribution as of {date}",
