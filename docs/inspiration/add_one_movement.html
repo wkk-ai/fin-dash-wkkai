@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="pt-BR" class="dark"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Adicionar Movimentação - Lançamento Único</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#ef4444", // Red for Despesa as seen in screenshot
+              "background-light": "#ffffff",
+              "background-dark": "#111827",
+              "surface-dark": "#1f2937",
+              "input-dark": "#374151"
+            },
+            fontFamily: {
+              display: ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem",
+            },
+          },
+        },
+      };
+    </script>
+<style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+      }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-black min-h-screen flex items-center justify-center p-4">
+<div class="w-full max-w-lg bg-background-light dark:bg-surface-dark rounded-2xl shadow-2xl overflow-hidden">
+<div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+<h2 class="text-xl font-bold text-gray-900 dark:text-white" style="">Adicionar Movimentação</h2>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors" style="">
+<span class="material-symbols-outlined" style="">close</span>
+</button>
+</div>
+<div class="px-6 pt-6">
+<div class="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+<button class="flex-1 py-2 text-sm font-semibold rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all" style="">
+                    Receita
+                </button>
+<button class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white dark:bg-gray-700 text-primary shadow-sm" style="">
+                    Despesa
+                </button>
+</div>
+</div>
+<div class="px-6 mt-4 border-b border-gray-100 dark:border-gray-700">
+<div class="flex gap-8">
+<button class="pb-3 text-sm font-medium text-blue-500 border-b-2 border-blue-500" style="">
+                    Uma Movimentação</button>
+<button class="pb-3 text-sm font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" style="">
+                    Várias Movimentações</button>
+</div>
+</div>
+<div class="p-6 space-y-5">
+<div>
+<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5" style="">Data</label>
+<div class="relative">
+<input class="w-full bg-gray-50 dark:bg-input-dark border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" type="date" value="2026-03-01">
+</div>
+</div>
+<div>
+<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5" style="">Descrição</label>
+<input class="w-full bg-gray-50 dark:bg-input-dark border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Ex: Aluguel, Supermercado..." type="text">
+</div>
+<div>
+<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5" style="">Categoria</label>
+<div class="relative">
+<select class="w-full appearance-none bg-gray-50 dark:bg-input-dark border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
+<option>Moradia</option>
+<option>Alimentação</option>
+<option>Transporte</option>
+<option>Lazer</option>
+</select>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 dark:text-gray-500">
+<span class="material-symbols-outlined text-xl" style="">expand_more</span>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5" style="">Valor</label>
+<div class="relative group">
+<input class="w-full bg-gray-50 dark:bg-input-dark border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pr-12" placeholder="0,00" step="0.01" type="number">
+<div class="absolute right-0 top-0 h-full flex flex-col border-l border-gray-200 dark:border-gray-600 rounded-r-xl overflow-hidden">
+<button class="flex-1 px-3 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-400 dark:text-gray-500 transition-colors" style="">
+<span class="material-symbols-outlined text-sm leading-none" style="">expand_less</span>
+</button>
+<button class="flex-1 px-3 border-t border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-400 dark:text-gray-500 transition-colors" style="">
+<span class="material-symbols-outlined text-sm leading-none" style="">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-6 flex items-center justify-end gap-4 bg-gray-50/50 dark:bg-gray-800/30">
+<button class="px-6 py-2.5 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors" style="">
+                Cancelar
+            </button>
+<button class="bg-primary hover:bg-red-600 text-white px-10 py-2.5 rounded-xl font-semibold shadow-lg shadow-red-500/20 active:scale-95 transition-all" style="">
+                Salvar
+            </button>
+</div>
+</div>
+<div class="fixed bottom-4 right-4">
+<button class="p-3 bg-white dark:bg-surface-dark rounded-full shadow-lg text-gray-600 dark:text-yellow-400 hover:scale-110 transition-transform" onclick="document.documentElement.classList.toggle('dark')" style="">
+<span class="material-symbols-outlined dark:hidden" style="">dark_mode</span>
+<span class="material-symbols-outlined hidden dark:block" style="">light_mode</span>
+</button>
+</div>
+<script>
+      // Automatically set dark mode based on preference or default to dark as per prompt requirement
+      document.documentElement.classList.add('dark');
+    </script>
+
+</body></html>
