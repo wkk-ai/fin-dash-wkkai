@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { AssetEntry } from "@/types/database";
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, ReferenceArea } from "recharts";
+import { useChartBrush } from "@/lib/useChartBrush";
 
 interface DashboardSectionProps {
     data: AssetEntry[];
@@ -109,6 +110,21 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
     const topGainerLabel = shouldAbbreviateAssets ? abbreviateAssetName(topGainerFullLabel) : topGainerFullLabel;
     const topLoserLabel = shouldAbbreviateAssets ? abbreviateAssetName(topLoserFullLabel) : topLoserFullLabel;
 
+    const wealthBrush = useChartBrush(wealthHistory, "value");
+
+    const [marketData, setMarketData] = useState<{ selic: string | null; ipca: string | null } | null>(null);
+
+    useEffect(() => {
+        fetch("/api/market")
+            .then(res => res.json())
+            .then(data => {
+                if (!data.error) {
+                    setMarketData({ selic: data.selic, ipca: data.ipca });
+                }
+            })
+            .catch(err => console.error("Error fetching market data:", err));
+    }, []);
+
     return (
         <div className="flex flex-col gap-8">
             {/* Welcome Section */}
@@ -121,6 +137,23 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                     <span className="text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
                         <span className="material-symbols-outlined text-[14px]">trending_up</span> {t("dashboard.marketOpen")}
                     </span>
+
+                    {marketData && (
+                        <>
+                            <div className="flex items-center gap-3 px-3 py-1.5 rounded bg-surface border border-border h-8">
+                                <div className="flex items-center gap-1.5 pt-[1px]">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("dashboard.selic")}</span>
+                                    <span className="text-xs font-bold text-primary">{marketData.selic}%</span>
+                                </div>
+                                <div className="w-[1px] h-3 bg-border" />
+                                <div className="flex items-center gap-1.5 pt-[1px]">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("dashboard.ipca")}</span>
+                                    <span className="text-xs font-bold text-primary">{marketData.ipca}%</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 min-w-[120px]">
                         {t("dashboard.lastUpdate", { date: latestDateStr })}
                     </span>
@@ -181,17 +214,25 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                 ref={variationProbeRef}
                                 className="absolute invisible pointer-events-none whitespace-nowrap text-sm font-medium"
                             >
-                                <span className="text-green-600 dark:text-green-400">+{Math.round(Math.abs(topGainer?.pct || 0))}%</span>
+                                <span className={topGainer && topGainer.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topGainer && topGainer.pct >= 0 ? "+" : ""}{topGainer?.pct.toFixed(1)}%
+                                </span>
                                 <span className="ml-1">{topGainerFullLabel}</span>
                                 <span className="mx-2">|</span>
-                                <span className="text-red-500 dark:text-red-400">-{Math.round(Math.abs(topLoser?.pct || 0))}%</span>
+                                <span className={topLoser && topLoser.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topLoser && topLoser.pct >= 0 ? "+" : ""}{topLoser?.pct.toFixed(1)}%
+                                </span>
                                 <span className="ml-1">{topLoserFullLabel}</span>
                             </div>
                             <div className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
-                                <span className="text-green-600 dark:text-green-400">+{Math.round(Math.abs(topGainer?.pct || 0))}%</span>
+                                <span className={topGainer && topGainer.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topGainer && topGainer.pct >= 0 ? "+" : ""}{topGainer?.pct.toFixed(1)}%
+                                </span>
                                 <span>{topGainerLabel}</span>
                                 <span className="mx-2">|</span>
-                                <span className="text-red-500 dark:text-red-400">-{Math.round(Math.abs(topLoser?.pct || 0))}%</span>
+                                <span className={topLoser && topLoser.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                    {topLoser && topLoser.pct >= 0 ? "+" : ""}{topLoser?.pct.toFixed(1)}%
+                                </span>
                                 <span>{topLoserLabel}</span>
                             </div>
                         </div>
@@ -231,9 +272,32 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t("dashboard.valueOverTime")}</p>
                         </div>
                     </div>
-                    <div className="flex-1 min-h-[300px] w-full relative">
+                    <div
+                        className="flex-1 min-h-[300px] w-full relative cursor-crosshair select-none"
+                        {...wealthBrush.containerHandlers}
+                    >
+                        {wealthBrush.variation && (
+                            <div
+                                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
+                                style={{
+                                    borderRadius: "8px",
+                                    border: `1px solid ${tooltipBorder}`,
+                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+                                    backgroundColor: tooltipBg,
+                                }}
+                            >
+                                <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                <span style={{ color: wealthBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
+                                    {formatCurrency(wealthBrush.variation.absolute)} ({wealthBrush.variation.percent >= 0 ? "+" : ""}{wealthBrush.variation.percent.toFixed(1)}%)
+                                </span>
+                            </div>
+                        )}
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={wealthHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart
+                                data={wealthHistory}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                {...wealthBrush.chartHandlers}
+                            >
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
@@ -250,10 +314,24 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
-                                    formatter={(value: any) => [formatCurrency(value as number), t("dashboard.wealth")]}
-                                    contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
-                                    labelStyle={{ color: tooltipLabelColor }}
+                                    cursor={false}
+                                    content={({ active, payload }) => (wealthBrush.isDragging ? null : active && payload?.length ? (
+                                        <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
+                                            <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
+                                            <p>{t("dashboard.wealth")}: {formatCurrency(payload[0].value as number)}</p>
+                                        </div>
+                                    ) : null)}
+                                    wrapperStyle={{ zIndex: 9999 }}
                                 />
+                                {wealthBrush.selectionBounds && wealthHistory[wealthBrush.selectionBounds[0]] && wealthHistory[wealthBrush.selectionBounds[1]] && (
+                                    <ReferenceArea
+                                        x1={wealthHistory[wealthBrush.selectionBounds[0]].name}
+                                        x2={wealthHistory[wealthBrush.selectionBounds[1]].name}
+                                        fill="#137fec"
+                                        fillOpacity={0.15}
+                                        strokeOpacity={0}
+                                    />
+                                )}
                                 <Area
                                     type="monotone"
                                     dataKey="value"
