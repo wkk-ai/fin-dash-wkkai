@@ -7,6 +7,8 @@ import { formatCurrency, parseCustomDate, cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { loadPendingData, savePendingData, clearPendingData } from "@/lib/pending-storage";
+import * as XLSX from "xlsx";
+import Papa from "papaparse";
 
 export default function Settings() {
     const { t } = useTranslation();
@@ -28,6 +30,7 @@ export default function Settings() {
     const [exportDashboard, setExportDashboard] = useState(true);
     const [exportPortfolio, setExportPortfolio] = useState(false);
     const [exportingPdf, setExportingPdf] = useState(false);
+    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
     // Modal state
     const [modalConfig, setModalConfig] = useState<{
@@ -535,6 +538,39 @@ export default function Settings() {
         }
     };
 
+    const downloadFile = (format: "csv" | "xlsx") => {
+        if (!data || data.length === 0) return;
+
+        // Prepare data for export
+        const exportData = data.map(row => ({
+            Date: row.Date,
+            Classification: row.Classification,
+            Asset: row.Asset,
+            Value: row.Value
+        }));
+
+        const filename = `fintrack-data-${new Date().toISOString().slice(0, 10)}`;
+
+        if (format === "csv") {
+            const csv = Papa.unparse(exportData);
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${filename}.csv`);
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } else {
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+            XLSX.writeFile(workbook, `${filename}.xlsx`);
+        }
+        setIsDownloadOpen(false);
+    };
+
 
     if (loading) {
         return (
@@ -668,6 +704,39 @@ export default function Settings() {
                             <span className="material-symbols-outlined text-[18px]">upload_file</span>
                             {importingFile ? t("settings.importing") : t("settings.importFile")}
                         </button>
+
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsDownloadOpen(!isDownloadOpen)}
+                                className="flex items-center gap-2 bg-surface border border-border hover:bg-border text-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">download</span>
+                                {t("settings.downloadData")}
+                            </button>
+
+                            {isDownloadOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-30" onClick={() => setIsDownloadOpen(false)} />
+                                    <div className="absolute right-0 mt-2 w-48 rounded-xl bg-surface border border-border shadow-xl z-40 py-1 overflow-hidden animate-in fade-in zoom-in duration-200">
+                                        <button
+                                            onClick={() => downloadFile("csv")}
+                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border transition-colors flex items-center gap-2"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px] text-slate-400">csv</span>
+                                            {t("settings.downloadCsv")}
+                                        </button>
+                                        <button
+                                            onClick={() => downloadFile("xlsx")}
+                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-foreground hover:bg-border transition-colors flex items-center gap-2"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px] text-slate-400">table_view</span>
+                                            {t("settings.downloadExcel")}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
                     <input
                         ref={fileInputRef}
