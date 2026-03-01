@@ -179,7 +179,10 @@
     "save": "Save",
     "actions": "Actions",
     "vsLastMonth": "vs last month",
-    "fromLastMonth": "from last month"
+    "fromLastMonth": "from last month",
+    "singleTab": "One Movement",
+    "multipleTab": "Multiple Movements",
+    "addNewLine": "Add Line"
   },
   "toast": {
     "pendingChanges": "Pending changes were not saved to the database.",

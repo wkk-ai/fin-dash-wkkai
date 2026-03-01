@@ -180,7 +180,10 @@
     "vsLastMonth": "vs mês anterior",
     "fromLastMonth": "desde o mês passado",
     "noData": "Nenhuma movimentação encontrada.",
-    "saveMovement": "Salvar Movimentação"
+    "saveMovement": "Salvar Movimentação",
+    "singleTab": "Uma Movimentação",
+    "multipleTab": "Várias Movimentações",
+    "addNewLine": "Adicionar Linha"
   },
   "toast": {
     "pendingChanges": "Alterações pendentes não foram salvas no banco de dados.",

@@ -97,7 +97,7 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
                 onBlur={handleBlur}
                 placeholder={placeholder}
                 required={required}
-                className={cn(showSpinner && "pr-8", className)}
+                className={cn(showSpinner && "pr-10", className)}
             />
             {showSpinner && (
                 <div className={cn(
@@ -112,7 +112,7 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
                         onMouseLeave={clearHold}
                         className={cn(
                             "flex items-center justify-center cursor-pointer",
-                            isDark ? "bg-slate-800 hover:bg-slate-700 text-slate-400" : "bg-slate-100 hover:bg-slate-200 text-slate-400",
+                            isDark ? "bg-slate-800 hover:bg-slate-700 text-slate-400" : "bg-slate-100 hover:bg-slate-200 text-slate-600",
                             compactSpinner ? "h-5" : "flex-1 min-h-[20px]"
                         )}
                     >
@@ -126,7 +126,7 @@ export function FormattedNumberInput({ value, onChange, className, placeholder, 
                         onMouseLeave={clearHold}
                         className={cn(
                             "flex items-center justify-center cursor-pointer",
-                            isDark ? "bg-slate-800 hover:bg-slate-700 text-slate-400" : "bg-slate-100 hover:bg-slate-200 text-slate-400",
+                            isDark ? "bg-slate-800 hover:bg-slate-700 text-slate-400" : "bg-slate-100 hover:bg-slate-200 text-slate-600",
                             compactSpinner ? "h-5" : "flex-1 min-h-[20px]"
                         )}
                     >
