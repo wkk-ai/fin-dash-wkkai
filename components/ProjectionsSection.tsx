@@ -5,7 +5,8 @@ import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { AssetEntry } from "@/types/database";
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
+import { useChartBrush } from "@/lib/useChartBrush";
 
 interface ProjectionsSectionProps {
     currentWealth: number;
@@ -67,6 +68,8 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
             });
         }
     }
+
+    const projectionBrush = useChartBrush(projectionData, "value");
 
     return (
         <div className="flex flex-col gap-8">
@@ -135,9 +138,44 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t("projections.compoundInterest")}</p>
                         </div>
                     </div>
-                    <div className="flex-1 min-h-[350px] w-full relative">
+                    <div className="flex-1 min-h-[350px] w-full relative cursor-crosshair select-none">
+                        {projectionBrush.isDragging && projectionBrush.variation !== null && (
+                            <div
+                                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
+                                style={{
+                                    borderRadius: "8px",
+                                    border: `1px solid ${tooltipBorder}`,
+                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+                                    backgroundColor: tooltipBg,
+                                }}
+                            >
+                                <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                <span style={{ color: projectionBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
+                                    {formatCurrency(projectionBrush.variation.absolute)} ({projectionBrush.variation.percent >= 0 ? "+" : ""}{projectionBrush.variation.percent.toFixed(1)}%)
+                                </span>
+                            </div>
+                        )}
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={projectionData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart
+                                data={projectionData}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                onMouseDown={(state: any) =>
+                                    projectionBrush.start(
+                                        typeof state?.activeTooltipIndex === "number"
+                                            ? state.activeTooltipIndex
+                                            : null
+                                    )
+                                }
+                                onMouseMove={(state: any) =>
+                                    projectionBrush.update(
+                                        typeof state?.activeTooltipIndex === "number"
+                                            ? state.activeTooltipIndex
+                                            : null
+                                    )
+                                }
+                                onMouseUp={projectionBrush.end}
+                                onMouseLeave={projectionBrush.end}
+                            >
                                 <defs>
                                     <linearGradient id="colorValueProj" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
@@ -158,10 +196,26 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
-                                    formatter={(value: any, name: any) => [formatCurrency(value as number), name === "value" ? t("dashboard.wealth") : t("projections.invested")]}
-                                    contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
-                                    labelStyle={{ color: tooltipLabelColor }}
+                                    cursor={false}
+                                    content={({ active, payload }) => (projectionBrush.isDragging ? null : active && payload?.length ? (
+                                        <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
+                                            <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
+                                            {payload.map((p: { dataKey?: string; value?: number }) => (
+                                                <p key={p.dataKey}>{p.dataKey === "value" ? t("dashboard.wealth") : t("projections.invested")}: {formatCurrency(p.value ?? 0)}</p>
+                                            ))}
+                                        </div>
+                                    ) : null)}
+                                    wrapperStyle={{ zIndex: 9999 }}
                                 />
+                                {projectionBrush.startIndex !== null && projectionBrush.endIndex !== null && projectionData[projectionBrush.startIndex] && projectionData[projectionBrush.endIndex] && (
+                                    <ReferenceArea
+                                        x1={projectionData[projectionBrush.startIndex].name}
+                                        x2={projectionData[projectionBrush.endIndex].name}
+                                        fill="#137fec"
+                                        fillOpacity={0.15}
+                                        strokeOpacity={0}
+                                    />
+                                )}
                                 <Area type="monotone" dataKey="invested" stroke="#94a3b8" strokeWidth={2} fillOpacity={1} fill="url(#colorInvested)" />
                                 <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorValueProj)" />
                             </AreaChart>

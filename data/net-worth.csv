@@ -2,13 +2,12 @@ Date,Classification,Asset,Value
 01/Jan/26,Fixed Income,Nubank,466099
 01/Jan/26,Fixed Income,XP,243075
 01/Jan/26,Variable Income,Clear,110193
-01/Jan/26,Fixed Income,Itau,104417
+01/Jan/26,Fixed Income,Itau,104017
 01/Jan/26,Pension Fund,FGTS,68286
 01/Jan/26,Fixed Income,Mercado Pago,33863
 01/Jan/26,Pension Fund,Icatu (Netflix),18613
 01/Jan/26,Variable Income,E-Trade,13985
 01/Jan/26,Pension Fund,BrasilPrev (Uber),11882
-01/Jan/26,Variable Income,Binance,0
 01/Dec/25,Fixed Income,Nubank,413009
 01/Dec/25,Fixed Income,XP,260705
 01/Dec/25,Variable Income,Clear,106108
@@ -71,7 +70,6 @@ Date,Classification,Asset,Value
 01/Apr/25,Pension Fund,FGTS,48121
 01/Apr/25,Variable Income,Binance,3560
 01/Apr/25,Fixed Income,C6,1
-01/Apr/25,Fixed Income,Inter,0
 01/Mar/25,Fixed Income,XP,248653
 01/Mar/25,Fixed Income,Nubank,242123
 01/Mar/25,Fixed Income,Itau,94723
@@ -80,7 +78,6 @@ Date,Classification,Asset,Value
 01/Mar/25,Pension Fund,FGTS,44285
 01/Mar/25,Variable Income,Binance,3560
 01/Mar/25,Fixed Income,C6,1
-01/Mar/25,Fixed Income,Inter,0
 01/Feb/25,Fixed Income,XP,245194
 01/Feb/25,Fixed Income,Nubank,243160
 01/Feb/25,Fixed Income,Itau,93986
@@ -90,7 +87,6 @@ Date,Classification,Asset,Value
 01/Feb/25,Variable Income,Binance,1069
 01/Feb/25,Fixed Income,Inter,748
 01/Feb/25,Fixed Income,C6,1
-01/Feb/25,Real State,Inv. Apto,0
 01/Jan/25,Fixed Income,Nubank,246237
 01/Jan/25,Fixed Income,XP,243760
 01/Jan/25,Fixed Income,Itau,93496
@@ -99,7 +95,6 @@ Date,Classification,Asset,Value
 01/Jan/25,Real State,Inv. Apto,10000
 01/Jan/25,Variable Income,Binance,1086
 01/Jan/25,Fixed Income,C6,1
-01/Jan/25,Fixed Income,Inter,0
 01/Dec/24,Fixed Income,XP,244158
 01/Dec/24,Fixed Income,Nubank,221176
 01/Dec/24,Fixed Income,Itau,116420
@@ -108,7 +103,6 @@ Date,Classification,Asset,Value
 01/Dec/24,Pension Fund,FGTS,37589
 01/Dec/24,Variable Income,Binance,1125
 01/Dec/24,Fixed Income,C6,1
-01/Dec/24,Fixed Income,Inter,0
 01/Nov/24,Fixed Income,XP,245412
 01/Nov/24,Fixed Income,Nubank,206344
 01/Nov/24,Fixed Income,Itau,115668
@@ -118,7 +112,6 @@ Date,Classification,Asset,Value
 01/Nov/24,Variable Income,Binance,1086
 01/Nov/24,Fixed Income,Inter,748
 01/Nov/24,Fixed Income,C6,1
-01/Nov/24,Real State,Inv. Apto,0
 01/Oct/24,Fixed Income,XP,250680
 01/Oct/24,Fixed Income,Nubank,152513
 01/Oct/24,Fixed Income,Itau,115218
@@ -145,7 +138,6 @@ Date,Classification,Asset,Value
 01/Aug/24,Real State,Inv. Apto,8000
 01/Aug/24,Variable Income,Binance,990
 01/Aug/24,Fixed Income,C6,1
-01/Aug/24,Fixed Income,Inter,0
 01/Jul/24,Fixed Income,XP,247932
 01/Jul/24,Fixed Income,Itau,138228
 01/Jul/24,Fixed Income,Nubank,100614
@@ -291,7 +283,6 @@ Date,Classification,Asset,Value
 01/Jan/23,Variable Income,Clear,77904
 01/Jan/23,Fixed Income,Nubank,4287
 01/Jan/23,Variable Income,Binance,927
-01/Jan/23,Fixed Income,C6,0
 01/Dec/22,Fixed Income,XP,171734
 01/Dec/22,Fixed Income,Itau,98939
 01/Dec/22,Variable Income,Clear,77082
@@ -303,7 +294,6 @@ Date,Classification,Asset,Value
 01/Nov/22,Variable Income,Clear,79658
 01/Nov/22,Fixed Income,Nubank,6824
 01/Nov/22,Variable Income,Binance,949
-01/Nov/22,Fixed Income,C6,0
 01/Oct/22,Fixed Income,XP,170246
 01/Oct/22,Fixed Income,Itau,93350
 01/Oct/22,Variable Income,Clear,82454
