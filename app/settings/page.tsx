@@ -294,14 +294,11 @@ export default function Settings() {
                     hasUserEditedRef.current = false;
                     clearPendingData();
                     window.dispatchEvent(new CustomEvent("pending-saved"));
-                    setModalConfig({
-                        isOpen: true,
-                        title: t("settings.success"),
-                        message: t("settings.dbSaved"),
-                        confirmLabel: t("common.ok"),
-                        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
-                        variant: "primary"
-                    });
+                    window.dispatchEvent(
+                        new CustomEvent("show-success-toast", {
+                            detail: { message: t("settings.dbSaved") }
+                        })
+                    );
                 } catch (e) {
                     console.error(e);
                     setModalConfig({

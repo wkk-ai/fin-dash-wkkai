@@ -112,6 +112,19 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
 
     const wealthBrush = useChartBrush(wealthHistory, "value");
 
+    const [marketData, setMarketData] = useState<{ selic: string | null; ipca: string | null } | null>(null);
+
+    useEffect(() => {
+        fetch("/api/market")
+            .then(res => res.json())
+            .then(data => {
+                if (!data.error) {
+                    setMarketData({ selic: data.selic, ipca: data.ipca });
+                }
+            })
+            .catch(err => console.error("Error fetching market data:", err));
+    }, []);
+
     return (
         <div className="flex flex-col gap-8">
             {/* Welcome Section */}
@@ -124,6 +137,23 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                     <span className="text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
                         <span className="material-symbols-outlined text-[14px]">trending_up</span> {t("dashboard.marketOpen")}
                     </span>
+
+                    {marketData && (
+                        <>
+                            <div className="flex items-center gap-3 px-3 py-1.5 rounded bg-surface border border-border h-8">
+                                <div className="flex items-center gap-1.5 pt-[1px]">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("dashboard.selic")}</span>
+                                    <span className="text-xs font-bold text-primary">{marketData.selic}%</span>
+                                </div>
+                                <div className="w-[1px] h-3 bg-border" />
+                                <div className="flex items-center gap-1.5 pt-[1px]">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("dashboard.ipca")}</span>
+                                    <span className="text-xs font-bold text-primary">{marketData.ipca}%</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                     <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 min-w-[120px]">
                         {t("dashboard.lastUpdate", { date: latestDateStr })}
                     </span>
