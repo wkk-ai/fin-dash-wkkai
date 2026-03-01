@@ -5,7 +5,8 @@ import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
+import { useChartBrush } from "@/lib/useChartBrush";
 
 export default function Portfolio() {
     const { t, formatCurrency } = useTranslation();
@@ -68,6 +69,7 @@ export default function Portfolio() {
     }, [data, filterClassification]);
 
     const isDark = resolvedTheme === "dark";
+    const portfolioBrush = useChartBrush(chartData, "value");
     const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
     const chartTickColor = isDark ? "#64748b" : "#94a3b8";
     const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
@@ -103,6 +105,18 @@ export default function Portfolio() {
         );
         return prev ? prev.Value : null;
     };
+
+    const formatAbbreviated = (num: number) => {
+        const absNum = Math.abs(num);
+        if (absNum >= 1_000_000) {
+            return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
+        }
+        if (absNum >= 1_000) {
+            return (num / 1_000).toFixed(1).replace(".", ",") + "k";
+        }
+        return num.toFixed(1).replace(".", ",");
+    };
+
     const totalWealth = currentAssets.reduce((sum, item) => sum + item.Value, 0);
 
     // Group by classification
@@ -161,6 +175,10 @@ export default function Portfolio() {
                         const classPercentage = totalWealth > 0 ? (classTotal / totalWealth) * 100 : 0;
                         const prevClassTotal = prevClassTotals[classification] || 0;
                         const classVariationPct = prevClassTotal > 0 ? ((classTotal - prevClassTotal) / prevClassTotal) * 100 : null;
+                        const classVariationAbs = prevClassTotal > 0 ? classTotal - prevClassTotal : (prevDateStr ? assets.reduce((sum, asset) => {
+                            const prev = getPrevValue(asset);
+                            return sum + (prev !== null ? asset.Value - prev : 0);
+                        }, 0) : null);
 
                         return (
                             <div key={classification} className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
@@ -172,6 +190,14 @@ export default function Portfolio() {
                                     <div className="flex items-center gap-4 text-sm">
                                         <span className="font-bold text-foreground">{formatCurrency(classTotal)}</span>
                                         <span className="text-slate-400 dark:text-slate-500">|</span>
+                                        {classVariationAbs !== null && (
+                                            <>
+                                                <span className={`font-semibold ${classVariationAbs >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                    {classVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(classVariationAbs)}
+                                                </span>
+                                                <span className="text-slate-400 dark:text-slate-500">|</span>
+                                            </>
+                                        )}
                                         {classVariationPct === null ? (
                                             <span className="font-semibold text-slate-400 dark:text-slate-500">—</span>
                                         ) : (
@@ -192,17 +218,18 @@ export default function Portfolio() {
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
+                                    <table className="w-full text-left border-collapse table-fixed">
                                         <thead>
-                                            <tr className="bg-surface text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                                <th className="px-6 py-3">{t("portfolio.assetInstitution")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.currentValue")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.monthVar")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.weightInCategory")}</th>
-                                                <th className="px-6 py-3 text-right">{t("portfolio.weightTotal")}</th>
+                                            <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
+                                                <th className="px-4 py-3 w-[25%] sm:w-[30%]">{t("portfolio.assetInstitution")}</th>
+                                                <th className="px-4 py-3 text-right w-[18%] sm:w-[15%]">{t("portfolio.currentValue")}</th>
+                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.monthAbsVar")}</th>
+                                                <th className="px-4 py-3 text-right w-[12%] sm:w-[10%]">{t("portfolio.monthVar")}</th>
+                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.weightInCategory")}</th>
+                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.weightTotal")}</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-border text-sm">
+                                        <tbody className="divide-y divide-border text-xs sm:text-sm">
                                             {assets.sort((a, b) => b.Value - a.Value).map((asset, idx) => {
                                                 const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
                                                 const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
@@ -213,26 +240,34 @@ export default function Portfolio() {
                                                         ? (variation! / prevValue) * 100
                                                         : null;
 
-                                                const rowHover = "group-hover:bg-slate-200 dark:group-hover:bg-white/10";
+                                                const rowHover = "group-hover:bg-slate-100 dark:group-hover:bg-slate-800";
                                                 return (
                                                     <tr key={`${asset.Asset}-${idx}`} className="group transition-colors">
-                                                        <td className={`px-6 py-4 font-medium text-foreground flex items-center gap-3 ${rowHover}`}>
-                                                            <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors">
+                                                        <td className={`px-4 py-4 font-medium text-foreground flex items-center gap-2 sm:gap-3 truncate ${rowHover}`}>
+                                                            <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors shrink-0 text-[10px] sm:text-sm">
                                                                 {asset.Asset.charAt(0).toUpperCase()}
                                                             </div>
-                                                            {asset.Asset}
+                                                            <span className="truncate">{asset.Asset}</span>
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right font-medium text-foreground ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right font-medium text-foreground ${rowHover}`}>
                                                             {formatCurrency(asset.Value)}
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right ${rowHover}`}>
+                                                            {variation !== null ? (
+                                                                <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                    {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                            )}
+                                                        </td>
+                                                        <td className={`px-4 py-4 text-right ${rowHover}`}>
                                                             {variationPct !== null ? (
                                                                 <span
-                                                                    className={`font-medium ${
-                                                                        variationPct >= 0
-                                                                            ? "text-green-600 dark:text-green-400"
-                                                                            : "text-red-500 dark:text-red-400"
-                                                                    }`}
+                                                                    className={`font-medium ${variationPct >= 0
+                                                                        ? "text-green-600 dark:text-green-400"
+                                                                        : "text-red-500 dark:text-red-400"
+                                                                        }`}
                                                                 >
                                                                     {variationPct >= 0 ? "+" : ""}
                                                                     {variationPct.toFixed(1)}%
@@ -241,10 +276,10 @@ export default function Portfolio() {
                                                                 <span className="text-slate-400 dark:text-slate-500">—</span>
                                                             )}
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
                                                             {weightInClass.toFixed(1)}%
                                                         </td>
-                                                        <td className={`px-6 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
+                                                        <td className={`px-4 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
                                                             {weightInTotal.toFixed(1)}%
                                                         </td>
                                                     </tr>
@@ -258,64 +293,101 @@ export default function Portfolio() {
                     })
                 )}
 
-            {/* Evolution Chart with Filters */}
-            {uniqueDates.length > 0 && (
-                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <h3 className="text-lg font-bold text-foreground">{t("portfolio.evolutionChart")}</h3>
-                        <div className="flex items-center gap-2">
-                            <select
-                                value={filterClassification}
-                                onChange={(e) => setClassification(e.target.value)}
-                                className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
-                            >
-                                <option value="">{t("portfolio.allClassifications")}</option>
-                                {classifications.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                            <span className="text-slate-400 text-sm">/</span>
-                            <select
-                                value={filterAsset}
-                                onChange={(e) => setFilterAsset(e.target.value)}
-                                className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
-                            >
-                                <option value="">{t("portfolio.allAssets")}</option>
-                                {assetsList.map((a) => (
-                                    <option key={a} value={a}>{a}</option>
-                                ))}
-                            </select>
+                {/* Evolution Chart with Filters */}
+                {uniqueDates.length > 0 && (
+                    <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <h3 className="text-lg font-bold text-foreground">{t("portfolio.evolutionChart")}</h3>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={filterClassification}
+                                    onChange={(e) => setClassification(e.target.value)}
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                >
+                                    <option value="">{t("portfolio.allClassifications")}</option>
+                                    {classifications.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                                <span className="text-slate-400 text-sm">/</span>
+                                <select
+                                    value={filterAsset}
+                                    onChange={(e) => setFilterAsset(e.target.value)}
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
+                                >
+                                    <option value="">{t("portfolio.allAssets")}</option>
+                                    {assetsList.map((a) => (
+                                        <option key={a} value={a}>{a}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div
+                            className="w-full h-[300px] relative cursor-crosshair select-none"
+                            {...portfolioBrush.containerHandlers}
+                        >
+                            {portfolioBrush.variation && (
+                                <div
+                                    className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
+                                    style={{
+                                        borderRadius: "8px",
+                                        border: `1px solid ${tooltipBorder}`,
+                                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+                                        backgroundColor: tooltipBg,
+                                    }}
+                                >
+                                    <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                    <span style={{ color: portfolioBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
+                                        {formatCurrency(portfolioBrush.variation.absolute)} ({portfolioBrush.variation.percent >= 0 ? "+" : ""}{portfolioBrush.variation.percent.toFixed(1)}%)
+                                    </span>
+                                </div>
+                            )}
+                            <ResponsiveContainer width="100%" height={300}>
+                                <AreaChart
+                                    data={chartData}
+                                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                    {...portfolioBrush.chartHandlers}
+                                >
+                                    <defs>
+                                        <linearGradient id="colorPortfolioValue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
+                                    <YAxis
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                                        stroke={chartTickColor}
+                                    />
+                                    <RechartsTooltip
+                                        cursor={false}
+                                        content={({ active, payload }) => (portfolioBrush.isDragging ? null : active && payload?.length ? (
+                                            <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
+                                                <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
+                                                <p>{t("dashboard.wealth")}: {formatCurrency(payload[0].value as number)}</p>
+                                            </div>
+                                        ) : null)}
+                                        wrapperStyle={{ zIndex: 9999 }}
+                                    />
+                                    {portfolioBrush.selectionBounds && chartData[portfolioBrush.selectionBounds[0]] && chartData[portfolioBrush.selectionBounds[1]] && (
+                                        <ReferenceArea
+                                            x1={chartData[portfolioBrush.selectionBounds[0]].name}
+                                            x2={chartData[portfolioBrush.selectionBounds[1]].name}
+                                            fill="#137fec"
+                                            fillOpacity={0.15}
+                                            strokeOpacity={0}
+                                        />
+                                    )}
+                                    <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorPortfolioValue)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                    <div className="w-full h-[300px] relative">
-                        <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorPortfolioValue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
-                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
-                                <YAxis
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                                    stroke={chartTickColor}
-                                />
-                                <RechartsTooltip
-                                    formatter={(value: unknown) => [formatCurrency(value as number), t("dashboard.wealth")]}
-                                    contentStyle={{ borderRadius: "8px", border: `1px solid ${tooltipBorder}`, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", backgroundColor: tooltipBg, color: tooltipTextColor }}
-                                    labelStyle={{ color: tooltipLabelColor }}
-                                />
-                                <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorPortfolioValue)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            )}
+                )}
             </div>
         </div>
     );
