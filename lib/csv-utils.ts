@@ -3,6 +3,7 @@ import path from "path";
 import Papa from "papaparse";
 
 const databasePath = path.resolve(process.cwd(), "data/net-worth.csv");
+const movementsPath = path.resolve(process.cwd(), "data/movements.csv");
 
 export function getUniqueValuesFromDatabase(): { classifications: string[], assets: string[] } {
     try {
@@ -29,6 +30,39 @@ export function getUniqueValuesFromDatabase(): { classifications: string[], asse
     } catch (error) {
         console.error("Error extracting unique values from CSV:", error);
         return { classifications: [], assets: [] };
+    }
+}
+
+export function getUniqueMovementValues(): { incomeCategories: string[], expenseCategories: string[] } {
+    try {
+        if (!fs.existsSync(movementsPath)) return { incomeCategories: [], expenseCategories: [] };
+
+        const fileContent = fs.readFileSync(movementsPath, "utf-8");
+        const parsed = Papa.parse(fileContent, {
+            header: true,
+            skipEmptyLines: true,
+        });
+
+        const incomeCategories = new Set<string>();
+        const expenseCategories = new Set<string>();
+
+        (parsed.data as any[]).forEach(row => {
+            if (!row.Category || !row.Type) return;
+            const cat = row.Category.trim();
+            if (row.Type === "Income") {
+                incomeCategories.add(cat);
+            } else if (row.Type === "Expense") {
+                expenseCategories.add(cat);
+            }
+        });
+
+        return {
+            incomeCategories: Array.from(incomeCategories).sort(),
+            expenseCategories: Array.from(expenseCategories).sort(),
+        };
+    } catch (error) {
+        console.error("Error extracting unique categories from movements CSV:", error);
+        return { incomeCategories: [], expenseCategories: [] };
     }
 }
 

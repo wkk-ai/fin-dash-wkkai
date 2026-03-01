@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MovementEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+
+import Portal from "./Portal";
 
 interface Props {
     onClose: () => void;
@@ -24,13 +26,45 @@ export const DEFAULT_CATEGORIES = [
 export default function AddMovementModal({ onClose }: Props) {
     const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
+    const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
+    const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
+    const [loadingCategories, setLoadingCategories] = useState(true);
+
     const [data, setData] = useState<MovementEntry>({
         Date: new Date().toISOString().split("T")[0],
         Description: "",
-        Category: DEFAULT_CATEGORIES[0],
+        Category: "",
         Type: "Expense",
         Value: 0
     });
+
+    useEffect(() => {
+        fetch("/api/settings")
+            .then(res => res.json())
+            .then(settings => {
+                setIncomeCategories(settings.incomeCategories || []);
+                setExpenseCategories(settings.expenseCategories || []);
+                setLoadingCategories(false);
+
+                // Set initial category
+                const initialCats = data.Type === "Income" ? settings.incomeCategories : settings.expenseCategories;
+                if (initialCats?.length > 0) {
+                    setData(prev => ({ ...prev, Category: initialCats[0] }));
+                }
+            })
+            .catch(err => {
+                console.error("Failed to load categories", err);
+                setLoadingCategories(false);
+            });
+    }, []);
+
+    // When type changes, reset category to first available for that type
+    useEffect(() => {
+        const cats = data.Type === "Income" ? incomeCategories : expenseCategories;
+        if (cats.length > 0 && !cats.includes(data.Category)) {
+            setData(prev => ({ ...prev, Category: cats[0] }));
+        }
+    }, [data.Type, incomeCategories, expenseCategories]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -128,8 +162,10 @@ export default function AddMovementModal({ onClose }: Props) {
                             value={data.Category}
                             onChange={e => setData({ ...data, Category: e.target.value })}
                             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            disabled={loadingCategories}
                         >
-                            {DEFAULT_CATEGORIES.map(c => (
+                            <option value="">{loadingCategories ? "Loading..." : t("common.select")}</option>
+                            {(data.Type === "Income" ? incomeCategories : expenseCategories).map(c => (
                                 <option key={c} value={c}>{c}</option>
                             ))}
                         </select>
