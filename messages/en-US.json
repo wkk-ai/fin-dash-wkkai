@@ -15,6 +15,7 @@
     "portfolio": "Net Worth",
     "settings": "Settings",
     "addAsset": "Add Asset",
+    "movements": "Movements",
     "closeMenu": "Close menu",
     "openMenu": "Open navigation menu",
     "selectLanguage": "Select language"
@@ -145,6 +146,28 @@
     "projectedGrowth": "Projected Growth",
     "compoundInterest": "Compound Interest + Monthly Contributions",
     "invested": "Invested"
+  },
+  "movements": {
+    "title": "My Movements",
+    "addMovement": "Add Movement",
+    "totalIncome": "Total Income",
+    "totalExpenses": "Total Expenses",
+    "savingsRate": "Savings Rate",
+    "remainingBudget": "Remaining Budget",
+    "incomeVsExpenses": "Income vs. Expenses",
+    "spendingByCategory": "Spending by Category",
+    "budgetVsActual": "Budget vs. Actual",
+    "topVendors": "Top Expense Vendors",
+    "netCashFlow": "Net Cash Flow",
+    "description": "Description",
+    "category": "Category",
+    "value": "Value",
+    "type": "Type",
+    "date": "Date",
+    "income": "Income",
+    "expense": "Expense",
+    "noData": "No movements found.",
+    "save": "Save Movement"
   },
   "toast": {
     "pendingChanges": "Pending changes were not saved to the database.",
