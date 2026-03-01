@@ -112,6 +112,8 @@
     "welcome": "Welcome back",
     "title": "Financial Overview",
     "marketOpen": "Market Open",
+    "selic": "Selic",
+    "ipca": "IPCA (12m)",
     "lastUpdate": "Last update: {date}",
     "totalWealth": "Total Wealth",
     "monthlyVariation": "Monthly Variation",

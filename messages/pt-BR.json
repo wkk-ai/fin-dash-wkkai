@@ -112,6 +112,8 @@
     "welcome": "Bem-vindo de volta",
     "title": "Panorama Financeiro",
     "marketOpen": "Mercado Aberto",
+    "selic": "Selic",
+    "ipca": "IPCA (12m)",
     "lastUpdate": "Última atu.: {date}",
     "totalWealth": "Patrimônio Total",
     "monthlyVariation": "Variação Mensal",
