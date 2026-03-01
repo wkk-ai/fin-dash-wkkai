@@ -4,7 +4,8 @@ import { getUniqueValuesFromDatabase, getUniqueMovementValues, readCustomCsv, wr
 
 const customClassPath = path.resolve(process.cwd(), "data/custom_classifications.csv");
 const customAssetsPath = path.resolve(process.cwd(), "data/custom_assets.csv");
-const customMovementsPath = path.resolve(process.cwd(), "data/custom_movements_categories.csv");
+const customIncomePath = path.resolve(process.cwd(), "data/custom_income_categories.csv");
+const customExpensePath = path.resolve(process.cwd(), "data/custom_expense_categories.csv");
 
 export async function GET() {
     try {
@@ -13,8 +14,8 @@ export async function GET() {
 
         const customClasses = readCustomCsv(customClassPath);
         const customAssets = readCustomCsv(customAssetsPath);
-        const customIncome = readCustomCsv(path.resolve(process.cwd(), "data/custom_income_categories.csv"));
-        const customExpense = readCustomCsv(path.resolve(process.cwd(), "data/custom_expense_categories.csv"));
+        const customIncome = readCustomCsv(customIncomePath);
+        const customExpense = readCustomCsv(customExpensePath);
 
         return NextResponse.json({
             classifications: Array.from(new Set([...dbClasses, ...customClasses])).sort(),
@@ -29,9 +30,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const { classifications, assets, movementCategories } = await request.json();
+        const { classifications, assets, incomeCategories, expenseCategories } = await request.json();
         const { classifications: dbClasses, assets: dbAssets } = getUniqueValuesFromDatabase();
-        const { categories: dbMovementCategories } = getUniqueMovementValues();
+        const { incomeCategories: dbIncomeCats, expenseCategories: dbExpenseCats } = getUniqueMovementValues();
 
         // Save only values NOT in the database (custom ones)
         if (classifications) {
@@ -44,9 +45,14 @@ export async function POST(request: Request) {
             writeCustomCsv(customAssetsPath, customAssets);
         }
 
-        if (movementCategories) {
-            const customMovements = movementCategories.filter((c: string) => !dbMovementCategories.includes(c));
-            writeCustomCsv(customMovementsPath, customMovements);
+        if (incomeCategories) {
+            const customIncome = incomeCategories.filter((c: string) => !dbIncomeCats.includes(c));
+            writeCustomCsv(customIncomePath, customIncome);
+        }
+
+        if (expenseCategories) {
+            const customExpense = expenseCategories.filter((c: string) => !dbExpenseCats.includes(c));
+            writeCustomCsv(customExpensePath, customExpense);
         }
 
         return NextResponse.json({ success: true });
