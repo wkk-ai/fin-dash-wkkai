@@ -93,6 +93,11 @@
     "importErrorCsvFormat": "The CSV format is invalid. Make sure every row has exactly 4 columns and there are no commas or line breaks inside values.",
     "importErrorUnsupportedType": "Unsupported file type. Use a .csv, .xlsx or .xls file.",
     "importErrorNoFile": "No file was uploaded.",
+    "financialCategories": "Financial Categories",
+    "categoryPlaceholder": "Ex: Salary, Food...",
+    "categoryInUse": "The category \"{name}\" is in use in your movements and cannot be deleted.",
+    "incomeSaved": "Income categories saved successfully!",
+    "expensesSaved": "Expense categories saved successfully!",
     "downloadData": "Download Data",
     "downloadCsv": "Download as CSV",
     "downloadExcel": "Download as Excel"

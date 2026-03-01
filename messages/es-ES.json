@@ -90,7 +90,11 @@
     "importErrorColumnNames": "Los nombres de columnas deben ser exactamente: {expected}. Encontrado: {received}.",
     "importErrorCsvFormat": "El formato del CSV no es válido. Comprueba que cada fila tenga exactamente 4 columnas y que no haya comas o saltos de línea dentro de los valores.",
     "importErrorUnsupportedType": "Tipo de archivo no admitido. Usa un archivo .csv, .xlsx o .xls.",
-    "importErrorNoFile": "No se ha subido ningún archivo."
+    "importErrorNoFile": "No se ha subido ningún archivo.",
+    "financialCategories": "Categorías Financieras",
+    "categoryPlaceholder": "Ej: Salario, Alimentación...",
+    "categoryInUse": "La categoría \"{name}\" está en uso en sus movimientos e no puede ser eliminada.",
+    "movementsSaved": "¡Categorías financieras guardadas con éxito!"
   },
   "addAsset": {
     "title": "Añadir Patrimonio",
