@@ -172,6 +172,9 @@
     "actions": "Acciones",
     "save": "Guardar",
     "vsLastMonth": "vs el mes pasado",
-    "fromLastMonth": "desde el mes pasado"
+    "fromLastMonth": "desde el mes pasado",
+    "singleTab": "Una Movimentación",
+    "multipleTab": "Varias Movimentaciones",
+    "addNewLine": "Añadir Línea"
   }
 }
