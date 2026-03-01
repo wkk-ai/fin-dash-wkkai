@@ -41,6 +41,7 @@ export default function Header() {
     const navLinks = [
         { name: t("nav.dashboard"), href: "/" },
         { name: t("nav.portfolio"), href: "/portfolio" },
+        { name: t("nav.movements"), href: "/movements" },
         { name: t("nav.settings"), href: "/settings" },
     ];
 

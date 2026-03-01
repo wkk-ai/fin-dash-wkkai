@@ -15,6 +15,7 @@
     "portfolio": "Carteira",
     "settings": "Configurações",
     "addAsset": "Adicionar Patrimônio",
+    "movements": "Movimentações",
     "closeMenu": "Fechar menu",
     "openMenu": "Abrir menu de navegação",
     "selectLanguage": "Selecionar idioma"
@@ -145,6 +146,28 @@
     "projectedGrowth": "Crescimento Projetado",
     "compoundInterest": "Juros Compostos + Aportes Mensais",
     "invested": "Investido"
+  },
+  "movements": {
+    "title": "Minhas Movimentações",
+    "addMovement": "Adicionar Movimentação",
+    "totalIncome": "Receita Total",
+    "totalExpenses": "Despesa Total",
+    "savingsRate": "Taxa de Poupança",
+    "remainingBudget": "Orçamento Restante",
+    "incomeVsExpenses": "Receitas vs. Despesas",
+    "spendingByCategory": "Gastos por Categoria",
+    "budgetVsActual": "Orçamento vs. Realizado",
+    "topVendors": "Principais Recebedores",
+    "netCashFlow": "Fluxo de Caixa Líquido",
+    "description": "Descrição",
+    "category": "Categoria",
+    "value": "Valor",
+    "type": "Tipo",
+    "date": "Data",
+    "income": "Receita",
+    "expense": "Despesa",
+    "noData": "Nenhuma movimentação encontrada.",
+    "save": "Salvar Movimentação"
   },
   "toast": {
     "pendingChanges": "Alterações pendentes não foram salvas no banco de dados.",
