@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { AssetEntry } from "@/types/database";
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, ReferenceArea } from "recharts";
+import { useChartBrush } from "@/lib/useChartBrush";
 
 interface DashboardSectionProps {
     data: AssetEntry[];
@@ -108,6 +109,8 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
         name !== "—" && name.length > 5 ? `${name.slice(0, 5)}.` : name;
     const topGainerLabel = shouldAbbreviateAssets ? abbreviateAssetName(topGainerFullLabel) : topGainerFullLabel;
     const topLoserLabel = shouldAbbreviateAssets ? abbreviateAssetName(topLoserFullLabel) : topLoserFullLabel;
+
+    const wealthBrush = useChartBrush(wealthHistory, "value");
 
     return (
         <div className="flex flex-col gap-8">
@@ -231,9 +234,44 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t("dashboard.valueOverTime")}</p>
                         </div>
                     </div>
-                    <div className="flex-1 min-h-[300px] w-full relative">
+                    <div className="flex-1 min-h-[300px] w-full relative cursor-crosshair select-none">
+                        {wealthBrush.isDragging && wealthBrush.variation !== null && (
+                            <div
+                                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
+                                style={{
+                                    borderRadius: "8px",
+                                    border: `1px solid ${tooltipBorder}`,
+                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+                                    backgroundColor: tooltipBg,
+                                }}
+                            >
+                                <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                <span style={{ color: wealthBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
+                                    {formatCurrency(wealthBrush.variation.absolute)} ({wealthBrush.variation.percent >= 0 ? "+" : ""}{wealthBrush.variation.percent.toFixed(1)}%)
+                                </span>
+                            </div>
+                        )}
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={wealthHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart
+                                data={wealthHistory}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                onMouseDown={(state: any) =>
+                                    wealthBrush.start(
+                                        typeof state?.activeTooltipIndex === "number"
+                                            ? state.activeTooltipIndex
+                                            : null
+                                    )
+                                }
+                                onMouseMove={(state: any) =>
+                                    wealthBrush.update(
+                                        typeof state?.activeTooltipIndex === "number"
+                                            ? state.activeTooltipIndex
+                                            : null
+                                    )
+                                }
+                                onMouseUp={wealthBrush.end}
+                                onMouseLeave={wealthBrush.end}
+                            >
                                 <defs>
                                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
@@ -250,10 +288,24 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
-                                    formatter={(value: any) => [formatCurrency(value as number), t("dashboard.wealth")]}
-                                    contentStyle={{ borderRadius: '8px', border: `1px solid ${tooltipBorder}`, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.2)', backgroundColor: tooltipBg, color: tooltipTextColor }}
-                                    labelStyle={{ color: tooltipLabelColor }}
+                                    cursor={false}
+                                    content={({ active, payload }) => (wealthBrush.isDragging ? null : active && payload?.length ? (
+                                        <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
+                                            <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
+                                            <p>{t("dashboard.wealth")}: {formatCurrency(payload[0].value as number)}</p>
+                                        </div>
+                                    ) : null)}
+                                    wrapperStyle={{ zIndex: 9999 }}
                                 />
+                                {wealthBrush.startIndex !== null && wealthBrush.endIndex !== null && wealthHistory[wealthBrush.startIndex] && wealthHistory[wealthBrush.endIndex] && (
+                                    <ReferenceArea
+                                        x1={wealthHistory[wealthBrush.startIndex].name}
+                                        x2={wealthHistory[wealthBrush.endIndex].name}
+                                        fill="#137fec"
+                                        fillOpacity={0.15}
+                                        strokeOpacity={0}
+                                    />
+                                )}
                                 <Area
                                     type="monotone"
                                     dataKey="value"

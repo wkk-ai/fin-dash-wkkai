@@ -5,7 +5,8 @@ import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
+import { useChartBrush } from "@/lib/useChartBrush";
 
 export default function Portfolio() {
     const { t, formatCurrency } = useTranslation();
@@ -68,6 +69,7 @@ export default function Portfolio() {
     }, [data, filterClassification]);
 
     const isDark = resolvedTheme === "dark";
+    const portfolioBrush = useChartBrush(chartData, "value");
     const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
     const chartTickColor = isDark ? "#64748b" : "#94a3b8";
     const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
@@ -287,9 +289,44 @@ export default function Portfolio() {
                             </select>
                         </div>
                     </div>
-                    <div className="w-full h-[300px] relative">
+                    <div className="w-full h-[300px] relative cursor-crosshair select-none">
+                        {portfolioBrush.isDragging && portfolioBrush.variation !== null && (
+                            <div
+                                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
+                                style={{
+                                    borderRadius: "8px",
+                                    border: `1px solid ${tooltipBorder}`,
+                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+                                    backgroundColor: tooltipBg,
+                                }}
+                            >
+                                <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                <span style={{ color: portfolioBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
+                                    {formatCurrency(portfolioBrush.variation.absolute)} ({portfolioBrush.variation.percent >= 0 ? "+" : ""}{portfolioBrush.variation.percent.toFixed(1)}%)
+                                </span>
+                            </div>
+                        )}
                         <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <AreaChart
+                                data={chartData}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                onMouseDown={(state: any) =>
+                                    portfolioBrush.start(
+                                        typeof state?.activeTooltipIndex === "number"
+                                            ? state.activeTooltipIndex
+                                            : null
+                                    )
+                                }
+                                onMouseMove={(state: any) =>
+                                    portfolioBrush.update(
+                                        typeof state?.activeTooltipIndex === "number"
+                                            ? state.activeTooltipIndex
+                                            : null
+                                    )
+                                }
+                                onMouseUp={portfolioBrush.end}
+                                onMouseLeave={portfolioBrush.end}
+                            >
                                 <defs>
                                     <linearGradient id="colorPortfolioValue" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
@@ -306,10 +343,24 @@ export default function Portfolio() {
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
-                                    formatter={(value: unknown) => [formatCurrency(value as number), t("dashboard.wealth")]}
-                                    contentStyle={{ borderRadius: "8px", border: `1px solid ${tooltipBorder}`, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", backgroundColor: tooltipBg, color: tooltipTextColor }}
-                                    labelStyle={{ color: tooltipLabelColor }}
+                                    cursor={false}
+                                    content={({ active, payload }) => (portfolioBrush.isDragging ? null : active && payload?.length ? (
+                                        <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
+                                            <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
+                                            <p>{t("dashboard.wealth")}: {formatCurrency(payload[0].value as number)}</p>
+                                        </div>
+                                    ) : null)}
+                                    wrapperStyle={{ zIndex: 9999 }}
                                 />
+                                {portfolioBrush.startIndex !== null && portfolioBrush.endIndex !== null && chartData[portfolioBrush.startIndex] && chartData[portfolioBrush.endIndex] && (
+                                    <ReferenceArea
+                                        x1={chartData[portfolioBrush.startIndex].name}
+                                        x2={chartData[portfolioBrush.endIndex].name}
+                                        fill="#137fec"
+                                        fillOpacity={0.15}
+                                        strokeOpacity={0}
+                                    />
+                                )}
                                 <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorPortfolioValue)" />
                             </AreaChart>
                         </ResponsiveContainer>
