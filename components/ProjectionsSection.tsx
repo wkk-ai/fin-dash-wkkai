@@ -138,8 +138,11 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
                             <p className="text-sm text-slate-500 dark:text-slate-400">{t("projections.compoundInterest")}</p>
                         </div>
                     </div>
-                    <div className="flex-1 min-h-[350px] w-full relative cursor-crosshair select-none">
-                        {projectionBrush.isDragging && projectionBrush.variation !== null && (
+                    <div
+                        className="flex-1 min-h-[350px] w-full relative cursor-crosshair select-none"
+                        {...projectionBrush.containerHandlers}
+                    >
+                        {projectionBrush.variation && (
                             <div
                                 className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
                                 style={{
@@ -159,22 +162,7 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
                             <AreaChart
                                 data={projectionData}
                                 margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                                onMouseDown={(state: any) =>
-                                    projectionBrush.start(
-                                        typeof state?.activeTooltipIndex === "number"
-                                            ? state.activeTooltipIndex
-                                            : null
-                                    )
-                                }
-                                onMouseMove={(state: any) =>
-                                    projectionBrush.update(
-                                        typeof state?.activeTooltipIndex === "number"
-                                            ? state.activeTooltipIndex
-                                            : null
-                                    )
-                                }
-                                onMouseUp={projectionBrush.end}
-                                onMouseLeave={projectionBrush.end}
+                                {...projectionBrush.chartHandlers}
                             >
                                 <defs>
                                     <linearGradient id="colorValueProj" x1="0" y1="0" x2="0" y2="1">
@@ -207,10 +195,10 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
                                     ) : null)}
                                     wrapperStyle={{ zIndex: 9999 }}
                                 />
-                                {projectionBrush.startIndex !== null && projectionBrush.endIndex !== null && projectionData[projectionBrush.startIndex] && projectionData[projectionBrush.endIndex] && (
+                                {projectionBrush.selectionBounds && projectionData[projectionBrush.selectionBounds[0]] && projectionData[projectionBrush.selectionBounds[1]] && (
                                     <ReferenceArea
-                                        x1={projectionData[projectionBrush.startIndex].name}
-                                        x2={projectionData[projectionBrush.endIndex].name}
+                                        x1={projectionData[projectionBrush.selectionBounds[0]].name}
+                                        x2={projectionData[projectionBrush.selectionBounds[1]].name}
                                         fill="#137fec"
                                         fillOpacity={0.15}
                                         strokeOpacity={0}
