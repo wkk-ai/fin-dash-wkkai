@@ -2,8 +2,7 @@
 
 import { useTranslation } from "@/lib/i18n";
 import { MovementEntry } from "@/types/database";
-import { useState } from "react";
-import { DEFAULT_CATEGORIES } from "./AddMovementModal";
+import { useState, useEffect } from "react";
 
 interface Props {
     movements: MovementEntry[];
@@ -15,6 +14,19 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<MovementEntry | null>(null);
     const [loading, setLoading] = useState(false);
+
+    const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
+    const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
+
+    useEffect(() => {
+        fetch("/api/settings")
+            .then(res => res.json())
+            .then(data => {
+                setIncomeCategories(data.incomeCategories || []);
+                setExpenseCategories(data.expenseCategories || []);
+            })
+            .catch(err => console.error(err));
+    }, []);
 
     const handleEdit = (index: number) => {
         setEditingId(index);
@@ -113,7 +125,7 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                             value={editData?.Category}
                                             onChange={e => setEditData(prev => prev ? { ...prev, Category: e.target.value } : null)}
                                         >
-                                            {DEFAULT_CATEGORIES.map(c => (
+                                            {(editData?.Type === "Income" ? incomeCategories : expenseCategories).map(c => (
                                                 <option key={c} value={c}>{c}</option>
                                             ))}
                                         </select>
@@ -129,7 +141,15 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                             <select
                                                 className="bg-background border border-border rounded px-1 py-0.5 text-[10px] w-20"
                                                 value={editData?.Type}
-                                                onChange={e => setEditData(prev => prev ? { ...prev, Type: e.target.value as any } : null)}
+                                                onChange={e => {
+                                                    const newType = e.target.value as any;
+                                                    const cats = newType === "Income" ? incomeCategories : expenseCategories;
+                                                    setEditData(prev => prev ? {
+                                                        ...prev,
+                                                        Type: newType,
+                                                        Category: cats.length > 0 ? cats[0] : ""
+                                                    } : null);
+                                                }}
                                             >
                                                 <option value="Income">{t("movements.income")}</option>
                                                 <option value="Expense">{t("movements.expense")}</option>

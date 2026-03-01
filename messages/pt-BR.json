@@ -93,6 +93,11 @@
     "importErrorCsvFormat": "O formato do CSV está inválido. Verifique se todas as linhas têm exatamente 4 colunas e se não há vírgulas ou quebras de linha dentro dos valores.",
     "importErrorUnsupportedType": "Tipo de arquivo não suportado. Use um arquivo .csv, .xlsx ou .xls.",
     "importErrorNoFile": "Nenhum arquivo foi enviado.",
+    "financialCategories": "Categorias Financeiras",
+    "categoryPlaceholder": "Ex: Salário, Alimentação...",
+    "categoryInUse": "A categoria \"{name}\" está em uso em suas movimentações e não pode ser excluída.",
+    "incomeSaved": "Categorias de receitas salvas com sucesso!",
+    "expensesSaved": "Categorias de despesas salvas com sucesso!",
     "downloadData": "Baixar Dados",
     "downloadCsv": "Baixar como CSV",
     "downloadExcel": "Baixar como Excel"

@@ -13,18 +13,27 @@ import Papa from "papaparse";
 export default function Settings() {
     const { t } = useTranslation();
     const [data, setData] = useState<AssetEntry[]>([]);
-    const [settings, setSettings] = useState<{ classifications: string[]; assets: string[] }>({
+    const [settings, setSettings] = useState<{
+        classifications: string[];
+        assets: string[];
+        incomeCategories: string[];
+        expenseCategories: string[];
+    }>({
         classifications: [],
         assets: [],
+        incomeCategories: [],
+        expenseCategories: [],
     });
 
     // Values currently in the main CSV (cannot be deleted from settings)
     const [dbClassifications, setDbClassifications] = useState<string[]>([]);
     const [dbAssets, setDbAssets] = useState<string[]>([]);
+    const [dbIncomeCategories, setDbIncomeCategories] = useState<string[]>([]);
+    const [dbExpenseCategories, setDbExpenseCategories] = useState<string[]>([]);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [savingSettings, setSavingSettings] = useState<{ type: "class" | "asset" | null }>({ type: null });
+    const [savingSettings, setSavingSettings] = useState<{ type: "class" | "asset" | "income" | "expense" | null }>({ type: null });
     const [importingFile, setImportingFile] = useState(false);
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [exportDashboard, setExportDashboard] = useState(true);
@@ -50,6 +59,8 @@ export default function Settings() {
     // New option states
     const [newClassification, setNewClassification] = useState("");
     const [newAsset, setNewAsset] = useState("");
+    const [newIncomeCategory, setNewIncomeCategory] = useState("");
+    const [newExpenseCategory, setNewExpenseCategory] = useState("");
     const hasUserEditedRef = useRef(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,13 +102,27 @@ export default function Settings() {
             });
 
             setData(sortedData);
-            setSettings(setJson);
+            setSettings({
+                classifications: setJson.classifications || [],
+                assets: setJson.assets || [],
+                incomeCategories: setJson.incomeCategories || [],
+                expenseCategories: setJson.expenseCategories || [],
+            });
 
             // Extract what's currently in use in the DB
             const usedClasses = Array.from(new Set(dbJson.map(r => r.Classification))).filter(Boolean);
             const usedAssets = Array.from(new Set(dbJson.map(r => r.Asset))).filter(Boolean);
             setDbClassifications(usedClasses);
             setDbAssets(usedAssets);
+
+            // Fetch movements to see what categories are in use
+            const movRes = await fetch("/api/movements");
+            const movJson = await movRes.json();
+            const movements = movJson.movements || [];
+            const usedIncome = Array.from(new Set(movements.filter((m: any) => m.Type === "Income").map((m: any) => m.Category))).filter(Boolean);
+            const usedExpense = Array.from(new Set(movements.filter((m: any) => m.Type === "Expense").map((m: any) => m.Category))).filter(Boolean);
+            setDbIncomeCategories(usedIncome as string[]);
+            setDbExpenseCategories(usedExpense as string[]);
         } catch (e) {
             console.error(e);
         } finally {
@@ -166,10 +191,12 @@ export default function Settings() {
         }
     }, [data]);
 
-    const saveSettingsSection = async (type: "class" | "asset") => {
+    const saveSettingsSection = async (type: "class" | "asset" | "income" | "expense") => {
         const isClass = type === "class";
-        const currentList = isClass ? settings.classifications : settings.assets;
-        const dbList = isClass ? dbClassifications : dbAssets;
+        const isAsset = type === "asset";
+        const isIncome = type === "income";
+        const currentList = isClass ? settings.classifications : isAsset ? settings.assets : isIncome ? settings.incomeCategories : settings.expenseCategories;
+        const dbList = isClass ? dbClassifications : isAsset ? dbAssets : isIncome ? dbIncomeCategories : dbExpenseCategories;
 
         // Safety check: is any item from DB missing in current list?
         const missing = dbList.filter(item => !currentList.includes(item));
@@ -192,9 +219,14 @@ export default function Settings() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings),
             });
+            let msgKey = "settings.classificationsSaved";
+            if (isAsset) msgKey = "settings.assetsSaved";
+            if (isIncome) msgKey = "settings.incomeSaved";
+            if (type === "expense") msgKey = "settings.expensesSaved";
+
             window.dispatchEvent(
                 new CustomEvent("show-success-toast", {
-                    detail: { message: t(isClass ? "settings.classificationsSaved" : "settings.assetsSaved") }
+                    detail: { message: t(msgKey) }
                 })
             );
         } catch (e) {
@@ -250,6 +282,54 @@ export default function Settings() {
             return;
         }
         setSettings(prev => ({ ...prev, assets: prev.assets.filter(x => x !== a) }));
+    };
+
+    const addIncomeCategory = () => {
+        if (!newIncomeCategory) return;
+        if (settings.incomeCategories.includes(newIncomeCategory)) return;
+        setSettings(prev => ({
+            ...prev,
+            incomeCategories: [...prev.incomeCategories, newIncomeCategory].sort((a, b) => a.localeCompare(b))
+        }));
+        setNewIncomeCategory("");
+    };
+
+    const removeIncomeCategory = (c: string) => {
+        if (dbIncomeCategories.includes(c)) {
+            setModalConfig({
+                isOpen: true,
+                title: t("settings.cannotDelete"),
+                message: t("settings.categoryInUse", { name: c }),
+                confirmLabel: t("common.understood"),
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+            });
+            return;
+        }
+        setSettings(prev => ({ ...prev, incomeCategories: prev.incomeCategories.filter(x => x !== c) }));
+    };
+
+    const addExpenseCategory = () => {
+        if (!newExpenseCategory) return;
+        if (settings.expenseCategories.includes(newExpenseCategory)) return;
+        setSettings(prev => ({
+            ...prev,
+            expenseCategories: [...prev.expenseCategories, newExpenseCategory].sort((a, b) => a.localeCompare(b))
+        }));
+        setNewExpenseCategory("");
+    };
+
+    const removeExpenseCategory = (c: string) => {
+        if (dbExpenseCategories.includes(c)) {
+            setModalConfig({
+                isOpen: true,
+                title: t("settings.cannotDelete"),
+                message: t("settings.categoryInUse", { name: c }),
+                confirmLabel: t("common.understood"),
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+            });
+            return;
+        }
+        setSettings(prev => ({ ...prev, expenseCategories: prev.expenseCategories.filter(x => x !== c) }));
     };
 
     const handleDataChange = (index: number, field: keyof AssetEntry, value: string) => {
@@ -578,7 +658,7 @@ export default function Settings() {
     }
 
     return (
-        <div className="mx-auto max-w-7xl flex flex-col gap-8 pb-20">
+        <div className="w-full flex flex-col gap-8 pb-20">
             <div className="animate-in slide-in-from-bottom-2 fade-in duration-500">
                 <h1 className="text-3xl font-bold text-foreground">{t("settings.title")}</h1>
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-300 mt-1">
@@ -588,89 +668,183 @@ export default function Settings() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
 
-                {/* Classifications */}
-                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-foreground">{t("settings.classifications")}</h3>
-                        <button
-                            type="button"
-                            onClick={() => saveSettingsSection("class")}
-                            title={t("common.save")}
-                            className="p-2 rounded-lg hover:bg-border text-slate-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
-                            disabled={savingSettings.type === "class"}
-                        >
-                            <span className={cn(
-                                "material-symbols-outlined text-[20px]",
-                                savingSettings.type === "class" && "animate-pulse"
-                            )}>
-                                save
-                            </span>
-                        </button>
-                    </div>
-                    <div className="flex gap-2 mb-4">
-                        <input
-                            value={newClassification}
-                            onChange={e => setNewClassification(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && addClassification()}
-                            placeholder={t("settings.classPlaceholder")}
-                            className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
-                        <button type="button" onClick={addClassification} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
-                            {t("common.add")}
-                        </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {settings.classifications?.map(c => (
-                            <div key={c} className="flex items-center gap-1 bg-border text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
-                                {c}
-                                <button type="button" onClick={() => removeClassification(c)} className="hover:text-red-500 ml-1 cursor-pointer">
-                                    <span className="material-symbols-outlined text-[16px] leading-none">close</span>
+                {/* Patrimônio Container */}
+                <div className="flex flex-col gap-6">
+                    <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
+                        <div className="flex items-center gap-2 mb-6 text-primary border-b border-border pb-4">
+                            <span className="material-symbols-outlined text-[24px]">account_balance_wallet</span>
+                            <h3 className="text-xl font-bold text-foreground">Patrimônio</h3>
+                        </div>
+
+                        {/* Classifications */}
+                        <div className="flex flex-col mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">{t("settings.classifications")}</h4>
+                                <button
+                                    type="button"
+                                    onClick={() => saveSettingsSection("class")}
+                                    className="p-1.5 rounded-lg hover:bg-border text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                    disabled={savingSettings.type === "class"}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px]",
+                                        savingSettings.type === "class" && "animate-pulse"
+                                    )}>save</span>
                                 </button>
                             </div>
-                        ))}
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    value={newClassification}
+                                    onChange={e => setNewClassification(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addClassification()}
+                                    placeholder={t("settings.classPlaceholder")}
+                                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <button type="button" onClick={addClassification} className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                                    Adicionar
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[40px]">
+                                {settings.classifications?.map(c => (
+                                    <div key={c} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
+                                        {c}
+                                        <button type="button" onClick={() => removeClassification(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                            <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Assets */}
+                        <div className="flex flex-col">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">{t("settings.assets")}</h4>
+                                <button
+                                    type="button"
+                                    onClick={() => saveSettingsSection("asset")}
+                                    className="p-1.5 rounded-lg hover:bg-border text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                    disabled={savingSettings.type === "asset"}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px]",
+                                        savingSettings.type === "asset" && "animate-pulse"
+                                    )}>save</span>
+                                </button>
+                            </div>
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    value={newAsset}
+                                    onChange={e => setNewAsset(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addAsset()}
+                                    placeholder={t("settings.assetPlaceholder")}
+                                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <button type="button" onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                                    Adicionar
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[40px]">
+                                {settings.assets?.map(a => (
+                                    <div key={a} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
+                                        {a}
+                                        <button type="button" onClick={() => removeAsset(a)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                            <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Assets */}
-                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-bold text-foreground">{t("settings.assets")}</h3>
-                        <button
-                            type="button"
-                            onClick={() => saveSettingsSection("asset")}
-                            title={t("common.save")}
-                            className="p-2 rounded-lg hover:bg-border text-slate-500 hover:text-primary transition-colors cursor-pointer disabled:opacity-50"
-                            disabled={savingSettings.type === "asset"}
-                        >
-                            <span className={cn(
-                                "material-symbols-outlined text-[20px]",
-                                savingSettings.type === "asset" && "animate-pulse"
-                            )}>
-                                save
-                            </span>
-                        </button>
-                    </div>
-                    <div className="flex gap-2 mb-4">
-                        <input
-                            value={newAsset}
-                            onChange={e => setNewAsset(e.target.value)}
-                            onKeyDown={e => e.key === "Enter" && addAsset()}
-                            placeholder={t("settings.assetPlaceholder")}
-                            className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
-                        <button type="button" onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer">
-                            {t("common.add")}
-                        </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {settings.assets?.map(a => (
-                            <div key={a} className="flex items-center gap-1 bg-border text-foreground px-3 py-1.5 rounded-full text-sm font-medium">
-                                {a}
-                                <button type="button" onClick={() => removeAsset(a)} className="hover:text-red-500 ml-1 cursor-pointer">
-                                    <span className="material-symbols-outlined text-[16px] leading-none">close</span>
+                {/* Financeiro Container */}
+                <div className="flex flex-col gap-6">
+                    <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
+                        <div className="flex items-center gap-2 mb-6 text-primary border-b border-border pb-4">
+                            <span className="material-symbols-outlined text-[24px]">payments</span>
+                            <h3 className="text-xl font-bold text-foreground">Financeiro</h3>
+                        </div>
+
+                        {/* Income Categories */}
+                        <div className="flex flex-col mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">Receitas</h4>
+                                <button
+                                    type="button"
+                                    onClick={() => saveSettingsSection("income")}
+                                    className="p-1.5 rounded-lg hover:bg-border text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                    disabled={savingSettings.type === "income"}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px]",
+                                        savingSettings.type === "income" && "animate-pulse"
+                                    )}>save</span>
                                 </button>
                             </div>
-                        ))}
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    value={newIncomeCategory}
+                                    onChange={e => setNewIncomeCategory(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addIncomeCategory()}
+                                    placeholder="Ex: Salário"
+                                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <button type="button" onClick={addIncomeCategory} className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                                    Adicionar
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[40px]">
+                                {settings.incomeCategories?.map(c => (
+                                    <div key={c} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
+                                        {c}
+                                        <button type="button" onClick={() => removeIncomeCategory(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                            <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Expense Categories */}
+                        <div className="flex flex-col">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">Despesas</h4>
+                                <button
+                                    type="button"
+                                    onClick={() => saveSettingsSection("expense")}
+                                    className="p-1.5 rounded-lg hover:bg-border text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                    disabled={savingSettings.type === "expense"}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px]",
+                                        savingSettings.type === "expense" && "animate-pulse"
+                                    )}>save</span>
+                                </button>
+                            </div>
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    value={newExpenseCategory}
+                                    onChange={e => setNewExpenseCategory(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addExpenseCategory()}
+                                    placeholder="Ex: Alimentação"
+                                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <button type="button" onClick={addExpenseCategory} className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                                    Adicionar
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[40px]">
+                                {settings.expenseCategories?.map(c => (
+                                    <div key={c} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
+                                        {c}
+                                        <button type="button" onClick={() => removeExpenseCategory(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                            <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -680,7 +854,7 @@ export default function Settings() {
                 <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-background/50">
                     <div>
                         <h3 className="text-lg font-bold text-foreground">{t("settings.rawDatabase")}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-300">{t("settings.editCells")}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">{t("settings.editCells")}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
