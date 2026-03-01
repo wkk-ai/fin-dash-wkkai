@@ -145,7 +145,7 @@ export default function AddMovementModal({ onClose }: Props) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">{t("movements.description")}</label>
+                            <label className="block text-sm font-medium text-foreground mb-1">{t("movements.descriptionTable")}</label>
                             <input
                                 type="text"
                                 required
@@ -165,7 +165,6 @@ export default function AddMovementModal({ onClose }: Props) {
                                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                 disabled={loadingCategories}
                             >
-                                <option value="">{loadingCategories ? "Loading..." : t("common.select")}</option>
                                 {(data.Type === "Income" ? incomeCategories : expenseCategories).map(c => (
                                     <option key={c} value={c}>{c}</option>
                                 ))}
