@@ -215,7 +215,7 @@ export default function Portfolio() {
                                                         ? (variation! / prevValue) * 100
                                                         : null;
 
-                                                const rowHover = "group-hover:bg-slate-200 dark:group-hover:bg-white/10";
+                                                const rowHover = "group-hover:bg-slate-100 dark:group-hover:bg-slate-800";
                                                 return (
                                                     <tr key={`${asset.Asset}-${idx}`} className="group transition-colors">
                                                         <td className={`px-6 py-4 font-medium text-foreground flex items-center gap-3 ${rowHover}`}>
@@ -230,11 +230,10 @@ export default function Portfolio() {
                                                         <td className={`px-6 py-4 text-right ${rowHover}`}>
                                                             {variationPct !== null ? (
                                                                 <span
-                                                                    className={`font-medium ${
-                                                                        variationPct >= 0
-                                                                            ? "text-green-600 dark:text-green-400"
-                                                                            : "text-red-500 dark:text-red-400"
-                                                                    }`}
+                                                                    className={`font-medium ${variationPct >= 0
+                                                                        ? "text-green-600 dark:text-green-400"
+                                                                        : "text-red-500 dark:text-red-400"
+                                                                        }`}
                                                                 >
                                                                     {variationPct >= 0 ? "+" : ""}
                                                                     {variationPct.toFixed(1)}%
@@ -260,113 +259,101 @@ export default function Portfolio() {
                     })
                 )}
 
-            {/* Evolution Chart with Filters */}
-            {uniqueDates.length > 0 && (
-                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <h3 className="text-lg font-bold text-foreground">{t("portfolio.evolutionChart")}</h3>
-                        <div className="flex items-center gap-2">
-                            <select
-                                value={filterClassification}
-                                onChange={(e) => setClassification(e.target.value)}
-                                className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
-                            >
-                                <option value="">{t("portfolio.allClassifications")}</option>
-                                {classifications.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                            <span className="text-slate-400 text-sm">/</span>
-                            <select
-                                value={filterAsset}
-                                onChange={(e) => setFilterAsset(e.target.value)}
-                                className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
-                            >
-                                <option value="">{t("portfolio.allAssets")}</option>
-                                {assetsList.map((a) => (
-                                    <option key={a} value={a}>{a}</option>
-                                ))}
-                            </select>
+                {/* Evolution Chart with Filters */}
+                {uniqueDates.length > 0 && (
+                    <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                            <h3 className="text-lg font-bold text-foreground">{t("portfolio.evolutionChart")}</h3>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={filterClassification}
+                                    onChange={(e) => setClassification(e.target.value)}
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                >
+                                    <option value="">{t("portfolio.allClassifications")}</option>
+                                    {classifications.map((c) => (
+                                        <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                                <span className="text-slate-400 text-sm">/</span>
+                                <select
+                                    value={filterAsset}
+                                    onChange={(e) => setFilterAsset(e.target.value)}
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
+                                >
+                                    <option value="">{t("portfolio.allAssets")}</option>
+                                    {assetsList.map((a) => (
+                                        <option key={a} value={a}>{a}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div
+                            className="w-full h-[300px] relative cursor-crosshair select-none"
+                            {...portfolioBrush.containerHandlers}
+                        >
+                            {portfolioBrush.variation && (
+                                <div
+                                    className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
+                                    style={{
+                                        borderRadius: "8px",
+                                        border: `1px solid ${tooltipBorder}`,
+                                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
+                                        backgroundColor: tooltipBg,
+                                    }}
+                                >
+                                    <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                    <span style={{ color: portfolioBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
+                                        {formatCurrency(portfolioBrush.variation.absolute)} ({portfolioBrush.variation.percent >= 0 ? "+" : ""}{portfolioBrush.variation.percent.toFixed(1)}%)
+                                    </span>
+                                </div>
+                            )}
+                            <ResponsiveContainer width="100%" height={300}>
+                                <AreaChart
+                                    data={chartData}
+                                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                    {...portfolioBrush.chartHandlers}
+                                >
+                                    <defs>
+                                        <linearGradient id="colorPortfolioValue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
+                                    <YAxis
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                                        stroke={chartTickColor}
+                                    />
+                                    <RechartsTooltip
+                                        cursor={false}
+                                        content={({ active, payload }) => (portfolioBrush.isDragging ? null : active && payload?.length ? (
+                                            <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
+                                                <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
+                                                <p>{t("dashboard.wealth")}: {formatCurrency(payload[0].value as number)}</p>
+                                            </div>
+                                        ) : null)}
+                                        wrapperStyle={{ zIndex: 9999 }}
+                                    />
+                                    {portfolioBrush.selectionBounds && chartData[portfolioBrush.selectionBounds[0]] && chartData[portfolioBrush.selectionBounds[1]] && (
+                                        <ReferenceArea
+                                            x1={chartData[portfolioBrush.selectionBounds[0]].name}
+                                            x2={chartData[portfolioBrush.selectionBounds[1]].name}
+                                            fill="#137fec"
+                                            fillOpacity={0.15}
+                                            strokeOpacity={0}
+                                        />
+                                    )}
+                                    <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorPortfolioValue)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                    <div className="w-full h-[300px] relative cursor-crosshair select-none">
-                        {portfolioBrush.isDragging && portfolioBrush.variation !== null && (
-                            <div
-                                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 rounded-lg px-3 py-2 border shadow text-sm font-medium pointer-events-none"
-                                style={{
-                                    borderRadius: "8px",
-                                    border: `1px solid ${tooltipBorder}`,
-                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)",
-                                    backgroundColor: tooltipBg,
-                                }}
-                            >
-                                <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
-                                <span style={{ color: portfolioBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
-                                    {formatCurrency(portfolioBrush.variation.absolute)} ({portfolioBrush.variation.percent >= 0 ? "+" : ""}{portfolioBrush.variation.percent.toFixed(1)}%)
-                                </span>
-                            </div>
-                        )}
-                        <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart
-                                data={chartData}
-                                margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                                onMouseDown={(state: any) =>
-                                    portfolioBrush.start(
-                                        typeof state?.activeTooltipIndex === "number"
-                                            ? state.activeTooltipIndex
-                                            : null
-                                    )
-                                }
-                                onMouseMove={(state: any) =>
-                                    portfolioBrush.update(
-                                        typeof state?.activeTooltipIndex === "number"
-                                            ? state.activeTooltipIndex
-                                            : null
-                                    )
-                                }
-                                onMouseUp={portfolioBrush.end}
-                                onMouseLeave={portfolioBrush.end}
-                            >
-                                <defs>
-                                    <linearGradient id="colorPortfolioValue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#137fec" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#137fec" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
-                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke={chartTickColor} />
-                                <YAxis
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                                    stroke={chartTickColor}
-                                />
-                                <RechartsTooltip
-                                    cursor={false}
-                                    content={({ active, payload }) => (portfolioBrush.isDragging ? null : active && payload?.length ? (
-                                        <div className="rounded-lg px-3 py-2 border shadow" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.2)", color: tooltipTextColor }}>
-                                            <p style={{ color: tooltipLabelColor }}>{payload[0].payload?.name}</p>
-                                            <p>{t("dashboard.wealth")}: {formatCurrency(payload[0].value as number)}</p>
-                                        </div>
-                                    ) : null)}
-                                    wrapperStyle={{ zIndex: 9999 }}
-                                />
-                                {portfolioBrush.startIndex !== null && portfolioBrush.endIndex !== null && chartData[portfolioBrush.startIndex] && chartData[portfolioBrush.endIndex] && (
-                                    <ReferenceArea
-                                        x1={chartData[portfolioBrush.startIndex].name}
-                                        x2={chartData[portfolioBrush.endIndex].name}
-                                        fill="#137fec"
-                                        fillOpacity={0.15}
-                                        strokeOpacity={0}
-                                    />
-                                )}
-                                <Area type="monotone" dataKey="value" stroke="#137fec" strokeWidth={3} fillOpacity={1} fill="url(#colorPortfolioValue)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-            )}
+                )}
             </div>
         </div>
     );
