@@ -98,11 +98,14 @@
   },
   "addAsset": {
     "title": "Add Asset",
+    "singleTab": "Single Asset",
+    "multipleTab": "Multiple Assets",
+    "addNewLine": "Add New Line",
     "date": "Date",
     "classification": "Classification",
     "assetInstitution": "Asset/Institution",
-    "valueBRL": "Value ($)",
-    "valuePlaceholder": "E.g.: 350000",
+    "valueBRL": "Value (BRL)",
+    "valuePlaceholder": "Ex: 350000",
     "saving": "Saving..."
   },
   "dashboard": {

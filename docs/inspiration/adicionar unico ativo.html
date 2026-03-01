@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Adicionar Patrimônio - Dashboard Financeiro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3B82F6",
+                        "background-light": "#F9FAFB",
+                        "background-dark": "#111827",
+                        "card-light": "#FFFFFF",
+                        "card-dark": "#1F2937",
+                        "input-light": "#F3F4F6",
+                        "input-dark": "#111827",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem",
+                    },
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex items-center justify-center p-4 transition-colors duration-200">
+<div class="w-full max-w-lg bg-card-light dark:bg-card-dark rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+<div class="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Adicionar Patrimônio</h2>
+<button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+<span class="material-icons-round">close</span>
+</button>
+</div>
+<div class="flex border-b border-gray-100 dark:border-gray-800">
+<button class="flex-1 py-3 px-4 text-sm font-medium text-primary border-b-2 border-primary">
+                Ativo Único
+            </button>
+<button class="flex-1 py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                Vários Ativos
+            </button>
+</div>
+<form class="p-6 space-y-5">
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="date">Data</label>
+<div class="relative">
+<input class="w-full bg-input-light dark:bg-input-dark border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary focus:border-primary transition-colors pr-10" id="date" type="date" value="2026-03-01"/>
+<span class="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xl">calendar_today</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="classification">Classificação</label>
+<div class="relative">
+<select class="w-full appearance-none bg-input-light dark:bg-input-dark border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary focus:border-primary transition-colors py-2.5 px-3" id="classification">
+<option>Fixed Income</option>
+<option>Variable Income</option>
+<option>Cryptocurrency</option>
+<option>Real Estate</option>
+</select>
+<span class="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="asset">Ativo/Instituição</label>
+<div class="relative">
+<select class="w-full appearance-none bg-input-light dark:bg-input-dark border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary focus:border-primary transition-colors py-2.5 px-3" id="asset">
+<option>Binance</option>
+<option>Coinbase</option>
+<option>Nubank</option>
+<option>XP Investimentos</option>
+</select>
+<span class="material-icons-round absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300" for="value">Valor (R$)</label>
+<div class="relative">
+<input class="w-full bg-input-light dark:bg-input-dark border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary focus:border-primary transition-colors py-2.5 px-3 [appearance:textfield] [&amp;::-webkit-outer-spin-button]:appearance-none [&amp;::-webkit-inner-spin-button]:appearance-none" id="value" placeholder="Ex: 350000" type="number"/>
+<div class="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col items-center bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-1 border border-gray-200 dark:border-gray-700">
+<button class="text-gray-500 hover:text-primary leading-none transition-colors" type="button">
+<span class="material-icons-round text-lg">expand_less</span>
+</button>
+<button class="text-gray-500 hover:text-primary leading-none transition-colors" type="button">
+<span class="material-icons-round text-lg">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end space-x-4 pt-4 mt-2">
+<button class="px-6 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" type="button">
+                    Cancelar
+                </button>
+<button class="px-8 py-2.5 bg-primary hover:bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-500/20 active:transform active:scale-95 transition-all" type="submit">
+                    Adicionar
+                </button>
+</div>
+</form>
+</div>
+<div class="fixed bottom-4 right-4">
+<button class="p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:scale-110 transition-transform" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-icons-round block dark:hidden">dark_mode</span>
+<span class="material-icons-round hidden dark:block">light_mode</span>
+</button>
+</div>
+<script>
+        // Set initial theme to dark as per request context
+        document.documentElement.classList.add('dark');
+    </script>
+
+</body></html>
