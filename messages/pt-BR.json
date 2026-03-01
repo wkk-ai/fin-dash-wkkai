@@ -98,6 +98,9 @@
   },
   "addAsset": {
     "title": "Adicionar Patrimônio",
+    "singleTab": "Ativo Único",
+    "multipleTab": "Vários Ativos",
+    "addNewLine": "Adicionar Nova Linha",
     "date": "Data",
     "classification": "Classificação",
     "assetInstitution": "Ativo/Instituição",
