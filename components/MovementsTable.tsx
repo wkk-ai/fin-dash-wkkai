@@ -18,6 +18,38 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
     const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
 
+    const parseCustomDate = (dateStr: string) => {
+        if (!dateStr) return new Date();
+        const parts = dateStr.split('/');
+        if (parts.length < 3) return new Date();
+        const day = parseInt(parts[0], 10);
+        const monthStr = parts[1];
+        const year = parseInt(`20${parts[2]}`, 10);
+        const months: Record<string, number> = {
+            Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
+        };
+        return new Date(year, months[monthStr], day);
+    };
+
+    const csvDateToInputDate = (csvDate: string): string => {
+        const d = parseCustomDate(csvDate);
+        if (Number.isNaN(d.getTime())) return "";
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    };
+
+    const inputDateToCsvDate = (inputDate: string): string => {
+        if (!inputDate) return "";
+        const d = new Date(`${inputDate}T00:00:00`);
+        if (Number.isNaN(d.getTime())) return "";
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = d.toLocaleString("en-US", { month: "short" });
+        const year = String(d.getFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+    };
+
     useEffect(() => {
         fetch("/api/settings")
             .then(res => res.json())
@@ -80,37 +112,37 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
             <div className="px-6 py-4 border-b border-border">
                 <h3 className="text-lg font-bold text-foreground">{t("movements.history")}</h3>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-border text-xs font-bold text-slate-500 uppercase tracking-wider">
-                            <th className="px-6 py-3 w-32">{t("movements.date")}</th>
-                            <th className="px-6 py-3">{t("movements.descriptionTable")}</th>
-                            <th className="px-6 py-3 w-48">{t("movements.category")}</th>
-                            <th className="px-6 py-3 w-40 text-right">{t("movements.value")}</th>
-                            <th className="px-6 py-3 w-32 text-center">{t("movements.actions")}</th>
+            <div className="overflow-x-auto max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                <table className="w-full text-left border-separate border-spacing-0">
+                    <thead className="sticky top-0 z-10 shadow-sm font-bold">
+                        <tr className="text-xs uppercase text-slate-500 tracking-wider">
+                            <th className="px-6 py-3 w-32 bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.date")}</th>
+                            <th className="px-6 py-3 bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.descriptionTable")}</th>
+                            <th className="px-6 py-3 w-48 bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.category")}</th>
+                            <th className="px-6 py-3 w-40 text-right bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.value")}</th>
+                            <th className="px-6 py-3 w-32 text-center bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.actions")}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                         {movements.map((movement, index) => (
-                            <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                            <tr key={index} className="hover:bg-blue-50/50 dark:hover:bg-white/5 transition-colors group">
+                                <td className="px-6 py-1.5 text-sm text-slate-600 dark:text-slate-400">
                                     {editingId === index ? (
                                         <input
-                                            type="text"
-                                            className="bg-background border border-border rounded px-2 py-1 w-full"
-                                            value={editData?.Date}
-                                            onChange={e => setEditData(prev => prev ? { ...prev, Date: e.target.value } : null)}
+                                            type="date"
+                                            className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-sm"
+                                            value={csvDateToInputDate(editData?.Date || "")}
+                                            onChange={e => setEditData(prev => prev ? { ...prev, Date: inputDateToCsvDate(e.target.value) } : null)}
                                         />
                                     ) : (
                                         movement.Date
                                     )}
                                 </td>
-                                <td className="px-6 py-4 text-sm font-medium text-foreground">
+                                <td className="px-6 py-1.5 text-sm font-medium text-foreground">
                                     {editingId === index ? (
                                         <input
                                             type="text"
-                                            className="bg-background border border-border rounded px-2 py-1 w-full"
+                                            className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-sm"
                                             value={editData?.Description}
                                             onChange={e => setEditData(prev => prev ? { ...prev, Description: e.target.value } : null)}
                                         />
@@ -118,10 +150,10 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                         movement.Description
                                     )}
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-1.5">
                                     {editingId === index ? (
                                         <select
-                                            className="bg-background border border-border rounded px-2 py-1 w-full text-xs"
+                                            className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-sm font-medium"
                                             value={editData?.Category}
                                             onChange={e => setEditData(prev => prev ? { ...prev, Category: e.target.value } : null)}
                                         >
@@ -130,16 +162,16 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                             ))}
                                         </select>
                                     ) : (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                        <span className="text-sm font-medium text-foreground">
                                             {movement.Category}
                                         </span>
                                     )}
                                 </td>
-                                <td className="px-6 py-4 text-sm font-bold text-right">
+                                <td className="px-6 py-1.5 text-sm font-bold text-right">
                                     {editingId === index ? (
                                         <div className="flex flex-col gap-1 items-end">
                                             <select
-                                                className="bg-background border border-border rounded px-1 py-0.5 text-[10px] w-20"
+                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 text-[10px] w-20"
                                                 value={editData?.Type}
                                                 onChange={e => {
                                                     const newType = e.target.value as any;
@@ -156,7 +188,7 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                             </select>
                                             <input
                                                 type="number"
-                                                className={`bg-background border border-border rounded px-2 py-1 w-24 text-right ${editData?.Type === "Income" ? "text-green-500" : "text-red-500"}`}
+                                                className={`bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-24 text-right ${editData?.Type === "Income" ? "text-green-500" : "text-red-500"}`}
                                                 value={editData?.Value}
                                                 onChange={e => setEditData(prev => prev ? { ...prev, Value: Number(e.target.value) } : null)}
                                             />
@@ -167,7 +199,7 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                         </span>
                                     )}
                                 </td>
-                                <td className="px-6 py-4 text-center">
+                                <td className="px-6 py-1.5 text-center">
                                     {editingId === index ? (
                                         <div className="flex justify-center gap-2">
                                             <button onClick={handleSave} disabled={loading} className="text-green-500 hover:text-green-600 transition-colors">

@@ -63,6 +63,7 @@ export default function Settings() {
     const [newExpenseCategory, setNewExpenseCategory] = useState("");
     const hasUserEditedRef = useRef(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
 
     const csvDateToInputDate = (csvDate: string): string => {
         const d = parseCustomDate(csvDate);
@@ -921,74 +922,104 @@ export default function Settings() {
                     />
                 </div>
 
-                <div className="overflow-x-auto max-h-[600px] overflow-y-auto relative">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 z-20 bg-surface shadow-sm">
-                            <tr className="text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                <th className="px-4 py-3 border-b border-border bg-surface">{t("common.actions")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.date")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.classification")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.asset")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface">{t("settings.value")}</th>
+                <div className="overflow-x-auto max-h-[400px] overflow-y-auto relative scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                    <table className="w-full text-left border-separate border-spacing-0">
+                        <thead className="sticky top-0 z-20 bg-surface shadow-sm font-bold">
+                            <tr className="text-xs uppercase text-slate-500 tracking-wider">
+                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0">{t("settings.date")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0">{t("settings.classification")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0">{t("settings.asset")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 text-right">{t("settings.value")}</th>
+                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 text-center">{t("common.actions")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border text-sm">
                             {data.map((row, index) => (
-                                <tr key={`${row.Date}-${row.Asset}-${index}`} className="hover:bg-background-light dark:hover:bg-white/5 transition-colors group">
-                                    <td className="px-4 py-2 w-16">
-                                        <button
-                                            type="button"
-                                            onClick={(e) => deleteRow(e, index)}
-                                            className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-500/10 cursor-pointer"
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                                        </button>
+                                <tr key={`${row.Date}-${row.Asset}-${index}`} className="hover:bg-blue-50/50 dark:hover:bg-white/5 transition-colors group">
+                                    <td className="px-4 py-1">
+                                        {editingRowIndex === index ? (
+                                            <input
+                                                type="date"
+                                                value={csvDateToInputDate(row.Date)}
+                                                onChange={(e) => handleDataChange(index, "Date", inputDateToCsvDate(e.target.value))}
+                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-foreground"
+                                            />
+                                        ) : (
+                                            <span className="text-slate-600 dark:text-slate-400">{row.Date}</span>
+                                        )}
                                     </td>
-                                    <td className="px-4 py-2">
-                                        <input
-                                            type="date"
-                                            value={csvDateToInputDate(row.Date)}
-                                            onChange={(e) => handleDataChange(index, "Date", inputDateToCsvDate(e.target.value))}
-                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
-                                        />
+                                    <td className="px-4 py-1">
+                                        {editingRowIndex === index ? (
+                                            <select
+                                                value={row.Classification}
+                                                onChange={(e) => handleDataChange(index, "Classification", e.target.value)}
+                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-foreground"
+                                            >
+                                                <option value={row.Classification}>{row.Classification}</option>
+                                                {settings.classifications
+                                                    .filter(c => c !== row.Classification)
+                                                    .sort((a, b) => a.localeCompare(b))
+                                                    .map(c => (
+                                                        <option key={c} value={c}>{c}</option>
+                                                    ))}
+                                            </select>
+                                        ) : (
+                                            <span className="font-medium text-foreground">{row.Classification}</span>
+                                        )}
                                     </td>
-                                    <td className="px-4 py-2">
-                                        <select
-                                            value={row.Classification}
-                                            onChange={(e) => handleDataChange(index, "Classification", e.target.value)}
-                                            className="bg-surface w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
-                                        >
-                                            <option value={row.Classification}>{row.Classification}</option>
-                                            {settings.classifications
-                                                .filter(c => c !== row.Classification)
-                                                .sort((a, b) => a.localeCompare(b))
-                                                .map(c => (
-                                                    <option key={c} value={c}>{c}</option>
-                                                ))}
-                                        </select>
+                                    <td className="px-4 py-1">
+                                        {editingRowIndex === index ? (
+                                            <select
+                                                value={row.Asset}
+                                                onChange={(e) => handleDataChange(index, "Asset", e.target.value)}
+                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-foreground"
+                                            >
+                                                <option value={row.Asset}>{row.Asset}</option>
+                                                {settings.assets
+                                                    .filter(a => a !== row.Asset)
+                                                    .sort((a, b) => a.localeCompare(b))
+                                                    .map(a => (
+                                                        <option key={a} value={a}>{a}</option>
+                                                    ))}
+                                            </select>
+                                        ) : (
+                                            <span className="font-medium text-foreground">{row.Asset}</span>
+                                        )}
                                     </td>
-                                    <td className="px-4 py-2">
-                                        <select
-                                            value={row.Asset}
-                                            onChange={(e) => handleDataChange(index, "Asset", e.target.value)}
-                                            className="bg-surface w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground"
-                                        >
-                                            <option value={row.Asset}>{row.Asset}</option>
-                                            {settings.assets
-                                                .filter(a => a !== row.Asset)
-                                                .sort((a, b) => a.localeCompare(b))
-                                                .map(a => (
-                                                    <option key={a} value={a}>{a}</option>
-                                                ))}
-                                        </select>
+                                    <td className="px-4 py-1 text-right">
+                                        {editingRowIndex === index ? (
+                                            <FormattedNumberInput
+                                                value={row.Value}
+                                                onChange={n => handleDataChange(index, "Value", String(n))}
+                                                compactSpinner
+                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-right text-foreground font-medium"
+                                            />
+                                        ) : (
+                                            <span className="font-bold text-foreground">{formatCurrency(row.Value)}</span>
+                                        )}
                                     </td>
-                                    <td className="px-4 py-2">
-                                        <FormattedNumberInput
-                                            value={row.Value}
-                                            onChange={n => handleDataChange(index, "Value", String(n))}
-                                            compactSpinner
-                                            className="bg-transparent w-full focus:outline-none focus:border-primary border-b border-transparent py-1 text-foreground font-medium"
-                                        />
+                                    <td className="px-4 py-1 text-center">
+                                        <div className="flex justify-center gap-2">
+                                            {editingRowIndex === index ? (
+                                                <>
+                                                    <button onClick={() => setEditingRowIndex(null)} className="text-green-500 hover:text-green-600 transition-colors">
+                                                        <span className="material-symbols-outlined text-lg">check_circle</span>
+                                                    </button>
+                                                    <button onClick={() => setEditingRowIndex(null)} className="text-slate-400 hover:text-slate-500">
+                                                        <span className="material-symbols-outlined text-lg">cancel</span>
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button onClick={() => setEditingRowIndex(index)} className="text-primary hover:text-primary/80 transition-colors">
+                                                        <span className="material-symbols-outlined text-lg">edit</span>
+                                                    </button>
+                                                    <button onClick={(e) => deleteRow(e, index)} className="text-slate-400 hover:text-red-500 transition-colors">
+                                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
