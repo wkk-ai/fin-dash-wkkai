@@ -6,6 +6,7 @@ import { useTranslation } from "@/lib/i18n";
 import { formatCurrency, parseCustomDate, cn } from "@/lib/utils";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import Portal from "@/components/Portal";
 import { loadPendingData, savePendingData, clearPendingData } from "@/lib/pending-storage";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
@@ -38,6 +39,7 @@ export default function Settings() {
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [exportDashboard, setExportDashboard] = useState(true);
     const [exportPortfolio, setExportPortfolio] = useState(false);
+    const [exportMovements, setExportMovements] = useState(false);
     const [exportingPdf, setExportingPdf] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
@@ -513,6 +515,7 @@ export default function Settings() {
         const selectedRoutes: string[] = [];
         if (exportDashboard) selectedRoutes.push("/");
         if (exportPortfolio) selectedRoutes.push("/portfolio");
+        if (exportMovements) selectedRoutes.push("/movements");
         if (!selectedRoutes.length) return;
 
         setExportingPdf(true);
@@ -1040,56 +1043,67 @@ export default function Settings() {
             </div>
 
             {isExportDialogOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-background/60 backdrop-blur-sm"
-                        onClick={() => !exportingPdf && setIsExportDialogOpen(false)}
-                    />
-                    <div className="relative w-full max-w-md rounded-2xl bg-surface border border-border shadow-2xl p-6">
-                        <h3 className="text-xl font-bold text-foreground mb-2">{t("settings.exportPdf")}</h3>
-                        <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">{t("settings.selectTabsToExport")}</p>
+                <Portal>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div
+                            className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+                            onClick={() => !exportingPdf && setIsExportDialogOpen(false)}
+                        />
+                        <div className="relative w-full max-w-md rounded-2xl bg-surface border border-border shadow-2xl p-6">
+                            <h3 className="text-xl font-bold text-foreground mb-2">{t("settings.exportPdf")}</h3>
+                            <p className="text-sm text-slate-700 dark:text-slate-300 mb-4">{t("settings.selectTabsToExport")}</p>
 
-                        <div className="space-y-3 mb-6">
-                            <label className="flex items-center gap-3 text-sm text-foreground">
-                                <input
-                                    type="checkbox"
-                                    checked={exportDashboard}
-                                    onChange={(e) => setExportDashboard(e.target.checked)}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                {t("settings.exportDashboard")}
-                            </label>
-                            <label className="flex items-center gap-3 text-sm text-foreground">
-                                <input
-                                    type="checkbox"
-                                    checked={exportPortfolio}
-                                    onChange={(e) => setExportPortfolio(e.target.checked)}
-                                    className="h-4 w-4 accent-primary"
-                                />
-                                {t("settings.exportPortfolio")}
-                            </label>
-                        </div>
+                            <div className="space-y-3 mb-6">
+                                <label className="flex items-center gap-3 text-sm text-foreground">
+                                    <input
+                                        type="checkbox"
+                                        checked={exportDashboard}
+                                        onChange={(e) => setExportDashboard(e.target.checked)}
+                                        className="h-4 w-4 accent-primary"
+                                    />
+                                    {t("settings.exportDashboard")}
+                                </label>
+                                <label className="flex items-center gap-3 text-sm text-foreground">
+                                    <input
+                                        type="checkbox"
+                                        checked={exportPortfolio}
+                                        onChange={(e) => setExportPortfolio(e.target.checked)}
+                                        className="h-4 w-4 accent-primary"
+                                    />
+                                    {t("settings.exportPortfolio")}
+                                </label>
+                                <label className="flex items-center gap-3 text-sm text-foreground">
+                                    <input
+                                        type="checkbox"
+                                        checked={exportMovements}
+                                        onChange={(e) => setExportMovements(e.target.checked)}
+                                        className="h-4 w-4 accent-primary"
+                                    />
+                                    {t("settings.exportMovements")}
+                                </label>
+                            </div>
 
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                type="button"
-                                onClick={() => setIsExportDialogOpen(false)}
-                                disabled={exportingPdf}
-                                className="px-4 py-2 rounded-lg text-sm font-bold text-foreground hover:bg-border transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                                {t("common.cancel")}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={exportSelectedTabsAsPdf}
-                                disabled={exportingPdf || (!exportDashboard && !exportPortfolio)}
-                                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                                {exportingPdf ? t("settings.exportingPdf") : t("settings.confirmExportPdf")}
-                            </button>
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsExportDialogOpen(false)}
+                                    disabled={exportingPdf}
+                                    className="px-4 py-2 rounded-lg text-sm font-bold text-foreground hover:bg-border transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                    {t("common.cancel")}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={exportSelectedTabsAsPdf}
+                                    disabled={exportingPdf || (!exportDashboard && !exportPortfolio && !exportMovements)}
+                                    className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                    {exportingPdf ? t("settings.exportingPdf") : t("settings.confirmExportPdf")}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             <ConfirmModal
