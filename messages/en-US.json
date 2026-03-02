@@ -81,6 +81,7 @@
     "selectTabsToExport": "Select tabs to export:",
     "exportDashboard": "Dashboard",
     "exportPortfolio": "Net Worth",
+    "exportMovements": "Movements",
     "confirmExportPdf": "Confirm",
     "exportingPdf": "Exporting...",
     "exportPdfError": "Could not generate PDF.",
