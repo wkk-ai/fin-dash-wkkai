@@ -1,18 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { MovementEntry, BudgetEntry } from "@/types/database";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
+import { parseCustomDate } from "@/lib/utils";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
 import AddMovementModal from "@/components/AddMovementModal";
 import MovementsTable from "@/components/MovementsTable";
 
 export default function MovementsPage() {
     const { t, formatCurrency } = useTranslation();
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === "dark";
+
     const [movements, setMovements] = useState<MovementEntry[]>([]);
     const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
+    const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
+    const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
+    const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
 
     const fetchData = async () => {
         try {
@@ -34,16 +44,26 @@ export default function MovementsPage() {
     }, []);
 
     // Process Data for KPIs
-    const now = new Date();
-    const currentMonth = now.toLocaleString('en-US', { month: 'short' });
-    const currentYear = String(now.getFullYear()).slice(-2);
-    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    // Identify the latest month in the data
+    const getLatestDate = () => {
+        if (movements.length === 0) return new Date();
+        const dates = movements.map(m => parseCustomDate(m.Date));
+        return new Date(Math.max(...dates.map(d => d.getTime())));
+    };
+
+    const latestDate = getLatestDate();
+    const currentMonth = latestDate.toLocaleString('en-US', { month: 'short' });
+    const currentYear = String(latestDate.getFullYear()).slice(-2);
+
+    const prevMonthDate = new Date(latestDate.getFullYear(), latestDate.getMonth() - 1, 1);
     const prevMonth = prevMonthDate.toLocaleString('en-US', { month: 'short' });
     const prevYear = String(prevMonthDate.getFullYear()).slice(-2);
 
     const matchMonth = (dateStr: string, m: string, y: string) => {
         const parts = dateStr.split('/'); // DD/MMM/YY
-        return parts[1] === m && parts[2] === y;
+        const monthPart = parts[1]?.replace(".", "")?.toLowerCase() || "";
+        const targetMonth = m.toLowerCase().replace(".", "");
+        return monthPart === targetMonth && parts[2] === y;
     };
 
     const currentMovements = movements.filter(m => matchMonth(m.Date, currentMonth, currentYear));
@@ -173,8 +193,8 @@ export default function MovementsPage() {
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("movements.remainingBudget")}</p>
                     <h3 className="text-2xl font-bold text-foreground">{formatCurrency(Math.max(0, curr.net))}</h3>
                     <div className="mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold text-slate-500">
-                        <span className="material-symbols-outlined text-sm">schedule</span>
-                        <span>{31 - now.getDate()} days remaining</span>
+                        <span className="material-symbols-outlined text-sm">event</span>
+                        <span>{currentMonth} {latestDate.getFullYear()}</span>
                     </div>
                 </div>
             </div>
@@ -203,7 +223,24 @@ export default function MovementsPage() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
                                 <XAxis dataKey="date" fontSize={11} tickLine={false} axisLine={false} tickMargin={10} />
                                 <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                <RechartsTooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        return (
+                                            <div className="rounded-lg px-3 py-2 border shadow-lg" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, color: tooltipTextColor }}>
+                                                <p className="text-xs font-bold mb-1" style={{ color: tooltipLabelColor }}>{payload[0].payload.date}</p>
+                                                {payload.map((entry: any, i: number) => (
+                                                    <p key={i} className="text-xs font-medium">
+                                                        <span style={{ color: entry.dataKey === "income" ? "#34d399" : "#f87171" }}>
+                                                            {entry.name || entry.dataKey} : {formatCurrency(entry.value)}
+                                                        </span>
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        );
+                                    }}
+                                />
                                 <Bar dataKey="income" fill="#34d399" radius={[4, 4, 0, 0]} barSize={40} />
                                 <Bar dataKey="expense" fill="#f87171" radius={[4, 4, 0, 0]} barSize={40} />
                             </BarChart>
@@ -230,9 +267,31 @@ export default function MovementsPage() {
                                             <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
                                         ))}
                                     </Pie>
+                                    <RechartsTooltip
+                                        content={({ active, payload }) => {
+                                            if (!active || !payload?.length) return null;
+                                            const { name, value } = payload[0].payload;
+                                            const idx = donutData.findIndex((d) => d.name === name);
+                                            const segmentColor = idx >= 0 ? DONUT_COLORS[idx % DONUT_COLORS.length] : tooltipTextColor;
+                                            return (
+                                                <div
+                                                    className="rounded-lg px-3 py-2 shadow-lg border"
+                                                    style={{
+                                                        zIndex: 9999,
+                                                        backgroundColor: tooltipBg,
+                                                        borderColor: tooltipBorder,
+                                                    }}
+                                                >
+                                                    <span style={{ color: segmentColor, fontWeight: 700 }}>{name}</span>
+                                                    <span className="text-sm font-medium" style={{ color: tooltipTextColor }}> : {formatCurrency(value)}</span>
+                                                </div>
+                                            );
+                                        }}
+                                        wrapperStyle={{ zIndex: 9999 }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                 <span className="text-xl font-bold text-foreground">{formatCurrency(curr.expenses / 1000)}k</span>
                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{t("movements.totalExpenses")}</span>
                             </div>
@@ -316,7 +375,20 @@ export default function MovementsPage() {
                                 </defs>
                                 <XAxis dataKey="date" hide />
                                 <YAxis hide />
-                                <Tooltip cursor={false} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                <RechartsTooltip
+                                    cursor={false}
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        return (
+                                            <div className="rounded-lg px-3 py-2 border shadow-lg" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, color: tooltipTextColor }}>
+                                                <p className="text-xs font-bold mb-1" style={{ color: tooltipLabelColor }}>{payload[0].payload.date}</p>
+                                                <p className="text-xs font-medium">
+                                                    {t("movements.wealth") || "Value"}: {formatCurrency(payload[0].value as number)}
+                                                </p>
+                                            </div>
+                                        );
+                                    }}
+                                />
                                 <Area type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                             </AreaChart>
                         </ResponsiveContainer>
