@@ -79,6 +79,7 @@
     "selectTabsToExport": "Selecciona qué pestañas deseas exportar:",
     "exportDashboard": "Panel",
     "exportPortfolio": "Portafolio",
+    "exportMovements": "Movimientos",
     "confirmExportPdf": "Confirmar",
     "exportingPdf": "Exportando...",
     "exportPdfError": "No se pudo generar el PDF.",
