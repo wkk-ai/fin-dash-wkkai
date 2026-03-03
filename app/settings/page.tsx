@@ -888,7 +888,7 @@ export default function SettingsPage() {
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.spending")}</span>
                             </div>
                             <div className="col-span-3">
-                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.goal")}</span>
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.goal")} (R$)</span>
                             </div>
                             <div className="col-span-6">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.goalWeight")}</span>
@@ -906,19 +906,17 @@ export default function SettingsPage() {
                                         <div className="col-span-3">
                                             <span className="text-sm font-medium text-foreground">{cat}</span>
                                         </div>
-                                        <div className="col-span-3 relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
-                                            <input
-                                                type="number"
-                                                value={budget || ""}
-                                                onChange={e => {
-                                                    const val = Number(e.target.value);
+                                        <div className="col-span-3">
+                                            <FormattedNumberInput
+                                                value={budget > 0 ? budget : 0}
+                                                onChange={val => {
                                                     setBudgets(prev => {
                                                         const filtered = prev.filter(b => b.Category !== cat);
                                                         return [...filtered, { Category: cat, Budget: val }].sort((a, b) => a.Category.localeCompare(b.Category));
                                                     });
                                                 }}
-                                                className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground text-right focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                                                placeholder="Ex: 0,00"
+                                                className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none transition-all font-medium"
                                             />
                                         </div>
                                         <div className="col-span-6 flex flex-col items-start gap-1.5">

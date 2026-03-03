@@ -106,14 +106,17 @@ export default function MovementsPage() {
     const donutData = Object.entries(categoryAgg).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     const DONUT_COLORS = ['#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
 
-    // Process Budget vs Actual
+    // Process Budget vs Actual (Show all budgeted categories + unbudgeted ones with expenses)
     const budgetMap: Record<string, number> = {};
     budgets.forEach(b => budgetMap[b.Category] = b.Budget);
-    const budgetVsActual = Object.entries(categoryAgg).map(([category, actual]) => ({
+
+    const allCategories = Array.from(new Set([...Object.keys(categoryAgg), ...Object.keys(budgetMap)]));
+
+    const budgetVsActual = allCategories.map(category => ({
         category,
-        actual,
-        budget: budgetMap[category] || (actual as number) * 1.2
-    }));
+        actual: categoryAgg[category] || 0,
+        budget: budgetMap[category] || 0
+    })).sort((a, b) => b.budget - a.budget); // Sort by largest budget first
 
     // Process Top Vendors (by Description)
     const vendorAgg: Record<string, { value: number, count: number }> = {};
@@ -318,22 +321,29 @@ export default function MovementsPage() {
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.budgetVsActual")}</h3>
                     <div className="space-y-6">
                         {budgetVsActual.map((item) => {
-                            const pct = Math.min(100, (item.actual / item.budget) * 100);
-                            const isOver = item.actual > item.budget;
+                            const pct = item.budget > 0 ? Math.min(100, (item.actual / item.budget) * 100) : (item.actual > 0 ? 100 : 0);
+                            const isOver = item.actual > item.budget && item.budget > 0;
                             return (
                                 <div key={item.category}>
-                                    <div className="flex justify-between text-sm font-medium mb-1.5">
-                                        <span className="text-foreground">{item.category}</span>
-                                        <span className="text-slate-500">{formatCurrency(item.actual)} / {formatCurrency(item.budget)}</span>
+                                    <div className="flex justify-between text-sm mb-2.5">
+                                        <span className="text-slate-200">{item.category}</span>
+                                        <span className="text-slate-500 font-medium">
+                                            {formatCurrency(item.actual)} / {formatCurrency(item.budget)}
+                                        </span>
                                     </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div className="h-2.5 w-full bg-[#1e293b] rounded-full overflow-hidden">
                                         <div
-                                            className={`h-full transition-all duration-1000 rounded-full ${isOver ? 'bg-red-600' : 'bg-red-400'}`}
-                                            style={{ width: `${pct}%` }}
+                                            className="h-full transition-all duration-1000 rounded-full"
+                                            style={{
+                                                width: `${pct}%`,
+                                                backgroundColor: '#ff6b6b'
+                                            }}
                                         />
                                     </div>
                                     {isOver && (
-                                        <p className="text-[10px] font-bold text-red-500 mt-1 uppercase">Overspent by {formatCurrency(item.actual - item.budget)}</p>
+                                        <p className="text-[10px] font-bold text-[#ff6b6b] mt-1.5 uppercase tracking-wider">
+                                            Overspent by {formatCurrency(item.actual - item.budget)}
+                                        </p>
                                     )}
                                 </div>
                             );
