@@ -89,7 +89,7 @@
     "importing": "Importando...",
     "importSuccess": "Base importada com sucesso.",
     "importError": "Não foi possível importar o arquivo.",
-    "importErrorColumnCount": "O arquivo deve ter exatamente 4 colunas (Data, Classificação, Ativo, Valor). Sua planilha tem {received} colunas — remova colunas extras ou use apenas as 4 exigidas.",
+    "importErrorColumnCount": "O arquivo deve ter exatamente {expected} colunas. Sua planilha tem {received} colunas — remova colunas extras ou use apenas as exigidas.",
     "importErrorColumnNames": "As colunas devem ser exatamente: {expected}. Encontrado: {received}.",
     "importErrorCsvFormat": "O formato do CSV está inválido. Verifique se todas as linhas têm exatamente 4 colunas e se não há vírgulas ou quebras de linha dentro dos valores.",
     "importErrorUnsupportedType": "Tipo de arquivo não suportado. Use um arquivo .csv, .xlsx ou .xls.",
@@ -101,7 +101,15 @@
     "expensesSaved": "Categorias de despesas salvas com sucesso!",
     "downloadData": "Baixar Dados",
     "downloadCsv": "Baixar como CSV",
-    "downloadExcel": "Baixar como Excel"
+    "downloadExcel": "Baixar como Excel",
+    "spendingGoals": "Metas de Gastos por Categoria",
+    "monthly": "Mensal",
+    "spending": "Gasto",
+    "goal": "Meta",
+    "goalWeight": "Peso da Meta",
+    "totalPlanned": "Total Planejado",
+    "saveGoals": "Salvar Metas",
+    "goalsSaved": "Metas salvas com sucesso!"
   },
   "addAsset": {
     "title": "Adicionar Patrimônio",

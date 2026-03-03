@@ -1,3 +1,6 @@
+export type Classification = string;
+export type Asset = string;
+
 export interface AssetEntry {
   Date: string;
   Classification: string;
@@ -16,4 +19,11 @@ export interface MovementEntry {
 export interface BudgetEntry {
   Category: string;
   Budget: number;
+}
+
+export interface Settings {
+  classifications: string[];
+  assets: string[];
+  incomeCategories: string[];
+  expenseCategories: string[];
 }

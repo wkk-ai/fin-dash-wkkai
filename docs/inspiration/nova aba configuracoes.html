@@ -1,0 +1,232 @@
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Database Settings - Budget Goals Left-Aligned</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                primary: "#3b82f6",
+                "background-dark": "#090c10",
+                "card-dark": "#111823",
+                "input-dark": "#0d1117",
+                "tag-bg": "#1c2433",
+              },
+              fontFamily: {
+                display: ["Inter", "sans-serif"],
+              },
+            },
+          },
+        };
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+          body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090c10;
+            color: #e2e8f0;
+          }
+        }
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-12">
+<div class="max-w-6xl mx-auto space-y-8">
+<header class="mb-10">
+<h1 class="text-3xl font-bold text-white mb-2">Configurações e Banco de Dados</h1>
+<p class="text-slate-400">Gerencie as opções do sistema e edite os dados brutos da sua base (CSV).</p>
+</header>
+<div class="w-full bg-card-dark rounded-xl border border-slate-800 p-8 space-y-10">
+<div class="flex items-center gap-3 border-b border-slate-800 pb-6">
+<span class="material-symbols-outlined text-primary text-2xl">account_balance_wallet</span>
+<h2 class="text-xl font-bold text-white">Patrimônio</h2>
+</div>
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="text-xs font-bold tracking-widest text-primary uppercase">Classificações</h3>
+<span class="material-symbols-outlined text-slate-500 text-lg">save</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 bg-input-dark border-slate-800 rounded-lg text-slate-100 focus:ring-primary focus:border-primary px-4 py-2.5 placeholder-slate-600" placeholder="Ex: Renda Variável BR" type="text"/>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold px-6 py-2.5 rounded-lg transition-all text-sm">Adicionar</button>
+</div>
+<div class="flex flex-wrap gap-2">
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">
+                        Fixed Income <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button>
+</div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">
+                        Pension Fund <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button>
+</div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">
+                        Real State <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button>
+</div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">
+                        Variable Income <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button>
+</div>
+</div>
+</section>
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="text-xs font-bold tracking-widest text-primary uppercase">Ativos/Instituições</h3>
+<span class="material-symbols-outlined text-slate-500 text-lg">save</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 bg-input-dark border-slate-800 rounded-lg text-slate-100 focus:ring-primary focus:border-primary px-4 py-2.5 placeholder-slate-600" placeholder="Ex: Rico" type="text"/>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold px-6 py-2.5 rounded-lg transition-all text-sm">Adicionar</button>
+</div>
+<div class="flex flex-wrap gap-2">
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Binance <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">BrasilPrev (Uber) <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">C6 <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Clear <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">E-Trade <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">FGTS <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Icatu (Netflix) <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Inter <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Inv. Apto <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Itau <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Mercado Pago <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Nubank <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Sara <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">XP <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+</div>
+</section>
+</div>
+<div class="w-full bg-card-dark rounded-xl border border-slate-800 p-8 space-y-10">
+<div class="flex items-center gap-3 border-b border-slate-800 pb-6">
+<span class="material-symbols-outlined text-primary text-2xl">payments</span>
+<h2 class="text-xl font-bold text-white">Financeiro</h2>
+</div>
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="text-xs font-bold tracking-widest text-primary uppercase">Receitas</h3>
+<span class="material-symbols-outlined text-slate-500 text-lg">save</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 bg-input-dark border-slate-800 rounded-lg text-slate-100 focus:ring-primary focus:border-primary px-4 py-2.5 placeholder-slate-600" placeholder="Ex: Salário" type="text"/>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold px-6 py-2.5 rounded-lg transition-all text-sm">Adicionar</button>
+</div>
+<div class="flex flex-wrap gap-2">
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">
+                        Salário <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button>
+</div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">
+                        Freelance <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button>
+</div>
+</div>
+</section>
+<section class="space-y-4">
+<div class="flex justify-between items-center">
+<h3 class="text-xs font-bold tracking-widest text-primary uppercase">Despesas</h3>
+<span class="material-symbols-outlined text-slate-500 text-lg">save</span>
+</div>
+<div class="flex gap-2">
+<input class="flex-1 bg-input-dark border-slate-800 rounded-lg text-slate-100 focus:ring-primary focus:border-primary px-4 py-2.5 placeholder-slate-600" placeholder="Ex: Alimentação" type="text"/>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold px-6 py-2.5 rounded-lg transition-all text-sm">Adicionar</button>
+</div>
+<div class="flex flex-wrap gap-2">
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Moradia <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Alimentação <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Transporte <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+<div class="flex items-center gap-2 bg-tag-bg border border-slate-700/50 text-slate-200 px-4 py-1.5 rounded-full text-xs font-medium">Lazer <button class="material-symbols-outlined text-[14px] text-slate-400 hover:text-white">close</button></div>
+</div>
+</section>
+<section class="space-y-6 pt-4 border-t border-slate-800">
+<div class="flex justify-between items-center">
+<h3 class="text-xs font-bold tracking-widest text-primary uppercase">Metas de Gastos por Categoria</h3>
+<span class="text-[10px] text-slate-500 uppercase font-semibold">Mensal</span>
+</div>
+<div class="grid grid-cols-12 gap-8 items-center">
+<div class="col-span-3">
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gasto</span>
+</div>
+<div class="col-span-3">
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Meta</span>
+</div>
+<div class="col-span-6">
+<span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Peso da Meta</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="grid grid-cols-12 gap-8 items-center">
+<div class="col-span-3">
+<span class="text-sm font-medium text-slate-200">Moradia</span>
+</div>
+<div class="col-span-3 relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+<input class="w-full pl-9 pr-3 py-2 bg-input-dark border-slate-800 rounded-lg text-sm text-slate-100 text-right focus:ring-1 focus:ring-primary outline-none" type="text" value="3.000"/>
+</div>
+<div class="col-span-6 flex flex-col items-start gap-1.5">
+<span class="text-[10px] font-bold text-slate-400 uppercase">58%</span>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[58%]"></div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8 items-center">
+<div class="col-span-3">
+<span class="text-sm font-medium text-slate-200">Alimentação</span>
+</div>
+<div class="col-span-3 relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+<input class="w-full pl-9 pr-3 py-2 bg-input-dark border-slate-800 rounded-lg text-sm text-slate-100 text-right focus:ring-1 focus:ring-primary outline-none" type="text" value="1.200"/>
+</div>
+<div class="col-span-6 flex flex-col items-start gap-1.5">
+<span class="text-[10px] font-bold text-slate-400 uppercase">23%</span>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[23%]"></div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8 items-center">
+<div class="col-span-3">
+<span class="text-sm font-medium text-slate-200">Transporte</span>
+</div>
+<div class="col-span-3 relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+<input class="w-full pl-9 pr-3 py-2 bg-input-dark border-slate-800 rounded-lg text-sm text-slate-100 text-right focus:ring-1 focus:ring-primary outline-none" type="text" value="600"/>
+</div>
+<div class="col-span-6 flex flex-col items-start gap-1.5">
+<span class="text-[10px] font-bold text-slate-400 uppercase">11%</span>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[11%]"></div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-8 items-center">
+<div class="col-span-3">
+<span class="text-sm font-medium text-slate-200">Lazer</span>
+</div>
+<div class="col-span-3 relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+<input class="w-full pl-9 pr-3 py-2 bg-input-dark border-slate-800 rounded-lg text-sm text-slate-100 text-right focus:ring-1 focus:ring-primary outline-none" type="text" value="400"/>
+</div>
+<div class="col-span-6 flex flex-col items-start gap-1.5">
+<span class="text-[10px] font-bold text-slate-400 uppercase">8%</span>
+<div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[8%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between p-6 bg-primary/5 border border-primary/20 rounded-xl mt-8">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-primary uppercase tracking-widest">Total Planejado</span>
+<span class="text-2xl font-bold text-white">R$ 5.200,00</span>
+</div>
+<button class="bg-primary hover:bg-blue-600 text-white font-bold py-3 px-10 rounded-lg transition-all shadow-lg shadow-primary/20">
+                        Salvar Metas
+                    </button>
+</div>
+</section>
+</div>
+</div>
+
+</body></html>
