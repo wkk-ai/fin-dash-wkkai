@@ -1,131 +1,103 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { AssetEntry } from "@/types/database";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "@/lib/i18n";
-import { formatCurrency, parseCustomDate, cn } from "@/lib/utils";
+import { AssetEntry, Classification, Asset, Settings, BudgetEntry } from "@/types/database";
+import { cn } from "@/lib/utils";
+import { savePendingData, loadPendingData as getPendingData, clearPendingData } from "@/lib/pending-storage";
+import Portal from "@/components/Portal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
-import Portal from "@/components/Portal";
-import { loadPendingData, savePendingData, clearPendingData } from "@/lib/pending-storage";
-import * as XLSX from "xlsx";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 
-export default function Settings() {
+export default function SettingsPage() {
     const { t } = useTranslation();
     const [data, setData] = useState<AssetEntry[]>([]);
-    const [settings, setSettings] = useState<{
-        classifications: string[];
-        assets: string[];
-        incomeCategories: string[];
-        expenseCategories: string[];
-    }>({
+    const [settings, setSettings] = useState<Settings>({
         classifications: [],
         assets: [],
         incomeCategories: [],
-        expenseCategories: [],
+        expenseCategories: []
     });
-
-    // Values currently in the main CSV (cannot be deleted from settings)
-    const [dbClassifications, setDbClassifications] = useState<string[]>([]);
-    const [dbAssets, setDbAssets] = useState<string[]>([]);
-    const [dbIncomeCategories, setDbIncomeCategories] = useState<string[]>([]);
-    const [dbExpenseCategories, setDbExpenseCategories] = useState<string[]>([]);
-
+    const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [savingSettings, setSavingSettings] = useState<{ type: "class" | "asset" | "income" | "expense" | null }>({ type: null });
     const [importingFile, setImportingFile] = useState(false);
-    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
-    const [exportDashboard, setExportDashboard] = useState(true);
-    const [exportPortfolio, setExportPortfolio] = useState(false);
-    const [exportMovements, setExportMovements] = useState(false);
-    const [exportingPdf, setExportingPdf] = useState(false);
-    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
-
-    // Modal state
-    const [modalConfig, setModalConfig] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-        confirmLabel?: string;
-        onConfirm: () => void;
-        variant?: "danger" | "primary";
-    }>({
-        isOpen: false,
-        title: "",
-        message: "",
-        onConfirm: () => { },
-    });
-
-    // New option states
     const [newClassification, setNewClassification] = useState("");
     const [newAsset, setNewAsset] = useState("");
     const [newIncomeCategory, setNewIncomeCategory] = useState("");
     const [newExpenseCategory, setNewExpenseCategory] = useState("");
-    const hasUserEditedRef = useRef(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+    const [savingSettings, setSavingSettings] = useState<{ type: string | null }>({ type: null });
+    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const hasUserEditedRef = useRef(false);
 
-    const csvDateToInputDate = (csvDate: string): string => {
-        const d = parseCustomDate(csvDate);
-        if (Number.isNaN(d.getTime())) return "";
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
+    const [modalConfig, setModalConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        confirmLabel: string;
+        onConfirm: () => void;
+        variant?: "primary" | "danger";
+    }>({
+        isOpen: false,
+        title: "",
+        message: "",
+        confirmLabel: "",
+        onConfirm: () => { },
+    });
+
+    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+    const [exportingPdf, setExportingPdf] = useState(false);
+    const [exportDashboard, setExportDashboard] = useState(true);
+    const [exportPortfolio, setExportPortfolio] = useState(true);
+    const [exportMovements, setExportMovements] = useState(true);
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+        }).format(value);
     };
 
-    const inputDateToCsvDate = (inputDate: string): string => {
+    const parseCustomDate = (dateStr: string) => {
+        const [day, month, year] = dateStr.split("/").map(Number);
+        return new Date(year, month - 1, day);
+    };
+
+    const csvDateToInputDate = (csvDate: string) => {
+        if (!csvDate) return "";
+        const parts = csvDate.split("/");
+        if (parts.length !== 3) return csvDate;
+        return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    };
+
+    const inputDateToCsvDate = (inputDate: string) => {
         if (!inputDate) return "";
-        const d = new Date(`${inputDate}T00:00:00`);
-        if (Number.isNaN(d.getTime())) return "";
-        const day = String(d.getDate()).padStart(2, "0");
-        const month = d.toLocaleString("en-US", { month: "short" });
-        const year = String(d.getFullYear()).slice(-2);
-        return `${day}/${month}/${year}`;
+        const parts = inputDate.split("-");
+        if (parts.length !== 3) return inputDate;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
     };
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [dbRes, setRes] = await Promise.all([
+            const [dbRes, settingsRes, movementsRes] = await Promise.all([
                 fetch("/api/database"),
-                fetch("/api/settings")
+                fetch("/api/settings"),
+                fetch("/api/movements")
             ]);
-            const dbJson = await dbRes.json() as AssetEntry[];
-            const setJson = await setRes.json();
 
-            // Sort: Date DESC, then Value DESC
-            const sortedData = [...dbJson].sort((a, b) => {
-                const dateA = parseCustomDate(a.Date).getTime();
-                const dateB = parseCustomDate(b.Date).getTime();
-                if (dateA !== dateB) return dateB - dateA;
-                return b.Value - a.Value;
-            });
+            const dbData = await dbRes.json();
+            const settingsData = await settingsRes.json();
+            const movementsData = await movementsRes.json();
 
-            setData(sortedData);
-            setSettings({
-                classifications: setJson.classifications || [],
-                assets: setJson.assets || [],
-                incomeCategories: setJson.incomeCategories || [],
-                expenseCategories: setJson.expenseCategories || [],
-            });
+            setData(dbData);
+            setSettings(settingsData);
+            setBudgets(movementsData.budgets || []);
 
-            // Extract what's currently in use in the DB
-            const usedClasses = Array.from(new Set(dbJson.map(r => r.Classification))).filter(Boolean);
-            const usedAssets = Array.from(new Set(dbJson.map(r => r.Asset))).filter(Boolean);
-            setDbClassifications(usedClasses);
-            setDbAssets(usedAssets);
-
-            // Fetch movements to see what categories are in use
-            const movRes = await fetch("/api/movements");
-            const movJson = await movRes.json();
-            const movements = movJson.movements || [];
-            const usedIncome = Array.from(new Set(movements.filter((m: any) => m.Type === "Income").map((m: any) => m.Category))).filter(Boolean);
-            const usedExpense = Array.from(new Set(movements.filter((m: any) => m.Type === "Expense").map((m: any) => m.Category))).filter(Boolean);
-            setDbIncomeCategories(usedIncome as string[]);
-            setDbExpenseCategories(usedExpense as string[]);
         } catch (e) {
             console.error(e);
         } finally {
@@ -133,8 +105,23 @@ export default function Settings() {
         }
     };
 
+    // Derived lists from database to prevent deleting tags actually in use
+    const [dbClassifications, setDbClassifications] = useState<string[]>([]);
+    const [dbAssets, setDbAssets] = useState<string[]>([]);
+    const [dbIncomeCategories, setDbIncomeCategories] = useState<string[]>([]);
+    const [dbExpenseCategories, setDbExpenseCategories] = useState<string[]>([]);
+
     useEffect(() => {
-        const pending = loadPendingData();
+        if (data.length > 0) {
+            const usedClasses = Array.from(new Set(data.map(r => r.Classification))).filter(Boolean);
+            const usedAssets = Array.from(new Set(data.map(r => r.Asset))).filter(Boolean);
+            setDbClassifications(usedClasses);
+            setDbAssets(usedAssets);
+        }
+    }, [data]);
+
+    useEffect(() => {
+        const pending = getPendingData();
         if (pending && pending.length > 0) {
             // Restore unsaved changes from previous session (e.g. after switching tabs)
             hasUserEditedRef.current = true;
@@ -145,8 +132,8 @@ export default function Settings() {
                 return b.Value - a.Value;
             });
             setData(sorted);
-            const usedClasses = Array.from(new Set(pending.map(r => r.Classification))).filter(Boolean);
-            const usedAssets = Array.from(new Set(pending.map(r => r.Asset))).filter(Boolean);
+            const usedClasses = Array.from(new Set(pending.map((r: AssetEntry) => r.Classification))).filter(Boolean) as string[];
+            const usedAssets = Array.from(new Set(pending.map((r: AssetEntry) => r.Asset))).filter(Boolean) as string[];
             setDbClassifications(usedClasses);
             setDbAssets(usedAssets);
             // Still need settings (classifications, assets) from API
@@ -344,6 +331,26 @@ export default function Settings() {
             newData[index][field] = value as any;
         }
         setData(newData);
+    };
+
+    const saveBudgets = async () => {
+        setSavingSettings({ type: "budget" });
+        try {
+            await fetch("/api/movements", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "updateBudgets", data: budgets }),
+            });
+            window.dispatchEvent(
+                new CustomEvent("show-success-toast", {
+                    detail: { message: t("settings.goalsSaved") }
+                })
+            );
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSavingSettings({ type: null });
+        }
     };
 
     const saveDatabase = async () => {
@@ -670,7 +677,7 @@ export default function Settings() {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
+            <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
 
                 {/* Patrimônio Container */}
                 <div className="flex flex-col gap-6">
@@ -851,6 +858,101 @@ export default function Settings() {
                         </div>
                     </div>
                 </div>
+
+                {/* Meta de Gastos Section */}
+                <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col mt-6">
+                    <section className="space-y-6">
+                        <div className="flex justify-between items-center border-b border-border pb-4">
+                            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                                <span className="material-symbols-outlined text-primary text-[24px]">target</span>
+                                {t("settings.spendingGoals")}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-500 uppercase font-semibold">{t("settings.monthly")}</span>
+                                <button
+                                    type="button"
+                                    onClick={saveBudgets}
+                                    className="p-1.5 rounded-lg hover:bg-border text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                    disabled={savingSettings.type === "budget"}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px]",
+                                        savingSettings.type === "budget" && "animate-pulse"
+                                    )}>save</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-4 items-center">
+                            <div className="col-span-3">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.spending")}</span>
+                            </div>
+                            <div className="col-span-3">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.goal")}</span>
+                            </div>
+                            <div className="col-span-6">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("settings.goalWeight")}</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            {settings.expenseCategories?.map((cat: string) => {
+                                const budget = budgets.find(b => b.Category === cat)?.Budget || 0;
+                                const totalBudget = budgets.reduce((acc, b) => acc + b.Budget, 0);
+                                const weight = totalBudget > 0 ? (budget / totalBudget) * 100 : 0;
+
+                                return (
+                                    <div key={cat} className="grid grid-cols-12 gap-4 items-center group">
+                                        <div className="col-span-3">
+                                            <span className="text-sm font-medium text-foreground">{cat}</span>
+                                        </div>
+                                        <div className="col-span-3 relative">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">R$</span>
+                                            <input
+                                                type="number"
+                                                value={budget || ""}
+                                                onChange={e => {
+                                                    const val = Number(e.target.value);
+                                                    setBudgets(prev => {
+                                                        const filtered = prev.filter(b => b.Category !== cat);
+                                                        return [...filtered, { Category: cat, Budget: val }].sort((a, b) => a.Category.localeCompare(b.Category));
+                                                    });
+                                                }}
+                                                className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-sm text-foreground text-right focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                                            />
+                                        </div>
+                                        <div className="col-span-6 flex flex-col items-start gap-1.5">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase">{weight.toFixed(0)}%</span>
+                                            <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div
+                                                    className="bg-primary h-full transition-all duration-500"
+                                                    style={{ width: `${weight}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="flex items-center justify-between p-6 bg-primary/5 border border-primary/10 rounded-xl mt-8 animate-in fade-in zoom-in duration-500">
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("settings.totalPlanned")}</span>
+                                <span className="text-2xl font-black text-foreground">
+                                    {formatCurrency(budgets.reduce((acc, b) => acc + b.Budget, 0))}
+                                </span>
+                            </div>
+                            <button
+                                onClick={saveBudgets}
+                                disabled={savingSettings.type === "budget"}
+                                className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-10 rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                            >
+                                <span className="material-symbols-outlined">save</span>
+                                {t("settings.saveGoals")}
+                            </button>
+                        </div>
+                    </section>
+                </div>
             </div>
 
             {/* Database View/Edit */}
@@ -960,7 +1062,7 @@ export default function Settings() {
                                             >
                                                 <option value={row.Classification}>{row.Classification}</option>
                                                 {settings.classifications
-                                                    .filter(c => c !== row.Classification)
+                                                    .filter((c: string) => c !== row.Classification)
                                                     .sort((a, b) => a.localeCompare(b))
                                                     .map(c => (
                                                         <option key={c} value={c}>{c}</option>
@@ -979,7 +1081,7 @@ export default function Settings() {
                                             >
                                                 <option value={row.Asset}>{row.Asset}</option>
                                                 {settings.assets
-                                                    .filter(a => a !== row.Asset)
+                                                    .filter((a: string) => a !== row.Asset)
                                                     .sort((a, b) => a.localeCompare(b))
                                                     .map(a => (
                                                         <option key={a} value={a}>{a}</option>
@@ -993,7 +1095,7 @@ export default function Settings() {
                                         {editingRowIndex === index ? (
                                             <FormattedNumberInput
                                                 value={row.Value}
-                                                onChange={n => handleDataChange(index, "Value", String(n))}
+                                                onChange={(n: number) => handleDataChange(index, "Value", String(n))}
                                                 compactSpinner
                                                 className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-right text-foreground font-medium"
                                             />

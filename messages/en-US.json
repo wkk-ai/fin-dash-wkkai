@@ -101,7 +101,15 @@
     "expensesSaved": "Expense categories saved successfully!",
     "downloadData": "Download Data",
     "downloadCsv": "Download as CSV",
-    "downloadExcel": "Download as Excel"
+    "downloadExcel": "Download as Excel",
+    "spendingGoals": "Spending Goals by Category",
+    "monthly": "Monthly",
+    "spending": "Expense",
+    "goal": "Goal",
+    "goalWeight": "Goal Weight",
+    "totalPlanned": "Total Planned",
+    "saveGoals": "Save Goals",
+    "goalsSaved": "Goals saved successfully!"
   },
   "addAsset": {
     "title": "Add Asset",
