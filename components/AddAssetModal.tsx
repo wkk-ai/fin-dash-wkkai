@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import { CustomCombobox } from "@/components/CustomCombobox";
 
 import Portal from "./Portal";
 
@@ -201,29 +202,25 @@ export default function AddAssetModal({ onClose }: Props) {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.classification")}</label>
-                                    <select
+                                    <CustomCombobox
+                                        options={classifications}
                                         required
+                                        placeholder="Adicionar ou escolher..."
                                         value={singleData.Classification}
-                                        onChange={e => setSingleData({ ...singleData, Classification: e.target.value })}
+                                        onChange={val => setSingleData({ ...singleData, Classification: val })}
                                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                                    >
-                                        {classifications.map((c) => (
-                                            <option key={c} value={c}>{c}</option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.assetInstitution")}</label>
-                                    <select
+                                    <CustomCombobox
+                                        options={assets}
                                         required
+                                        placeholder="Adicionar ou escolher..."
                                         value={singleData.Asset}
-                                        onChange={e => setSingleData({ ...singleData, Asset: e.target.value })}
+                                        onChange={val => setSingleData({ ...singleData, Asset: val })}
                                         className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                                    >
-                                        {assets.map((a) => (
-                                            <option key={a} value={a}>{a}</option>
-                                        ))}
-                                    </select>
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-1">{t("addAsset.valueBRL")}</label>
@@ -269,22 +266,22 @@ export default function AddAssetModal({ onClose }: Props) {
                                                         />
                                                     </td>
                                                     <td className="py-2 pr-4">
-                                                        <select
+                                                        <CustomCombobox
+                                                            options={classifications}
+                                                            placeholder="Adicionar ou escolher..."
                                                             value={row.Classification}
-                                                            onChange={e => updateRow(row.id, "Classification", e.target.value)}
+                                                            onChange={val => updateRow(row.id, "Classification", val)}
                                                             className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none transition-all"
-                                                        >
-                                                            {classifications.map(c => <option key={c} value={c}>{c}</option>)}
-                                                        </select>
+                                                        />
                                                     </td>
                                                     <td className="py-2 pr-4">
-                                                        <select
+                                                        <CustomCombobox
+                                                            options={assets}
+                                                            placeholder="Adicionar ou escolher..."
                                                             value={row.Asset}
-                                                            onChange={e => updateRow(row.id, "Asset", e.target.value)}
+                                                            onChange={val => updateRow(row.id, "Asset", val)}
                                                             className="w-full rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none transition-all"
-                                                        >
-                                                            {assets.map(a => <option key={a} value={a}>{a}</option>)}
-                                                        </select>
+                                                        />
                                                     </td>
                                                     <td className="py-2 pr-4">
                                                         <FormattedNumberInput
