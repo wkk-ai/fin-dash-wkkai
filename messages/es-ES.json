@@ -177,6 +177,16 @@
     "fromLastMonth": "desde el mes pasado",
     "singleTab": "Una Movimentación",
     "multipleTab": "Varias Movimentaciones",
-    "addNewLine": "Añadir Línea"
+    "addNewLine": "Añadir Línea",
+    "dailyTracking": "Seguimiento Diario",
+    "dailyTrackingDesc": "Flujo de caja detallado: Entradas y Salidas",
+    "netBalance": "Saldo Final"
+  },
+  "filters": {
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mes",
+    "thisQuarter": "Este Trimestre",
+    "thisSemester": "Este Semestre",
+    "thisYear": "Este Año"
   }
 }
