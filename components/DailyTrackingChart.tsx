@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { MovementEntry } from "@/types/database";
 import { parseCustomDate } from "@/lib/utils";
@@ -99,22 +99,26 @@ export default function DailyTrackingChart({ movements, t, formatCurrency }: Pro
     const onPointerDown = useCallback((handle: "start" | "end") => (e: React.PointerEvent) => {
         e.preventDefault();
         dragging.current = handle;
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
     }, []);
 
-    const onPointerMove = useCallback((e: React.PointerEvent) => {
-        if (!dragging.current) return;
-        const pct = getPercent(e.clientX);
-        if (dragging.current === "start") {
-            setRangeStart(Math.min(pct, rangeEnd - 2));
-        } else {
-            setRangeEnd(Math.max(pct, rangeStart + 2));
-        }
+    useEffect(() => {
+        const onMove = (e: PointerEvent) => {
+            if (!dragging.current) return;
+            const pct = getPercent(e.clientX);
+            if (dragging.current === "start") {
+                setRangeStart(prev => Math.min(pct, rangeEnd - 2));
+            } else {
+                setRangeEnd(prev => Math.max(pct, rangeStart + 2));
+            }
+        };
+        const onUp = () => { dragging.current = null; };
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        return () => {
+            document.removeEventListener('pointermove', onMove);
+            document.removeEventListener('pointerup', onUp);
+        };
     }, [getPercent, rangeStart, rangeEnd]);
-
-    const onPointerUp = useCallback(() => {
-        dragging.current = null;
-    }, []);
 
     return (
         <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
@@ -193,8 +197,6 @@ export default function DailyTrackingChart({ movements, t, formatCurrency }: Pro
             <div
                 className="relative mt-4 mx-4 select-none"
                 style={{ height: 65 }}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
             >
                 {/* Track line */}
                 <div ref={trackRef} className="absolute top-[11px] left-0 right-0 h-[2px] bg-slate-600 rounded-full" />
