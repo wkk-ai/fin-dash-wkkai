@@ -192,7 +192,17 @@
     "fromLastMonth": "from last month",
     "singleTab": "One Movement",
     "multipleTab": "Multiple Movements",
-    "addNewLine": "Add Line"
+    "addNewLine": "Add Line",
+    "dailyTracking": "Daily Tracking",
+    "dailyTrackingDesc": "Detailed cash flow: Inflows and Outflows",
+    "netBalance": "Net Balance"
+  },
+  "filters": {
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "thisQuarter": "This Quarter",
+    "thisSemester": "This Semester",
+    "thisYear": "This Year"
   },
   "toast": {
     "pendingChanges": "Pending changes were not saved to the database.",
