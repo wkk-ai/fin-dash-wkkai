@@ -159,6 +159,7 @@
     "incomeVsExpensesDesc": "Seguimiento mensual de la actividad financiera",
     "spendingByCategory": "Gastos por Categoría",
     "budgetVsActual": "Presupuesto vs. Real",
+    "overspent": "EXCESO DE {amount}",
     "topVendors": "Principales Gastos",
     "netCashFlow": "Flujo de Caja Neto",
     "netCashFlowDesc": "Tendencia acumulativa",

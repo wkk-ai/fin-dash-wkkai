@@ -6,7 +6,6 @@ import { useTranslation } from "@/lib/i18n";
 import { MovementEntry, BudgetEntry } from "@/types/database";
 import { parseCustomDate } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
-import NewEntryModal from "@/components/NewEntryModal";
 import MovementsTable from "@/components/MovementsTable";
 
 export default function MovementsPage() {
@@ -16,7 +15,6 @@ export default function MovementsPage() {
 
     const [movements, setMovements] = useState<MovementEntry[]>([]);
     const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
@@ -86,16 +84,30 @@ export default function MovementsPage() {
     const prevSavingsRate = prev.income > 0 ? (prev.net / prev.income) * 100 : 0;
     const savingsVar = savingsRate - prevSavingsRate;
 
-    // Process Data for Income vs Expenses Bar Chart (Daily/Monthly aggregated by Date)
-    const aggregatedByDate: Record<string, { date: string, income: number, expense: number }> = {};
+    // Process Data for Income vs Expenses Bar Chart (aggregated by Month/Year)
+    const aggregatedByMonth: Record<string, { monthYear: string, income: number, expense: number, sortKey: string }> = {};
     movements.forEach(m => {
-        if (!aggregatedByDate[m.Date]) {
-            aggregatedByDate[m.Date] = { date: m.Date.split('/')[0] + '/' + m.Date.split('/')[1], income: 0, expense: 0 };
+        const parts = m.Date.split('/'); // DD/MMM/YY
+        const monthYear = parts[1] + '/' + parts[2]; // MMM/YY
+
+        // Create a sort key based on YY/MM format
+        const monthMap: Record<string, string> = {
+            'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+            'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+        };
+        const monthNum = monthMap[parts[1].toLowerCase().replace(".", "")] || "00";
+        const sortKey = parts[2] + monthNum;
+
+        if (!aggregatedByMonth[monthYear]) {
+            aggregatedByMonth[monthYear] = { monthYear, income: 0, expense: 0, sortKey };
         }
-        if (m.Type === "Income") aggregatedByDate[m.Date].income += m.Value;
-        else aggregatedByDate[m.Date].expense += m.Value;
+        if (m.Type === "Income") aggregatedByMonth[monthYear].income += m.Value;
+        else aggregatedByMonth[monthYear].expense += m.Value;
     });
-    const barChartData = Object.values(aggregatedByDate).sort((a, b) => a.date.localeCompare(b.date)).slice(-7);
+    const barChartData = Object.values(aggregatedByMonth)
+        .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+        .map(d => ({ date: d.monthYear, income: d.income, expense: d.expense }))
+        .slice(-12); // Show last 12 months
 
     // Process Data for Spending by Category (Donut)
     const categoryAgg: Record<string, number> = {};
@@ -130,7 +142,16 @@ export default function MovementsPage() {
         .sort((a, b) => b.value - a.value)
         .slice(0, 5);
 
-    // Net Cash Flow (Cumulative)
+    // Net Cash Flow (Cumulative - using daily for smoothness)
+    const aggregatedByDate: Record<string, { date: string, income: number, expense: number }> = {};
+    movements.forEach(m => {
+        if (!aggregatedByDate[m.Date]) {
+            aggregatedByDate[m.Date] = { date: m.Date.split('/')[0] + '/' + m.Date.split('/')[1], income: 0, expense: 0 };
+        }
+        if (m.Type === "Income") aggregatedByDate[m.Date].income += m.Value;
+        else aggregatedByDate[m.Date].expense += m.Value;
+    });
+
     let cumulative = 0;
     const cashFlowData = Object.values(aggregatedByDate)
         .sort((a, b) => a.date.localeCompare(b.date))
@@ -153,13 +174,6 @@ export default function MovementsPage() {
                     <h1 className="text-3xl font-bold text-foreground">{t("movements.title")}</h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{t("movements.description")}</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all cursor-pointer"
-                >
-                    <span className="material-symbols-outlined text-[20px]">add_circle</span>
-                    {t("movements.addMovement")}
-                </button>
             </div>
 
             {/* KPI Grid */}
@@ -321,29 +335,38 @@ export default function MovementsPage() {
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.budgetVsActual")}</h3>
                     <div className="space-y-6">
                         {budgetVsActual.map((item) => {
-                            const pct = item.budget > 0 ? Math.min(100, (item.actual / item.budget) * 100) : (item.actual > 0 ? 100 : 0);
+                            const actualPct = item.budget > 0 ? (item.actual / item.budget) * 100 : (item.actual > 0 ? 100 : 0);
+                            const displayPct = Math.min(100, actualPct);
                             const isOver = item.actual > item.budget && item.budget > 0;
+                            const badgeColorClass = isOver ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500";
+
                             return (
                                 <div key={item.category}>
-                                    <div className="flex justify-between text-sm mb-2.5">
-                                        <span className="text-slate-200">{item.category}</span>
-                                        <span className="text-slate-500 font-medium">
-                                            {formatCurrency(item.actual)} / {formatCurrency(item.budget)}
+                                    <div className="flex justify-between items-center text-sm mb-2.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-foreground font-medium">{item.category}</span>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeColorClass}`}>
+                                                {actualPct.toFixed(0)}%
+                                            </span>
+                                        </div>
+                                        <span className={`font-bold ${isOver ? "text-red-500" : "text-slate-400"}`}>
+                                            {formatCurrency(item.actual)} <span className="text-slate-500 font-normal">/ {formatCurrency(item.budget)}</span>
                                         </span>
                                     </div>
-                                    <div className="h-2.5 w-full bg-[#1e293b] rounded-full overflow-hidden">
+                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                         <div
                                             className="h-full transition-all duration-1000 rounded-full"
                                             style={{
-                                                width: `${pct}%`,
-                                                backgroundColor: `hsl(${Math.max(0, 142 - (pct * 1.42))}, 100%, 50%)`
+                                                width: `${displayPct}%`,
+                                                backgroundColor: isOver ? "#ef4444" : "#3b82f6"
                                             }}
                                         />
                                     </div>
                                     {isOver && (
-                                        <p className="text-[10px] font-bold text-[#ff6b6b] mt-1.5 uppercase tracking-wider">
-                                            Overspent by {formatCurrency(item.actual - item.budget)}
-                                        </p>
+                                        <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-red-500 uppercase tracking-widest">
+                                            <span className="material-symbols-outlined text-[14px]">warning</span>
+                                            {t("movements.overspent").replace("{amount}", formatCurrency(item.actual - item.budget))}
+                                        </div>
                                     )}
                                 </div>
                             );
@@ -407,8 +430,6 @@ export default function MovementsPage() {
             </div>
 
             <MovementsTable movements={movements} onUpdate={fetchData} />
-
-            {isModalOpen && <NewEntryModal onClose={() => setIsModalOpen(false)} />}
         </div>
     );
 }
