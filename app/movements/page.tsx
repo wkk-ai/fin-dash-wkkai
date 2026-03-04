@@ -336,7 +336,7 @@ export default function MovementsPage() {
                                             className="h-full transition-all duration-1000 rounded-full"
                                             style={{
                                                 width: `${pct}%`,
-                                                backgroundColor: '#ff6b6b'
+                                                backgroundColor: `hsl(${Math.max(0, 142 - (pct * 1.42))}, 100%, 50%)`
                                             }}
                                         />
                                     </div>
@@ -362,7 +362,7 @@ export default function MovementsPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-foreground truncate">{vendor.name}</p>
-                                    <p className="text-xs text-slate-500">{vendor.count} Transactions</p>
+                                    <p className="text-xs text-slate-500"><span className="font-bold text-slate-700 dark:text-slate-300">{vendor.count}</span> Transactions</p>
                                 </div>
                                 <span className="text-sm font-bold text-red-500">-{formatCurrency(vendor.value)}</span>
                             </div>
