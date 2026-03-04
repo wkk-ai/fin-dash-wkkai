@@ -143,23 +143,26 @@ export default function MovementsPage() {
         .sort((a, b) => b.value - a.value)
         .slice(0, 5);
 
-    // Net Cash Flow (Cumulative - using daily for smoothness)
-    const aggregatedByDate: Record<string, { date: string, income: number, expense: number }> = {};
+    // Net Cash Flow (Monthly result)
+    const monthlyNetAgg: Record<string, { monthKey: string, date: string, income: number, expense: number }> = {};
     movements.forEach(m => {
-        if (!aggregatedByDate[m.Date]) {
-            aggregatedByDate[m.Date] = { date: m.Date.split('/')[0] + '/' + m.Date.split('/')[1], income: 0, expense: 0 };
+        const dateObj = parseCustomDate(m.Date);
+        const monthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
+        const displayDate = dateObj.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+
+        if (!monthlyNetAgg[monthKey]) {
+            monthlyNetAgg[monthKey] = { monthKey, date: displayDate, income: 0, expense: 0 };
         }
-        if (m.Type === "Income") aggregatedByDate[m.Date].income += m.Value;
-        else aggregatedByDate[m.Date].expense += m.Value;
+        if (m.Type === "Income") monthlyNetAgg[monthKey].income += m.Value;
+        else monthlyNetAgg[monthKey].expense += m.Value;
     });
 
-    let cumulative = 0;
-    const cashFlowData = Object.values(aggregatedByDate)
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .map(d => {
-            cumulative += (d.income - d.expense);
-            return { date: d.date, value: cumulative };
-        });
+    const cashFlowData = Object.values(monthlyNetAgg)
+        .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+        .map(d => ({
+            date: d.date,
+            value: d.income - d.expense
+        }));
 
     if (loading) return (
         <div className="flex items-center justify-center min-h-[400px]">
@@ -407,7 +410,13 @@ export default function MovementsPage() {
                                         <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <XAxis dataKey="date" hide />
+                                <XAxis
+                                    dataKey="date"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fontSize: 10, fill: '#64748b' }}
+                                    dy={5}
+                                />
                                 <YAxis hide />
                                 <RechartsTooltip
                                     cursor={false}
@@ -417,7 +426,7 @@ export default function MovementsPage() {
                                             <div className="rounded-lg px-3 py-2 border shadow-lg" style={{ backgroundColor: tooltipBg, borderColor: tooltipBorder, color: tooltipTextColor }}>
                                                 <p className="text-xs font-bold mb-1" style={{ color: tooltipLabelColor }}>{payload[0].payload.date}</p>
                                                 <p className="text-xs font-medium">
-                                                    {t("movements.wealth") || "Value"}: {formatCurrency(payload[0].value as number)}
+                                                    {t("movements.cash") || "Value"}: {formatCurrency(payload[0].value as number)}
                                                 </p>
                                             </div>
                                         );
