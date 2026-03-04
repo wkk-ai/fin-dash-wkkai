@@ -7,6 +7,7 @@ import { MovementEntry, BudgetEntry } from "@/types/database";
 import { parseCustomDate } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
 import MovementsTable from "@/components/MovementsTable";
+import DailyTrackingChart from "@/components/DailyTrackingChart";
 
 export default function MovementsPage() {
     const { t, formatCurrency } = useTranslation();
@@ -428,6 +429,8 @@ export default function MovementsPage() {
                     </div>
                 </div>
             </div>
+
+            <DailyTrackingChart movements={movements} t={t} formatCurrency={formatCurrency} />
 
             <MovementsTable movements={movements} onUpdate={fetchData} />
         </div>

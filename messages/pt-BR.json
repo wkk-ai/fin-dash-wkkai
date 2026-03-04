@@ -193,7 +193,17 @@
     "saveMovement": "Salvar Movimentação",
     "singleTab": "Uma Movimentação",
     "multipleTab": "Várias Movimentações",
-    "addNewLine": "Adicionar Linha"
+    "addNewLine": "Adicionar Linha",
+    "dailyTracking": "Acompanhamento Diário",
+    "dailyTrackingDesc": "Fluxo de caixa detalhado: Entradas e Saídas",
+    "netBalance": "Saldo Final"
+  },
+  "filters": {
+    "thisWeek": "Esta Semana",
+    "thisMonth": "Este Mês",
+    "thisQuarter": "Este Trimestre",
+    "thisSemester": "Este Semestre",
+    "thisYear": "Este Ano"
   },
   "toast": {
     "pendingChanges": "Alterações pendentes não foram salvas no banco de dados.",
