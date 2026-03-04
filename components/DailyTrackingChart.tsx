@@ -19,17 +19,40 @@ export default function DailyTrackingChart({ movements, t, formatCurrency }: Pro
     const chartData = useMemo(() => {
         if (!movements.length) return [];
 
-        const sortedMovements = [...movements].sort((a, b) => parseCustomDate(b.Date).getTime() - parseCustomDate(a.Date).getTime());
-        const referenceDate = sortedMovements.length > 0 ? parseCustomDate(sortedMovements[0].Date) : new Date();
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-        let startDate = new Date(referenceDate);
-        if (timeRange === "week") startDate.setDate(startDate.getDate() - 7);
-        if (timeRange === "month") startDate.setMonth(startDate.getMonth() - 1);
-        if (timeRange === "quarter") startDate.setMonth(startDate.getMonth() - 3);
-        if (timeRange === "semester") startDate.setMonth(startDate.getMonth() - 6);
-        if (timeRange === "year") startDate.setFullYear(startDate.getFullYear() - 1);
+        let startDate = new Date(today);
+        let endDate = new Date(today);
 
-        const filtered = movements.filter(m => parseCustomDate(m.Date) >= startDate);
+        if (timeRange === "week") {
+            // Monday of current week
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+            startDate = new Date(today.getFullYear(), today.getMonth(), diff);
+            // "Até sexta" as requested
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 4);
+        } else if (timeRange === "month") {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        } else if (timeRange === "quarter") {
+            const quarter = Math.floor(today.getMonth() / 3);
+            startDate = new Date(today.getFullYear(), quarter * 3, 1);
+            endDate = new Date(today.getFullYear(), (quarter + 1) * 3, 0);
+        } else if (timeRange === "semester") {
+            const semester = Math.floor(today.getMonth() / 6);
+            startDate = new Date(today.getFullYear(), semester * 6, 1);
+            endDate = new Date(today.getFullYear(), (semester + 1) * 6, 0);
+        } else if (timeRange === "year") {
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = new Date(today.getFullYear(), 11, 31);
+        }
+
+        const filtered = movements.filter(m => {
+            const d = parseCustomDate(m.Date);
+            return d >= startDate && d <= endDate;
+        });
 
         const dailyAgg: Record<string, { date: string, dateObj: Date, income: number, expense: number }> = {};
 
@@ -48,7 +71,7 @@ export default function DailyTrackingChart({ movements, t, formatCurrency }: Pro
 
         const result = [];
         let current = new Date(startDate);
-        while (current <= referenceDate) {
+        while (current <= endDate) {
             const isoKey = current.toISOString().split('T')[0];
             if (dailyAgg[isoKey]) {
                 result.push(dailyAgg[isoKey]);

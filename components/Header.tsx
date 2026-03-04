@@ -39,10 +39,10 @@ export default function Header() {
     }, [isNavOpen]);
 
     const navLinks = [
-        { name: t("nav.dashboard"), href: "/" },
-        { name: t("nav.portfolio"), href: "/portfolio" },
-        { name: t("nav.movements"), href: "/movements" },
-        { name: t("nav.settings"), href: "/settings" },
+        { name: t("nav.dashboard"), href: "/", icon: "home" },
+        { name: t("nav.portfolio"), href: "/portfolio", icon: "account_balance_wallet" },
+        { name: t("nav.movements"), href: "/movements", icon: "swap_horiz" },
+        { name: t("nav.settings"), href: "/settings", icon: "settings" },
     ];
 
     return (
@@ -58,19 +58,36 @@ export default function Header() {
                 </div>
 
                 <div className="flex flex-1 justify-end items-center gap-6">
-                    <nav className="hidden md:flex gap-6 text-sm font-medium text-slate-500 dark:text-slate-400">
+                    <nav className="hidden md:flex gap-1 text-sm font-medium">
                         {navLinks.map((link) => {
                             const isActive = pathname === link.href;
                             return (
                                 <Link
                                     key={link.name}
                                     href={link.href}
-                                    className={`transition-colors ${isActive
-                                        ? "text-primary hover:text-primary"
-                                        : "hover:text-slate-900 dark:hover:text-white"
-                                        }`}
+                                    className={cn(
+                                        "flex items-center px-4 py-2 transition-colors group",
+                                        isActive
+                                            ? "text-white"
+                                            : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                                    )}
                                 >
-                                    {link.name}
+                                    <div className="relative flex items-center gap-2 px-0.5 py-1">
+                                        <span
+                                            className={cn(
+                                                "material-symbols-outlined text-[20px] transition-colors leading-none select-none",
+                                                isActive ? "text-primary" : ""
+                                            )}
+                                        >
+                                            {link.icon}
+                                        </span>
+                                        <span className={cn("whitespace-nowrap select-none transition-all", isActive ? "font-bold" : "font-medium")}>
+                                            {link.name}
+                                        </span>
+                                        {isActive && (
+                                            <span className="absolute -bottom-2.5 left-0 right-0 h-[2.5px] rounded-full bg-primary shadow-[0_0_10px_2px_rgba(59,130,246,0.6)]" />
+                                        )}
+                                    </div>
                                 </Link>
                             );
                         })}
@@ -99,12 +116,13 @@ export default function Header() {
                                             href={link.href}
                                             onClick={() => setIsNavOpen(false)}
                                             className={cn(
-                                                "block px-4 py-2.5 text-sm font-medium transition-colors",
+                                                "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
                                                 isActive
                                                     ? "text-primary bg-primary/10"
                                                     : "text-slate-600 dark:text-slate-400 hover:bg-border hover:text-foreground"
                                             )}
                                         >
+                                            <span className={cn("material-symbols-outlined text-[20px]", isActive ? "text-primary" : "")}>{link.icon}</span>
                                             {link.name}
                                         </Link>
                                     );
