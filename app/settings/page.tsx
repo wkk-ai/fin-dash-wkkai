@@ -210,6 +210,17 @@ export default function SettingsPage() {
 
         setSavingSettings({ type });
         try {
+            // Prune budgets for categories that no longer exist if expense categories are being saved
+            if (type === "expense") {
+                const activeBudgets = budgets.filter(b => settings.expenseCategories.includes(b.Category));
+                await fetch("/api/movements", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "updateBudgets", data: activeBudgets }),
+                });
+                setBudgets(activeBudgets); // Update local state after pruning
+            }
+
             await fetch("/api/settings", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -944,7 +955,10 @@ export default function SettingsPage() {
                         <div className="space-y-4">
                             {settings.expenseCategories?.map((cat: string) => {
                                 const budget = budgets.find(b => b.Category === cat)?.Budget || 0;
-                                const totalBudget = budgets.reduce((acc, b) => acc + b.Budget, 0);
+                                const totalBudget = settings.expenseCategories?.reduce((acc, c) => {
+                                    const b = budgets.find(budget => budget.Category === c);
+                                    return acc + (b?.Budget || 0);
+                                }, 0) || 0;
                                 const weight = totalBudget > 0 ? (budget / totalBudget) * 100 : 0;
 
                                 return (
@@ -983,7 +997,10 @@ export default function SettingsPage() {
                             <div className="flex flex-col">
                                 <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{t("settings.totalPlanned")}</span>
                                 <span className="text-2xl font-black text-foreground">
-                                    {formatCurrency(budgets.reduce((acc, b) => acc + b.Budget, 0))}
+                                    {formatCurrency(settings.expenseCategories?.reduce((acc, c) => {
+                                        const b = budgets.find(budget => budget.Category === c);
+                                        return acc + (b?.Budget || 0);
+                                    }, 0) || 0)}
                                 </span>
                             </div>
                             <button
