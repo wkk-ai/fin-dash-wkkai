@@ -98,6 +98,12 @@ export default function SettingsPage() {
             setSettings(settingsData);
             setBudgets(movementsData.budgets || []);
 
+            // Identify used categories from movements
+            const usedIncome = Array.from(new Set(movementsData.movements.filter((m: any) => m.Type === "Income").map((m: any) => m.Category))).filter(Boolean) as string[];
+            const usedExpense = Array.from(new Set(movementsData.movements.filter((m: any) => m.Type === "Expense").map((m: any) => m.Category))).filter(Boolean) as string[];
+            setDbIncomeCategories(usedIncome);
+            setDbExpenseCategories(usedExpense);
+
         } catch (e) {
             console.error(e);
         } finally {
@@ -716,14 +722,24 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                             <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {settings.classifications?.map(c => (
-                                    <div key={c} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
-                                        {c}
-                                        <button type="button" onClick={() => removeClassification(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
-                                            <span className="material-symbols-outlined text-[14px]">close</span>
-                                        </button>
-                                    </div>
-                                ))}
+                                {settings.classifications?.map(c => {
+                                    const isInUse = dbClassifications.includes(c);
+                                    return (
+                                        <div key={c} className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                                            isInUse
+                                                ? "bg-primary/10 text-primary border-primary/30"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-border group hover:border-primary/30"
+                                        )}>
+                                            {c}
+                                            {!isInUse && (
+                                                <button type="button" onClick={() => removeClassification(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -756,14 +772,24 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                             <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {settings.assets?.map(a => (
-                                    <div key={a} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
-                                        {a}
-                                        <button type="button" onClick={() => removeAsset(a)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
-                                            <span className="material-symbols-outlined text-[14px]">close</span>
-                                        </button>
-                                    </div>
-                                ))}
+                                {settings.assets?.map(a => {
+                                    const isInUse = dbAssets.includes(a);
+                                    return (
+                                        <div key={a} className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                                            isInUse
+                                                ? "bg-primary/10 text-primary border-primary/30"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-border group hover:border-primary/30"
+                                        )}>
+                                            {a}
+                                            {!isInUse && (
+                                                <button type="button" onClick={() => removeAsset(a)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
@@ -806,14 +832,24 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                             <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {settings.incomeCategories?.map(c => (
-                                    <div key={c} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
-                                        {c}
-                                        <button type="button" onClick={() => removeIncomeCategory(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
-                                            <span className="material-symbols-outlined text-[14px]">close</span>
-                                        </button>
-                                    </div>
-                                ))}
+                                {settings.incomeCategories?.map(c => {
+                                    const isInUse = dbIncomeCategories.includes(c);
+                                    return (
+                                        <div key={c} className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                                            isInUse
+                                                ? "bg-primary/10 text-primary border-primary/30"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-border group hover:border-primary/30"
+                                        )}>
+                                            {c}
+                                            {!isInUse && (
+                                                <button type="button" onClick={() => removeIncomeCategory(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
@@ -846,14 +882,24 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                             <div className="flex flex-wrap gap-2 min-h-[40px]">
-                                {settings.expenseCategories?.map(c => (
-                                    <div key={c} className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-xs font-semibold border border-border group transition-all hover:border-primary/30">
-                                        {c}
-                                        <button type="button" onClick={() => removeExpenseCategory(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
-                                            <span className="material-symbols-outlined text-[14px]">close</span>
-                                        </button>
-                                    </div>
-                                ))}
+                                {settings.expenseCategories?.map(c => {
+                                    const isInUse = dbExpenseCategories.includes(c);
+                                    return (
+                                        <div key={c} className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                                            isInUse
+                                                ? "bg-primary/10 text-primary border-primary/30"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-border group hover:border-primary/30"
+                                        )}>
+                                            {c}
+                                            {!isInUse && (
+                                                <button type="button" onClick={() => removeExpenseCategory(c)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
