@@ -380,9 +380,9 @@ export default function MovementsPage() {
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.topVendors")}</h3>
                     <div className="flex-1 space-y-3">
                         {topVendors.map((vendor) => (
-                            <div key={vendor.name} className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-border">
-                                <div className="size-10 rounded-lg bg-surface border border-border flex items-center justify-center text-slate-400">
-                                    <span className="material-symbols-outlined">shopping_cart</span>
+                            <div key={vendor.name} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-border">
+                                <div className="size-8 rounded-lg bg-surface border border-border flex items-center justify-center text-slate-400">
+                                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>shopping_cart</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-foreground truncate">{vendor.name}</p>
