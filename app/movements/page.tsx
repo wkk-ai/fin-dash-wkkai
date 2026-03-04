@@ -176,7 +176,13 @@ export default function MovementsPage() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">{t("movements.title")}</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{t("movements.description")}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{t("movements.description")}</p>
+                        <span className="size-1 rounded-full bg-slate-400" />
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            {latestDate.toLocaleDateString(t("nav.selectLanguage") === "English" ? 'en-US' : 'pt-BR', { month: 'long', year: 'numeric' })}
+                        </span>
+                    </div>
                 </div>
             </div>
 
