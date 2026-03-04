@@ -31,15 +31,15 @@ export default function RootLayout({
       <body className={`${manrope.variable} antialiased min-h-screen transition-colors duration-200`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
-          <DocumentTitle />
-          <div className="layout-container flex h-full min-h-screen flex-col">
-            <Header />
-            <main className="flex-1 overflow-y-auto px-4 py-8 lg:px-40">
-              {children}
-            </main>
-            <AddAssetSuccessToast />
-            <PendingChangesToast />
-          </div>
+            <DocumentTitle />
+            <div className="layout-container flex h-full min-h-screen flex-col">
+              <Header />
+              <main className="flex-1 px-4 py-8 lg:px-40">
+                {children}
+              </main>
+              <AddAssetSuccessToast />
+              <PendingChangesToast />
+            </div>
           </LanguageProvider>
         </ThemeProvider>
       </body>
