@@ -16,6 +16,7 @@ export default function MovementsPage() {
 
     const [movements, setMovements] = useState<MovementEntry[]>([]);
     const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
+    const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
@@ -29,6 +30,10 @@ export default function MovementsPage() {
             const data = await res.json();
             setMovements(data.movements || []);
             setBudgets(data.budgets || []);
+
+            const settingsRes = await fetch("/api/settings");
+            const settingsData = await settingsRes.json();
+            setSettings(settingsData);
         } catch (error) {
             console.error("Error fetching movements:", error);
         } finally {
@@ -128,7 +133,9 @@ export default function MovementsPage() {
     const budgetMap: Record<string, number> = {};
     budgets.forEach(b => budgetMap[b.Category] = b.Budget);
 
-    const allCategories = Array.from(new Set([...Object.keys(categoryAgg), ...Object.keys(budgetMap)]));
+    // Only show categories that are enabled in settings and have a budget or have actual movements
+    const activeExpenseCategories = settings?.expenseCategories || [];
+    const allCategories = activeExpenseCategories;
 
     const budgetVsActual = allCategories.map(category => ({
         category,
@@ -346,9 +353,9 @@ export default function MovementsPage() {
             {/* Charts Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Budget vs Actual */}
-                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6">
+                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col h-[400px]">
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.budgetVsActual")}</h3>
-                    <div className="space-y-6">
+                    <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 space-y-6">
                         {budgetVsActual.map((item) => {
                             const actualPct = item.budget > 0 ? (item.actual / item.budget) * 100 : (item.actual > 0 ? 100 : 0);
                             const displayPct = Math.min(100, actualPct);
@@ -390,7 +397,7 @@ export default function MovementsPage() {
                 </div>
 
                 {/* Top Vendors */}
-                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
+                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col h-[400px]">
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.topVendors")}</h3>
                     <div className="flex-1 space-y-3">
                         {topVendors.map((vendor) => (
@@ -409,7 +416,7 @@ export default function MovementsPage() {
                 </div>
 
                 {/* Net Cash Flow */}
-                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col min-h-[300px]">
+                <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col h-[400px]">
                     <h3 className="text-lg font-bold text-foreground">{t("movements.netCashFlow")}</h3>
                     <p className="text-xs text-slate-500 mb-6">{t("movements.netCashFlowDesc")}</p>
                     <div className="flex-1">
