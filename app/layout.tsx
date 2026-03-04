@@ -34,7 +34,7 @@ export default function RootLayout({
             <DocumentTitle />
             <div className="layout-container flex h-full min-h-screen flex-col">
               <Header />
-              <main className="flex-1 px-4 py-8 lg:px-40">
+              <main className="flex-1 px-4 py-8 lg:px-40 pt-24">
                 {children}
               </main>
               <AddAssetSuccessToast />
