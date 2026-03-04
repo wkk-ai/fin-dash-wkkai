@@ -6,7 +6,7 @@ import { useTranslation } from "@/lib/i18n";
 import { MovementEntry, BudgetEntry } from "@/types/database";
 import { parseCustomDate } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
-import AddMovementModal from "@/components/AddMovementModal";
+import NewEntryModal from "@/components/NewEntryModal";
 import MovementsTable from "@/components/MovementsTable";
 
 export default function MovementsPage() {
@@ -408,7 +408,7 @@ export default function MovementsPage() {
 
             <MovementsTable movements={movements} onUpdate={fetchData} />
 
-            {isModalOpen && <AddMovementModal onClose={() => setIsModalOpen(false)} />}
+            {isModalOpen && <NewEntryModal onClose={() => setIsModalOpen(false)} />}
         </div>
     );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState, useEffect, useRef } from "react";
-import AddAssetModal from "./AddAssetModal";
+import NewEntryModal from "./NewEntryModal";
 import LanguageSelector from "./LanguageSelector";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
@@ -121,7 +121,7 @@ export default function Header() {
                             className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all cursor-pointer"
                         >
                             <span className="material-symbols-outlined text-[20px]">add</span>
-                            <span className="truncate">{t("nav.addAsset")}</span>
+                            <span className="truncate">Nova Entrada</span>
                         </button>
 
                         <button
@@ -149,7 +149,7 @@ export default function Header() {
             </header>
 
             {isModalOpen && (
-                <AddAssetModal onClose={() => setIsModalOpen(false)} />
+                <NewEntryModal onClose={() => setIsModalOpen(false)} />
             )}
         </>
     );
