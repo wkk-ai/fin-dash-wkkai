@@ -28,7 +28,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${manrope.variable} antialiased min-h-screen transition-colors duration-200`}>
+      <body suppressHydrationWarning className={`${manrope.variable} antialiased min-h-screen transition-colors duration-200`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <DocumentTitle />
