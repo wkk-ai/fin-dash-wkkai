@@ -18,17 +18,17 @@ export function parseCustomDate(dateStr: string): Date {
     const cleanMonth = monthStr.toLowerCase().replace(".", "");
     const months: Record<string, number> = {
         jan: 0,
-        feb: 1,
+        feb: 1, fev: 1,
         mar: 2,
-        apr: 3,
-        may: 4,
+        apr: 3, abr: 3,
+        may: 4, mai: 4,
         jun: 5,
         jul: 6,
-        aug: 7,
-        sep: 8,
-        oct: 9,
+        aug: 7, ago: 7,
+        sep: 8, set: 8,
+        oct: 9, out: 9,
         nov: 10,
-        dec: 11,
+        dec: 11, dez: 11,
     };
 
     const month = months[cleanMonth] ?? 0;

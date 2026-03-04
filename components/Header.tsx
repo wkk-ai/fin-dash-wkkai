@@ -47,7 +47,7 @@ export default function Header() {
 
     return (
         <>
-            <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-surface/80 backdrop-blur-md px-6 py-3 lg:px-10">
+            <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-border bg-surface/80 backdrop-blur-md px-6 py-3 lg:px-10 w-full">
                 <div className="flex items-center gap-4">
                     <div className="flex size-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
                         <span className="material-symbols-outlined text-2xl">grid_view</span>
