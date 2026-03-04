@@ -70,14 +70,19 @@ export default function MovementsPage() {
 
     const getTotals = (list: MovementEntry[]) => {
         const income = list.filter(m => m.Type === "Income").reduce((acc, m) => acc + m.Value, 0);
-        const expenses = list.filter(m => m.Type === "Expense").reduce((acc, m) => acc + m.Value, 0);
+        // Sum expenses and take absolute value to get a positive total for comparison
+        const expenses = Math.abs(list.filter(m => m.Type === "Expense").reduce((acc, m) => acc + m.Value, 0));
         return { income, expenses, net: income - expenses };
     };
 
     const curr = getTotals(currentMovements);
     const prev = getTotals(previousMovements);
 
-    const calcVar = (c: number, p: number) => p > 0 ? ((c - p) / p) * 100 : 0;
+    const calcVar = (c: number, p: number) => {
+        const current = Math.abs(c);
+        const previous = Math.abs(p);
+        return previous > 0 ? ((current - previous) / previous) * 100 : 0;
+    };
 
     const incomeVar = calcVar(curr.income, prev.income);
     const expenseVar = calcVar(curr.expenses, prev.expenses);
@@ -103,7 +108,7 @@ export default function MovementsPage() {
             aggregatedByMonth[monthYear] = { monthYear, income: 0, expense: 0, sortKey };
         }
         if (m.Type === "Income") aggregatedByMonth[monthYear].income += m.Value;
-        else aggregatedByMonth[monthYear].expense += m.Value;
+        else aggregatedByMonth[monthYear].expense += Math.abs(m.Value);
     });
     const barChartData = Object.values(aggregatedByMonth)
         .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
@@ -113,7 +118,7 @@ export default function MovementsPage() {
     // Process Data for Spending by Category (Donut)
     const categoryAgg: Record<string, number> = {};
     currentMovements.filter(m => m.Type === "Expense").forEach(m => {
-        categoryAgg[m.Category] = (categoryAgg[m.Category] || 0) + m.Value;
+        categoryAgg[m.Category] = (categoryAgg[m.Category] || 0) + Math.abs(m.Value);
     });
 
     const donutData = Object.entries(categoryAgg).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -135,7 +140,7 @@ export default function MovementsPage() {
     const vendorAgg: Record<string, { value: number, count: number }> = {};
     currentMovements.filter(m => m.Type === "Expense").forEach(m => {
         if (!vendorAgg[m.Description]) vendorAgg[m.Description] = { value: 0, count: 0 };
-        vendorAgg[m.Description].value += m.Value;
+        vendorAgg[m.Description].value += Math.abs(m.Value);
         vendorAgg[m.Description].count += 1;
     });
     const topVendors = Object.entries(vendorAgg)
@@ -154,7 +159,7 @@ export default function MovementsPage() {
             monthlyNetAgg[monthKey] = { monthKey, date: displayDate, income: 0, expense: 0 };
         }
         if (m.Type === "Income") monthlyNetAgg[monthKey].income += m.Value;
-        else monthlyNetAgg[monthKey].expense += m.Value;
+        else monthlyNetAgg[monthKey].expense += Math.abs(m.Value);
     });
 
     const cashFlowData = Object.values(monthlyNetAgg)
