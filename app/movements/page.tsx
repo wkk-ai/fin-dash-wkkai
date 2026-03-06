@@ -425,15 +425,21 @@ export default function MovementsPage() {
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.topVendors")}</h3>
                     <div className="flex-1 space-y-3">
                         {topVendors.map((vendor) => (
-                            <div key={vendor.name} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-border">
+                            <div key={vendor.name} className="group relative flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-border">
                                 <div className="size-8 rounded-lg bg-surface border border-border flex items-center justify-center text-slate-400">
                                     <span className="material-symbols-outlined" style={{ fontSize: 18 }}>shopping_cart</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-foreground truncate">{vendor.name}</p>
+                                    <p className="text-sm font-bold text-foreground truncate cursor-help">{vendor.name}</p>
                                     <p className="text-xs text-slate-500"><span className="font-bold text-slate-700 dark:text-slate-300">{vendor.count}</span> Transactions</p>
                                 </div>
                                 <span className="text-sm font-bold text-red-500">-{formatCurrency(vendor.value)}</span>
+
+                                {/* Custom Fast Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none z-50 whitespace-normal min-w-[200px] max-w-[300px]">
+                                    {vendor.name}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900" />
+                                </div>
                             </div>
                         ))}
                     </div>
