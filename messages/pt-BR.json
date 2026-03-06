@@ -197,7 +197,8 @@
     "addNewLine": "Adicionar Linha",
     "dailyTracking": "Acompanhamento Diário",
     "dailyTrackingDesc": "Fluxo de caixa detalhado: Entradas e Saídas",
-    "netBalance": "Saldo Final"
+    "netBalance": "Saldo Final",
+    "others": "Outros"
   },
   "filters": {
     "thisWeek": "Esta Semana",

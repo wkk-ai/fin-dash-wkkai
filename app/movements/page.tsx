@@ -126,8 +126,32 @@ export default function MovementsPage() {
         categoryAgg[m.Category] = (categoryAgg[m.Category] || 0) + Math.abs(m.Value);
     });
 
-    const donutData = Object.entries(categoryAgg).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-    const DONUT_COLORS = ['#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
+    const sortedAgg = Object.entries(categoryAgg)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
+
+    const topCategories = sortedAgg.slice(0, 6);
+    const othersValue = sortedAgg.slice(6).reduce((acc, curr) => acc + curr.value, 0);
+
+    const donutData = [...topCategories];
+    if (othersValue > 0) {
+        donutData.push({ name: t("movements.others") || "Outros", value: othersValue });
+    }
+
+    // Colors: Largest is dark red, others are lighter reds, "Outros" is gray
+    const DONUT_COLORS = [
+        '#991b1b', // Top 1: Dark Red
+        '#b91c1c',
+        '#dc2626',
+        '#ef4444',
+        '#f87171',
+        '#fca5a5'
+    ];
+    // If we have "Outros", it will be the last item, assign it gray
+    const getDonutColor = (index: number, name: string) => {
+        if (name === (t("movements.others") || "Outros")) return '#94a3b8'; // Gray
+        return DONUT_COLORS[index % DONUT_COLORS.length];
+    };
 
     // Process Budget vs Actual (Show all budgeted categories + unbudgeted ones with expenses)
     const budgetMap: Record<string, number> = {};
@@ -303,7 +327,7 @@ export default function MovementsPage() {
                                         stroke="none"
                                     >
                                         {donutData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                                            <Cell key={`cell-${index}`} fill={getDonutColor(index, entry.name)} />
                                         ))}
                                     </Pie>
                                     <RechartsTooltip
@@ -311,7 +335,7 @@ export default function MovementsPage() {
                                             if (!active || !payload?.length) return null;
                                             const { name, value } = payload[0].payload;
                                             const idx = donutData.findIndex((d) => d.name === name);
-                                            const segmentColor = idx >= 0 ? DONUT_COLORS[idx % DONUT_COLORS.length] : tooltipTextColor;
+                                            const segmentColor = idx >= 0 ? getDonutColor(idx, name) : tooltipTextColor;
                                             return (
                                                 <div
                                                     className="rounded-lg px-3 py-2 shadow-lg border"
@@ -339,7 +363,7 @@ export default function MovementsPage() {
                             {donutData.map((entry: any, index: number) => (
                                 <div key={entry.name} className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <div className="size-2 rounded-full" style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }} />
+                                        <div className="size-2 rounded-full" style={{ backgroundColor: getDonutColor(index, entry.name) }} />
                                         <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{entry.name}</span>
                                     </div>
                                     <span className="text-sm font-bold text-foreground">{((entry.value / curr.expenses) * 100).toFixed(0)}%</span>
