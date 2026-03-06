@@ -196,7 +196,8 @@
     "addNewLine": "Add Line",
     "dailyTracking": "Daily Tracking",
     "dailyTrackingDesc": "Detailed cash flow: Inflows and Outflows",
-    "netBalance": "Net Balance"
+    "netBalance": "Net Balance",
+    "others": "Others"
   },
   "filters": {
     "thisWeek": "This Week",
