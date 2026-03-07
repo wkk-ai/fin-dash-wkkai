@@ -332,7 +332,15 @@ export async function POST(request: Request) {
             updatedCsv = trimmedContent + newRow;
 
         } else if (body.action === "updateAll") {
-            updatedCsv = Papa.unparse(body.data);
+            updatedCsv = Papa.unparse({
+                fields: ["Date", "Classification", "Asset", "Value"],
+                data: body.data
+            }, {
+                header: true
+            });
+            // Reset custom files to default headers when overwriting everything
+            fs.writeFileSync(customClassPath, "Value\n", "utf-8");
+            fs.writeFileSync(customAssetsPath, "Value\n", "utf-8");
         } else {
             return NextResponse.json({ error: "Invalid action" }, { status: 400 });
         }
