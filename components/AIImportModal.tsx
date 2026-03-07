@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "@/lib/i18n";
 import Portal from "./Portal";
+import { FormattedNumberInput } from "./FormattedNumberInput";
+import { CustomCombobox } from "./CustomCombobox";
 
 interface Props {
     onClose: () => void;
@@ -36,6 +38,56 @@ export default function AIImportModal({ onClose }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [importing, setImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Categories/Assets state
+    const [classifications, setClassifications] = useState<string[]>([]);
+    const [assets, setAssets] = useState<string[]>([]);
+    const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
+    const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
+
+    useEffect(() => {
+        fetch("/api/settings")
+            .then(res => res.json())
+            .then(data => {
+                setClassifications((data.classifications || []).sort((a: string, b: string) => a.localeCompare(b)));
+                setAssets((data.assets || []).sort((a: string, b: string) => a.localeCompare(b)));
+                setIncomeCategories(data.incomeCategories || []);
+                setExpenseCategories(data.expenseCategories || []);
+            })
+            .catch(err => console.error("Failed to load settings", err));
+    }, []);
+
+    // Date helpers
+    const dbDateToInputDate = (dbDate: string) => {
+        if (!dbDate) return "";
+        // Expected "DD/MMM/YY" (e.g. 30/Dec/25)
+        const parts = dbDate.split("/");
+        if (parts.length !== 3) return dbDate;
+
+        const day = parts[0].padStart(2, "0");
+        const monthStr = parts[1].toLowerCase().replace(".", "");
+        const yearShort = parts[2];
+        const year = `20${yearShort}`;
+
+        const months: Record<string, string> = {
+            jan: "01", feb: "02", fev: "02", mar: "03", apr: "04", abr: "04",
+            may: "05", mai: "05", jun: "06", jul: "07", aug: "08", ago: "08",
+            sep: "09", set: "09", oct: "10", out: "10", nov: "11", dec: "12", dez: "12"
+        };
+        const month = months[monthStr] || "01";
+        return `${year}-${month}-${day}`;
+    };
+
+    const inputDateToDbDate = (inputDate: string) => {
+        if (!inputDate) return "";
+        const dateObj = new Date(inputDate);
+        if (isNaN(dateObj.getTime())) return inputDate;
+
+        const day = String(dateObj.getUTCDate()).padStart(2, "0");
+        const month = dateObj.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+        const year = String(dateObj.getUTCFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+    };
 
     const handleTypeSelect = (type: ImportType) => {
         setImportType(type);
@@ -199,7 +251,7 @@ export default function AIImportModal({ onClose }: Props) {
                                                 <th className="px-4 py-3">Data</th>
                                                 <th className="px-4 py-3">{isMovimentacao ? "Descrição" : "Classificação"}</th>
                                                 <th className="px-4 py-3">{isMovimentacao ? "Categoria" : "Ativo"}</th>
-                                                <th className="px-4 py-3 text-right">Valor</th>
+                                                <th className="px-4 py-3 text-left">Valor</th>
                                                 <th className="px-4 py-3 w-10"></th>
                                             </tr>
                                         </thead>
@@ -208,38 +260,45 @@ export default function AIImportModal({ onClose }: Props) {
                                                 <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
                                                     <td className="px-4 py-2">
                                                         <input
-                                                            type="text"
-                                                            value={row.Date}
-                                                            onChange={(e) => handleUpdateRow(row.id, "Date", e.target.value)}
-                                                            className="w-[90px] bg-transparent text-sm text-slate-600 dark:text-slate-300 border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
+                                                            type="date"
+                                                            value={dbDateToInputDate(row.Date)}
+                                                            onChange={(e) => handleUpdateRow(row.id, "Date", inputDateToDbDate(e.target.value))}
+                                                            className="w-[130px] bg-transparent text-sm text-slate-600 dark:text-slate-300 border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-2">
-                                                        <input
-                                                            type="text"
-                                                            value={isMovimentacao ? row.Description : row.Classification}
-                                                            onChange={(e) => handleUpdateRow(row.id, isMovimentacao ? "Description" : "Classification", e.target.value)}
-                                                            className="w-full min-w-[200px] bg-transparent text-sm font-medium text-slate-800 dark:text-white border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-2">
-                                                        <input
-                                                            type="text"
-                                                            value={isMovimentacao ? row.Category : row.Asset}
-                                                            onChange={(e) => handleUpdateRow(row.id, isMovimentacao ? "Category" : "Asset", e.target.value)}
-                                                            className="w-[140px] bg-primary/10 text-primary border border-primary/20 hover:border-primary/40 focus:bg-slate-50 dark:focus:bg-slate-900 focus:border-primary text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none transition-colors"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <div className="flex items-center justify-end gap-1">
-                                                            <span className="text-sm font-bold text-slate-400">R$</span>
+                                                        {isMovimentacao ? (
                                                             <input
-                                                                type="number"
-                                                                step="0.01"
+                                                                type="text"
+                                                                value={row.Description}
+                                                                onChange={(e) => handleUpdateRow(row.id, "Description", e.target.value)}
+                                                                className="w-full min-w-[200px] bg-transparent text-sm font-medium text-slate-800 dark:text-white border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
+                                                            />
+                                                        ) : (
+                                                            <CustomCombobox
+                                                                options={classifications}
+                                                                value={row.Classification || ""}
+                                                                onChange={(val) => handleUpdateRow(row.id, "Classification", val)}
+                                                                className="w-full min-w-[150px] bg-transparent text-sm font-medium text-slate-800 dark:text-white border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
+                                                            />
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <CustomCombobox
+                                                            options={isMovimentacao ? (row.Value >= 0 ? incomeCategories : expenseCategories) : assets}
+                                                            value={isMovimentacao ? row.Category : row.Asset || ""}
+                                                            onChange={(val) => handleUpdateRow(row.id, isMovimentacao ? "Category" : "Asset", val)}
+                                                            className="w-[160px] bg-primary/10 text-primary border border-primary/20 hover:border-primary/40 focus:bg-slate-50 dark:focus:bg-slate-900 focus:border-primary text-xs font-bold rounded-lg px-2.5 py-1.5 outline-none transition-colors"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-2 text-left">
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-sm font-bold text-slate-400">R$</span>
+                                                            <FormattedNumberInput
                                                                 value={row.Value}
-                                                                onChange={(e) => handleUpdateRow(row.id, "Value", parseFloat(e.target.value) || 0)}
-                                                                className="w-[90px] bg-transparent text-sm font-bold text-right text-slate-800 dark:text-white border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
-                                                                dir="rtl"
+                                                                onChange={(n) => handleUpdateRow(row.id, "Value", n)}
+                                                                step={100}
+                                                                className="w-[100px] bg-transparent text-sm font-bold text-left text-slate-800 dark:text-white border border-transparent hover:border-slate-200 dark:border-slate-700 focus:border-primary focus:bg-slate-50 dark:focus:bg-slate-900 rounded px-2 py-1 outline-none transition-colors"
                                                             />
                                                         </div>
                                                     </td>
