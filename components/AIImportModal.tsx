@@ -174,15 +174,32 @@ export default function AIImportModal({ onClose }: Props) {
                 const action = importType === "patrimonio" ? "updateAll" : "updateMovements";
                 const dataToSend = processedData.map(r => {
                     if (importType === "patrimonio") {
-                        return { Date: r.Date, Classification: r.Classification || "", Asset: r.Asset || "", Value: r.Value };
+                        return {
+                            Date: r.Date,
+                            Classification: r.Classification || "",
+                            Asset: r.Asset || "",
+                            Value: r.Value
+                        };
                     }
-                    return { Date: r.Date, Description: r.Description, Category: r.Category, Type: r.Value >= 0 ? "Income" : "Expense", Value: r.Value };
+                    return {
+                        Date: r.Date,
+                        Description: r.Description,
+                        Category: r.Category,
+                        Type: r.Value >= 0 ? "Income" : "Expense",
+                        Value: r.Value
+                    };
                 });
-                await fetch(endpoint, {
+
+                const res = await fetch(endpoint, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ action, data: dataToSend }),
                 });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || errorData.details || "Erro ao substituir dados no servidor");
+                }
             } else {
                 // Append: add each row individually
                 for (const r of processedData) {
@@ -190,11 +207,16 @@ export default function AIImportModal({ onClose }: Props) {
                         ? { Date: r.Date, Classification: r.Classification || "", Asset: r.Asset || "", Value: r.Value }
                         : { Date: r.Date, Description: r.Description, Category: r.Category, Type: r.Value >= 0 ? "Income" : "Expense", Value: r.Value };
 
-                    await fetch(endpoint, {
+                    const res = await fetch(endpoint, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ action: "append", data: rowData }),
                     });
+
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.error || errorData.details || "Erro ao adicionar registro no servidor");
+                    }
                 }
             }
 
@@ -209,6 +231,7 @@ export default function AIImportModal({ onClose }: Props) {
 
             onClose();
         } catch (err: any) {
+            console.error("Import error:", err);
             setError(err.message || "Erro ao importar dados");
         } finally {
             setImporting(false);
