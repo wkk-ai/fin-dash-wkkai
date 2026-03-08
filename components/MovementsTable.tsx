@@ -18,8 +18,6 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<MovementEntry | null>(null);
     const [loading, setLoading] = useState(false);
-    const [importingFile, setImportingFile] = useState(false);
-    const [reviewData, setReviewData] = useState<ProcessedRow[] | null>(null);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
@@ -35,7 +33,6 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
         onConfirm: () => { },
     });
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
@@ -129,113 +126,7 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
         }
     };
 
-    const handleImportFile = async (file: File) => {
-        setImportingFile(true);
-        try {
-            const fileName = file.name.toLowerCase();
-            let parsedData: any[] = [];
 
-            if (fileName.endsWith(".csv")) {
-                const text = await file.text();
-                const result = Papa.parse(text, { header: true, skipEmptyLines: true });
-                parsedData = result.data;
-            } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
-                const buffer = await file.arrayBuffer();
-                const workbook = XLSX.read(buffer);
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                parsedData = XLSX.utils.sheet_to_json(worksheet);
-            }
-
-            // Convert to ProcessedRow format
-            const formattedData: ProcessedRow[] = parsedData.map((row: any, index: number) => {
-                // Normalize keys to lowercase for easier matching
-                const normalizedRow: any = {};
-                Object.keys(row).forEach(key => {
-                    normalizedRow[key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")] = row[key];
-                });
-
-                const rawDate = normalizedRow.date || normalizedRow.data || "";
-                const dateObj = parseCustomDate(String(rawDate));
-                const day = String(dateObj.getUTCDate()).padStart(2, "0");
-                const month = dateObj.toLocaleString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace(".", "");
-                const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
-                const year = String(dateObj.getUTCFullYear()).slice(-2);
-                const standardizedDate = `${day}/${capitalizedMonth}/${year}`;
-
-                return {
-                    id: `manual-${index}-${Date.now()}`,
-                    Date: standardizedDate,
-                    Description: normalizedRow.description || normalizedRow.descricao || normalizedRow.historico || "",
-                    Category: normalizedRow.category || normalizedRow.categoria || "",
-                    Value: parseFloat(String(normalizedRow.value || normalizedRow.valor || "0").replace(",", "."))
-                };
-            }).filter(r => r.Date && r.Description);
-
-            setReviewData(formattedData);
-        } catch (e) {
-            console.error(e);
-            window.dispatchEvent(new CustomEvent("show-success-toast", {
-                detail: { message: t("settings.importError"), variant: "danger" }
-            }));
-        } finally {
-            setImportingFile(false);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
-
-    const handleConfirmImport = async (data: ProcessedRow[], mode: "append" | "overwrite") => {
-        setImportingFile(true);
-        try {
-            if (mode === "overwrite") {
-                const dataToSend = data.map(r => ({
-                    Date: r.Date,
-                    Description: r.Description,
-                    Category: r.Category,
-                    Type: r.Value >= 0 ? "Income" : "Expense",
-                    Value: r.Value
-                }));
-
-                const res = await fetch("/api/movements", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "updateMovements", data: dataToSend }),
-                });
-                if (!res.ok) throw new Error("Failed to overwrite");
-            } else {
-                for (const r of data) {
-                    await fetch("/api/movements", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            action: "append",
-                            data: {
-                                Date: r.Date,
-                                Description: r.Description,
-                                Category: r.Category,
-                                Type: r.Value >= 0 ? "Income" : "Expense",
-                                Value: r.Value
-                            }
-                        }),
-                    });
-                }
-            }
-
-            onUpdate();
-            window.dispatchEvent(new CustomEvent("movement-added"));
-            window.dispatchEvent(new CustomEvent("show-success-toast", {
-                detail: { message: t("settings.importSuccess") }
-            }));
-            setReviewData(null);
-        } catch (e) {
-            console.error(e);
-            window.dispatchEvent(new CustomEvent("show-success-toast", {
-                detail: { message: t("settings.importError"), variant: "danger" }
-            }));
-        } finally {
-            setImportingFile(false);
-        }
-    };
 
     const downloadFile = (type: "csv" | "xlsx") => {
         setIsDownloadOpen(false);
@@ -287,20 +178,11 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                 setLoading(false);
                             }
                         }}
-                        disabled={loading || importingFile}
+                        disabled={loading}
                         className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
                     >
                         <span className="material-symbols-outlined text-[10px]">save</span>
                         {loading ? t("settings.saving") : t("settings.saveChanges")}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={loading || importingFile}
-                        className="flex items-center gap-2 bg-surface border border-border hover:bg-border disabled:opacity-50 text-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
-                        {importingFile ? t("settings.importing") : t("settings.importFile")}
                     </button>
 
                     <div className="relative">
@@ -336,16 +218,6 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                         )}
                     </div>
                 </div>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv,.xlsx,.xls"
-                    className="hidden"
-                    onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImportFile(file);
-                    }}
-                />
             </div>
             <div className="overflow-x-auto max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
                 <table className="w-full text-left border-separate border-spacing-0">
@@ -467,15 +339,6 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                     </tbody>
                 </table>
             </div>
-            {reviewData && (
-                <DataReviewModal
-                    type="movimentacao"
-                    initialData={reviewData}
-                    onClose={() => setReviewData(null)}
-                    onImport={handleConfirmImport}
-                    isImporting={importingFile}
-                />
-            )}
 
             <ConfirmModal
                 isOpen={modalConfig.isOpen}
