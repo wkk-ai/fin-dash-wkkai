@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "@/lib/i18n";
+import { parseCustomDate } from "@/lib/utils";
 import Portal from "./Portal";
 import { FormattedNumberInput } from "./FormattedNumberInput";
 import { CustomCombobox } from "./CustomCombobox";
@@ -173,16 +174,23 @@ export default function AIImportModal({ onClose }: Props) {
                 // Overwrite: send all data at once
                 const action = importType === "patrimonio" ? "updateAll" : "updateMovements";
                 const dataToSend = processedData.map(r => {
+                    const dateObj = parseCustomDate(r.Date || "");
+                    const normalizedDate = dateObj.toLocaleDateString("en-US", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "2-digit"
+                    }).replace(/ /g, "/"); // Standardize to DD/MMM/YY
+
                     if (importType === "patrimonio") {
                         return {
-                            Date: r.Date,
+                            Date: normalizedDate,
                             Classification: r.Classification || "",
                             Asset: r.Asset || "",
                             Value: r.Value
                         };
                     }
                     return {
-                        Date: r.Date,
+                        Date: normalizedDate,
                         Description: r.Description,
                         Category: r.Category,
                         Type: r.Value >= 0 ? "Income" : "Expense",
@@ -203,9 +211,16 @@ export default function AIImportModal({ onClose }: Props) {
             } else {
                 // Append: add each row individually
                 for (const r of processedData) {
+                    const dateObj = parseCustomDate(r.Date || "");
+                    const normalizedDate = dateObj.toLocaleDateString("en-US", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "2-digit"
+                    }).replace(/ /g, "/");
+
                     const rowData = importType === "patrimonio"
-                        ? { Date: r.Date, Classification: r.Classification || "", Asset: r.Asset || "", Value: r.Value }
-                        : { Date: r.Date, Description: r.Description, Category: r.Category, Type: r.Value >= 0 ? "Income" : "Expense", Value: r.Value };
+                        ? { Date: normalizedDate, Classification: r.Classification || "", Asset: r.Asset || "", Value: r.Value }
+                        : { Date: normalizedDate, Description: r.Description, Category: r.Category, Type: r.Value >= 0 ? "Income" : "Expense", Value: r.Value };
 
                     const res = await fetch(endpoint, {
                         method: "POST",
@@ -391,23 +406,38 @@ export default function AIImportModal({ onClose }: Props) {
                         )}
 
                         {/* Review Footer */}
-                        <div className="p-6 flex items-center justify-end gap-3">
-                            <button onClick={onClose} className="px-6 py-3 text-sm font-bold text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 cursor-pointer">
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleConfirmImport}
-                                disabled={importing || processedData.length === 0}
-                                className="px-8 py-3 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                            >
-                                {importing ? "Importando..." : "Confirmar e Importar"}
-                                {!importing && <span className="material-symbols-outlined text-[18px]">check_circle</span>}
-                            </button>
+                        <div className="p-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 min-w-0 flex-1">
+                                <span className="material-symbols-outlined text-[14px] flex-shrink-0">lock</span>
+                                <span className="leading-tight">Seus dados são criptografados</span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-red-400/80 hover:text-red-400 dark:bg-red-500/5 hover:bg-red-500/10 transition-colors rounded-xl border border-red-500/10 hover:border-red-500/30 cursor-pointer">
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setProcessedData([]);
+                                        setStep("select");
+                                    }}
+                                    className="px-5 py-2.5 text-sm font-bold text-slate-200 hover:text-white transition-colors rounded-xl border border-slate-700 hover:border-slate-600 cursor-pointer"
+                                >
+                                    Voltar
+                                </button>
+                                <button
+                                    onClick={handleConfirmImport}
+                                    disabled={importing || processedData.length === 0}
+                                    className="px-6 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-xl shadow-lg shadow-primary/20 transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                                >
+                                    {importing ? "Importando..." : "Confirmar e Importar"}
+                                    {!importing && <span className="material-symbols-outlined text-[18px]">check_circle</span>}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ) : (
                     /* Steps: Select + Upload + Processing */
-                    <div className="w-full max-w-lg bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="w-full max-w-xl bg-white dark:bg-[#1e293b] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="p-6 flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -524,16 +554,26 @@ export default function AIImportModal({ onClose }: Props) {
                         </div>
 
                         {/* Footer */}
-                        <div className="px-6 py-4 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-                            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
-                                <span className="material-symbols-outlined text-[14px]">lock</span>
-                                Seus dados são criptografados
+                        <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 min-w-0 flex-1">
+                                <span className="material-symbols-outlined text-[14px] flex-shrink-0">lock</span>
+                                <span className="leading-tight">Seus dados são criptografados</span>
                             </div>
                             {step !== "processing" && (
-                                <div className="flex items-center gap-3">
-                                    <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 cursor-pointer">
-                                        Cancelar
-                                    </button>
+                                <div className="flex items-center gap-3 flex-shrink-0">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={onClose} className="px-5 py-2.5 text-sm font-bold text-red-400/80 hover:text-red-400 dark:bg-red-500/5 hover:bg-red-500/10 transition-colors rounded-xl border border-red-500/10 hover:border-red-500/30 cursor-pointer">
+                                            Cancelar
+                                        </button>
+                                        {importType && (
+                                            <button
+                                                onClick={() => setImportType(null)}
+                                                className="px-5 py-2.5 text-sm font-bold text-slate-200 hover:text-white transition-colors rounded-xl border border-slate-700 hover:border-slate-600 cursor-pointer"
+                                            >
+                                                Voltar
+                                            </button>
+                                        )}
+                                    </div>
                                     {importType && file && (
                                         <button
                                             onClick={handleProcess}
