@@ -107,10 +107,15 @@ export default function MovementsPage() {
         // Create a sort key based on YY/MM format
         const monthMap: Record<string, string> = {
             'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
-            'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12'
+            'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+            'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04', 'maio': '05', 'junho': '06',
+            'julho': '07', 'agosto': '08', 'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12',
+            '01': '01', '02': '02', '03': '03', '04': '04', '05': '05', '06': '06',
+            '07': '07', '08': '08', '09': '09', '10': '10', '11': '11', '12': '12'
         };
-        const monthNum = monthMap[parts[1].toLowerCase().replace(".", "")] || "00";
-        const sortKey = parts[2] + monthNum;
+        const rawMonth = parts[1] ? parts[1].toLowerCase().replace(".", "") : "";
+        const monthNum = monthMap[rawMonth] || "00";
+        const sortKey = (parts[2] || "00") + monthNum;
 
         if (!aggregatedByMonth[monthYear]) {
             aggregatedByMonth[monthYear] = { monthYear, income: 0, expense: 0, sortKey };
