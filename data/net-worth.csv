@@ -347,3 +347,6 @@ Date,Classification,Asset,Value
 01/Jan/22,Fixed Income,Nubank,16787
 01/Jan/22,Fixed Income,Itau,1894
 01/Jan/22,Variable Income,Binance,1885
+NaN/Invalid Date/aN,,Nubank,100
+30/Dec/25,,XP,50.5
+05/Jan/24,,FGTS,20
