@@ -51,7 +51,10 @@ export default function MovementsPage() {
     // Identify the latest month in the data
     const getLatestDate = () => {
         if (movements.length === 0) return new Date();
-        const dates = movements.map(m => parseCustomDate(m.Date));
+        const dates = movements
+            .map(m => parseCustomDate(m.Date))
+            .filter(d => !isNaN(d.getTime()));
+        if (dates.length === 0) return new Date();
         return new Date(Math.max(...dates.map(d => d.getTime())));
     };
 
