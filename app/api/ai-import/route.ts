@@ -113,17 +113,21 @@ function tryLocalParseMovimentacao(textContent: string): { rows: MovimentacaoRow
 
 // ─── AI Helpers ─────────────────────────────────────────────────────
 
-function buildExtractionPrompt(type: string, content: string): string {
+function buildExtractionPrompt(type: string, content: string, settings: any): string {
+    const existingClasses = settings.classifications?.join(", ") || "";
+    const allCategories = [...(settings.incomeCategories || []), ...(settings.expenseCategories || [])].join(", ");
+
     if (type === "patrimonio") {
         return `You are a financial data extraction assistant. Analyze the following document and extract portfolio/asset data.
 
 Return ONLY a valid JSON array. Each object must have:
-- "Date": string in "DD/Mon/YY" format (e.g. "06/Mar/26")
-- "Classification": string (asset class like "Renda Fixa", "Renda Variável", "Imóveis", "Previdência", etc.)
+- "Date": identify the format of the date string and convert it to "DD/Mon/YY" format (e.g. "06/Mar/26")
+- "Classification": string (asset class). Use one of these existing classifications if it fits: [${existingClasses}]. If none fit, you may create a new one.
 - "Asset": string (specific asset name or institution)
 - "Value": number (positive, the current value)
 
-If the date is not clear, use today's date. Infer the classification from context.
+IMPORTANT: Prioritize existing classifications [${existingClasses}] before creating new ones.
+If the date is not clear, use today's date.
 Do NOT include any explanation, markdown, or text outside the JSON array.
 
 Document content:
@@ -133,11 +137,12 @@ ${content}`;
     return `You are a financial data extraction assistant. Analyze the following document and extract financial movement/transaction data.
 
 Return ONLY a valid JSON array. Each object must have:
-- "Date": string in "DD/Mon/YY" format (e.g. "06/Mar/26")
-- "Description": string (transaction description)
-- "Category": string (category like "Alimentação", "Transporte", "Moradia", "Saúde", "Educação", "Lazer", "Compras", "Serviços", "Salário", etc.)
+- "Date": identify the format of the date string and convert it to "DD/Mon/YY" format (e.g. "06/Mar/26")
+- "Description": string (transaction description). Summarize the description.
+- "Category": string. Use one of these existing categories if it fits: [${allCategories}]. If none fit, you may create a new one.
 - "Value": number (negative for expenses, positive for income)
 
+IMPORTANT: Prioritize existing categories [${allCategories}] before creating new ones.
 Infer the category from the description/context. If the date is ambiguous, make your best guess.
 Do NOT include any explanation, markdown, or text outside the JSON array.
 
@@ -202,10 +207,14 @@ async function classifyCategories(rows: MovimentacaoRow[]): Promise<Movimentacao
     const uncategorized = rows.filter(r => !r.Category);
     if (uncategorized.length === 0) return rows;
 
+    const settings = await getExistingCategories();
+    const allCategories = [...(settings.incomeCategories || []), ...(settings.expenseCategories || [])].join(", ");
+
     const descriptions = uncategorized.map((r, i) => `${i}: ${r.Description}`).join("\n");
 
-    const prompt = `Classify each transaction description into one of these categories:
-Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Compras, Serviços, Salário, Investimento, Transferência, Outros.
+    const prompt = `Classify each transaction description into one of these categories. 
+PRIORITIZE these existing categories if they fit: [${allCategories}]. 
+If none fit, you may use standard ones like: Alimentação, Transporte, Moradia, Saúde, Educação, Lazer, Compras, Serviços, Salário, Investimento, Transferência, Outros.
 
 Return ONLY a JSON array of objects with "index" (number) and "category" (string).
 
@@ -234,6 +243,19 @@ ${descriptions}`;
 }
 
 // ─── Main Handler ───────────────────────────────────────────────────
+
+async function getExistingCategories() {
+    try {
+        const fs = await import("fs/promises");
+        const path = await import("path");
+        const filePath = path.join(process.cwd(), "data", "settings.json");
+        const fileContent = await fs.readFile(filePath, "utf-8");
+        return JSON.parse(fileContent);
+    } catch (e) {
+        console.error("Error reading settings for AI prompt:", e);
+        return { classifications: [], incomeCategories: [], expenseCategories: [] };
+    }
+}
 
 export async function POST(request: Request) {
     try {
@@ -294,7 +316,8 @@ export async function POST(request: Request) {
             ? textContent.substring(0, maxChars) + "\n... [truncated]"
             : textContent;
 
-        const prompt = buildExtractionPrompt(type, truncatedContent);
+        const settings = await getExistingCategories();
+        const prompt = buildExtractionPrompt(type, truncatedContent, settings);
         const aiRows = await callOpenAI(prompt, "You are a precise data extraction assistant. You only respond with valid JSON arrays. Never include markdown formatting or explanations.");
 
         if (!aiRows || aiRows.length === 0) {
