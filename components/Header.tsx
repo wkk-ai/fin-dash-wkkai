@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState, useEffect, useRef } from "react";
 import NewEntryModal from "./NewEntryModal";
+import AIImportModal from "./AIImportModal";
 import LanguageSelector from "./LanguageSelector";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
@@ -15,6 +16,7 @@ export default function Header() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAIModalOpen, setIsAIModalOpen] = useState(false);
     const [isNavOpen, setIsNavOpen] = useState(false);
     const navMenuRef = useRef<HTMLDivElement>(null);
 
@@ -135,6 +137,14 @@ export default function Header() {
 
                     <div className="flex items-center gap-3">
                         <button
+                            onClick={() => setIsAIModalOpen(true)}
+                            className="hidden sm:flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-4 py-2 text-sm font-bold text-primary shadow-lg shadow-primary/10 hover:bg-primary/20 transition-all cursor-pointer"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+                            <span className="truncate">AI Import</span>
+                        </button>
+
+                        <button
                             onClick={() => setIsModalOpen(true)}
                             className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all cursor-pointer"
                         >
@@ -168,6 +178,10 @@ export default function Header() {
 
             {isModalOpen && (
                 <NewEntryModal onClose={() => setIsModalOpen(false)} />
+            )}
+
+            {isAIModalOpen && (
+                <AIImportModal onClose={() => setIsAIModalOpen(false)} />
             )}
         </>
     );
