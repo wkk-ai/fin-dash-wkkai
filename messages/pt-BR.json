@@ -198,14 +198,17 @@
     "dailyTracking": "Acompanhamento Diário",
     "dailyTrackingDesc": "Fluxo de caixa detalhado: Entradas e Saídas",
     "netBalance": "Saldo Final",
-    "others": "Outros"
+    "others": "Outros",
+    "daysWithData": "Dias com Dados"
   },
   "filters": {
     "thisWeek": "Esta Semana",
     "thisMonth": "Este Mês",
     "thisQuarter": "Este Trimestre",
     "thisSemester": "Este Semestre",
-    "thisYear": "Este Ano"
+    "thisYear": "Este Ano",
+    "last7": "Últimos 7 dias",
+    "last30": "Últimos 30 dias"
   },
   "toast": {
     "pendingChanges": "Alterações pendentes não foram salvas no banco de dados.",

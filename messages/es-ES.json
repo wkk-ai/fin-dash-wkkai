@@ -180,13 +180,16 @@
     "addNewLine": "Añadir Línea",
     "dailyTracking": "Seguimiento Diario",
     "dailyTrackingDesc": "Flujo de caja detallado: Entradas y Salidas",
-    "netBalance": "Saldo Final"
+    "netBalance": "Saldo Final",
+    "daysWithData": "Días con Datos"
   },
   "filters": {
     "thisWeek": "Esta Semana",
     "thisMonth": "Este Mes",
     "thisQuarter": "Este Trimestre",
     "thisSemester": "Este Semestre",
-    "thisYear": "Este Año"
+    "thisYear": "Este Año",
+    "last7": "Últimos 7 días",
+    "last30": "Últimos 30 días"
   }
 }
