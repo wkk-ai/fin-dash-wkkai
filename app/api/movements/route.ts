@@ -233,8 +233,14 @@ export async function POST(request: Request) {
         }
 
         if (body.action === "updateMovements") {
+            console.log(`[API] updateMovements action received with ${body.data.length} rows`);
             const movements = body.data as MovementEntry[];
-            const csvData = Papa.unparse(movements);
+            const csvData = Papa.unparse({
+                fields: ["Date", "Description", "Category", "Type", "Value"],
+                data: movements
+            }, {
+                header: true
+            });
             fs.writeFileSync(movementsPath, csvData, "utf-8");
             return NextResponse.json({ success: true });
         }
