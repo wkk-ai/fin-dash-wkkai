@@ -197,14 +197,17 @@
     "dailyTracking": "Daily Tracking",
     "dailyTrackingDesc": "Detailed cash flow: Inflows and Outflows",
     "netBalance": "Net Balance",
-    "others": "Others"
+    "others": "Others",
+    "daysWithData": "Days with Data"
   },
   "filters": {
     "thisWeek": "This Week",
     "thisMonth": "This Month",
     "thisQuarter": "This Quarter",
     "thisSemester": "This Semester",
-    "thisYear": "This Year"
+    "thisYear": "This Year",
+    "last7": "Last 7 days",
+    "last30": "Last 30 days"
   },
   "toast": {
     "pendingChanges": "Pending changes were not saved to the database.",
