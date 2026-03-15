@@ -34,6 +34,15 @@ export default function SettingsPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const hasUserEditedRef = useRef(false);
 
+    // Sorting and Filtering State
+    const [sortConfig, setSortConfig] = useState<{ key: keyof AssetEntry, direction: "asc" | "desc" } | null>({ key: "Date", direction: "desc" });
+    const [selectedClassifications, setSelectedClassifications] = useState<string[]>([]);
+    const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+    const [isClassFilterOpen, setIsClassFilterOpen] = useState(false);
+    const [isAssetFilterOpen, setIsAssetFilterOpen] = useState(false);
+    const classFilterRef = useRef<HTMLDivElement>(null);
+    const assetFilterRef = useRef<HTMLDivElement>(null);
+
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -177,7 +186,22 @@ export default function SettingsPage() {
         };
 
         window.addEventListener("asset-added", handleAdd);
-        return () => window.removeEventListener("asset-added", handleAdd);
+
+        // Click outside to close filters
+        const handleClickOutside = (event: MouseEvent) => {
+            if (classFilterRef.current && !classFilterRef.current.contains(event.target as Node)) {
+                setIsClassFilterOpen(false);
+            }
+            if (assetFilterRef.current && !assetFilterRef.current.contains(event.target as Node)) {
+                setIsAssetFilterOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            window.removeEventListener("asset-added", handleAdd);
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
     }, []);
 
     // Persist data to sessionStorage ONLY when user has explicitly edited (delete, edit, add)
@@ -186,6 +210,70 @@ export default function SettingsPage() {
             savePendingData(data);
         }
     }, [data]);
+
+    const handleSort = (key: keyof AssetEntry) => {
+        setSortConfig(prev => {
+            if (prev?.key === key) {
+                return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+            }
+            return { key, direction: "asc" };
+        });
+    };
+
+    const handleClassFilterToggle = (classification: string) => {
+        setSelectedClassifications(prev =>
+            prev.includes(classification)
+                ? prev.filter(c => c !== classification)
+                : [...prev, classification]
+        );
+    };
+
+    const handleAssetFilterToggle = (asset: string) => {
+        setSelectedAssets(prev =>
+            prev.includes(asset)
+                ? prev.filter(a => a !== asset)
+                : [...prev, asset]
+        );
+    };
+
+    const filteredAndSortedData = (() => {
+        let result = [...data];
+
+        // Apply filters
+        if (selectedClassifications.length > 0) {
+            result = result.filter(row => selectedClassifications.includes(row.Classification));
+        }
+        if (selectedAssets.length > 0) {
+            result = result.filter(row => selectedAssets.includes(row.Asset));
+        }
+
+        // Apply sorting
+        if (sortConfig) {
+            result.sort((a, b) => {
+                let valA: any = a[sortConfig.key];
+                let valB: any = b[sortConfig.key];
+
+                if (sortConfig.key === "Date") {
+                    valA = parseCustomDate(valA).getTime();
+                    valB = parseCustomDate(valB).getTime();
+                }
+
+                if (typeof valA === "string") valA = valA.toLowerCase();
+                if (typeof valB === "string") valB = valB.toLowerCase();
+
+                if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+                if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+                return 0;
+            });
+        }
+
+        return result;
+    })();
+
+    const renderSortIcon = (key: keyof AssetEntry) => {
+        if (sortConfig?.key !== key) return <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-40 transition-opacity">unfold_more</span>;
+        return <span className="material-symbols-outlined text-[14px] text-primary">{sortConfig.direction === "asc" ? "expand_less" : "expand_more"}</span>;
+    };
 
     const saveSettingsSection = async (type: "class" | "asset" | "income" | "expense") => {
         const isClass = type === "class";
@@ -339,13 +427,13 @@ export default function SettingsPage() {
         setSettings(prev => ({ ...prev, expenseCategories: prev.expenseCategories.filter(x => x !== c) }));
     };
 
-    const handleDataChange = (index: number, field: keyof AssetEntry, value: string) => {
+    const handleDataChange = (originalIndex: number, field: keyof AssetEntry, value: string) => {
         hasUserEditedRef.current = true;
         const newData = [...data];
         if (field === "Value") {
-            newData[index][field] = Number(value);
+            newData[originalIndex] = { ...newData[originalIndex], [field]: Number(value) };
         } else {
-            newData[index][field] = value as any;
+            newData[originalIndex] = { ...newData[originalIndex], [field]: value as any };
         }
         setData(newData);
     };
@@ -423,7 +511,7 @@ export default function SettingsPage() {
         });
     };
 
-    const deleteRow = (e: React.MouseEvent, index: number) => {
+    const deleteRow = (e: React.MouseEvent, originalIndex: number) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -436,7 +524,7 @@ export default function SettingsPage() {
             onConfirm: () => {
                 hasUserEditedRef.current = true;
                 const newData = [...data];
-                newData.splice(index, 1);
+                newData.splice(originalIndex, 1);
                 setData(newData);
                 setModalConfig(prev => ({ ...prev, isOpen: false }));
             }
@@ -585,10 +673,10 @@ export default function SettingsPage() {
 
 
     const downloadFile = (format: "csv" | "xlsx") => {
-        if (!data || data.length === 0) return;
+        if (!filteredAndSortedData || filteredAndSortedData.length === 0) return;
 
         // Prepare data for export
-        const exportData = data.map(row => ({
+        const exportData = filteredAndSortedData.map(row => ({
             Date: row.Date,
             Classification: row.Classification,
             Asset: row.Asset,
@@ -958,11 +1046,11 @@ export default function SettingsPage() {
             </div>
 
             {/* Database View/Edit */}
-            <div className="rounded-xl bg-surface border border-border shadow-sm flex flex-col animate-in slide-in-from-bottom-8 fade-in duration-1000 overflow-hidden">
-                <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-background/50">
+            <div className="rounded-xl bg-surface border border-border/60 shadow-sm flex flex-col animate-in slide-in-from-bottom-8 fade-in duration-1000 overflow-hidden">
+                <div className="px-6 py-4 border-b border-border/40 flex justify-between items-center bg-background/50 backdrop-blur-md">
                     <div>
-                        <h3 className="text-lg font-bold text-foreground">{t("settings.rawDatabase")}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-300 mt-0.5">{t("settings.editCells")}</p>
+                        <h3 className="text-lg font-bold text-foreground tracking-tight">{t("settings.rawDatabase")}</h3>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">{t("settings.editCells")}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -1012,105 +1100,192 @@ export default function SettingsPage() {
 
                 <div className="overflow-x-auto max-h-[400px] overflow-y-auto relative scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
                     <table className="w-full text-left border-separate border-spacing-0">
-                        <thead className="sticky top-0 z-20 bg-surface shadow-sm font-bold">
-                            <tr className="text-xs uppercase text-slate-500 tracking-wider">
-                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0">{t("settings.date")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0">{t("settings.classification")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0">{t("settings.asset")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 text-right">{t("settings.value")}</th>
-                                <th className="px-4 py-3 border-b border-border bg-surface/95 backdrop-blur-sm sticky top-0 text-center">{t("common.actions")}</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border text-sm">
-                            {data.map((row, index) => (
-                                <tr key={`${row.Date}-${row.Asset}-${index}`} className="hover:bg-blue-50/50 dark:hover:bg-white/5 transition-colors group">
-                                    <td className="px-4 py-1">
-                                        {editingRowIndex === index ? (
-                                            <input
-                                                type="date"
-                                                value={csvDateToInputDate(row.Date)}
-                                                onChange={(e) => handleDataChange(index, "Date", inputDateToCsvDate(e.target.value))}
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-foreground"
-                                            />
-                                        ) : (
-                                            <span className="text-slate-600 dark:text-slate-400">{row.Date}</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-1">
-                                        {editingRowIndex === index ? (
-                                            <select
-                                                value={row.Classification}
-                                                onChange={(e) => handleDataChange(index, "Classification", e.target.value)}
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-foreground"
+                        <thead className="sticky top-0 z-20 bg-surface/95 backdrop-blur-md font-bold">
+                            <tr className="text-[10px] uppercase text-slate-400 tracking-[0.1em]">
+                                <th className="px-6 py-3 border-b border-border/40 bg-transparent group cursor-pointer select-none transition-colors hover:text-primary" onClick={() => handleSort("Date")}>
+                                    <div className="flex items-center gap-2">
+                                        {t("settings.date")}
+                                        {renderSortIcon("Date")}
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 border-b border-border/40 bg-transparent group relative">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary" onClick={() => handleSort("Classification")}>
+                                            {t("settings.classification")}
+                                            {renderSortIcon("Classification")}
+                                        </div>
+                                        <div className="relative" ref={classFilterRef}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setIsClassFilterOpen(!isClassFilterOpen); }}
+                                                className={`flex items-center justify-center size-6 rounded-md transition-all cursor-pointer ${selectedClassifications.length > 0 ? "bg-primary text-white scale-110" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-300 hover:text-slate-500"}`}
                                             >
-                                                <option value={row.Classification}>{row.Classification}</option>
-                                                {settings.classifications
-                                                    .filter((c: string) => c !== row.Classification)
-                                                    .sort((a, b) => a.localeCompare(b))
-                                                    .map(c => (
-                                                        <option key={c} value={c}>{c}</option>
-                                                    ))}
-                                            </select>
-                                        ) : (
-                                            <span className="font-medium text-foreground">{row.Classification}</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-1">
-                                        {editingRowIndex === index ? (
-                                            <select
-                                                value={row.Asset}
-                                                onChange={(e) => handleDataChange(index, "Asset", e.target.value)}
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-foreground"
-                                            >
-                                                <option value={row.Asset}>{row.Asset}</option>
-                                                {settings.assets
-                                                    .filter((a: string) => a !== row.Asset)
-                                                    .sort((a, b) => a.localeCompare(b))
-                                                    .map(a => (
-                                                        <option key={a} value={a}>{a}</option>
-                                                    ))}
-                                            </select>
-                                        ) : (
-                                            <span className="font-medium text-foreground">{row.Asset}</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-1 text-right">
-                                        {editingRowIndex === index ? (
-                                            <FormattedNumberInput
-                                                value={row.Value}
-                                                onChange={(n: number) => handleDataChange(index, "Value", String(n))}
-                                                compactSpinner
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-right text-foreground font-medium"
-                                            />
-                                        ) : (
-                                            <span className="font-bold text-foreground">{formatCurrency(row.Value)}</span>
-                                        )}
-                                    </td>
-                                    <td className="px-4 py-1 text-center">
-                                        <div className="flex justify-center gap-2">
-                                            {editingRowIndex === index ? (
-                                                <>
-                                                    <button onClick={() => setEditingRowIndex(null)} className="text-green-500 hover:text-green-600 transition-colors">
-                                                        <span className="material-symbols-outlined text-lg">check_circle</span>
-                                                    </button>
-                                                    <button onClick={() => setEditingRowIndex(null)} className="text-slate-400 hover:text-slate-500">
-                                                        <span className="material-symbols-outlined text-lg">cancel</span>
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button onClick={() => setEditingRowIndex(index)} className="text-primary hover:text-primary/80 transition-colors">
-                                                        <span className="material-symbols-outlined text-lg">edit</span>
-                                                    </button>
-                                                    <button onClick={(e) => deleteRow(e, index)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                                        <span className="material-symbols-outlined text-lg">delete</span>
-                                                    </button>
-                                                </>
+                                                <span className="material-symbols-outlined text-[14px]">filter_alt</span>
+                                            </button>
+                                            {isClassFilterOpen && (
+                                                <div className="absolute right-0 mt-3 w-64 p-4 bg-surface border border-border/60 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("settings.classifications")}</span>
+                                                        <button onClick={() => setSelectedClassifications([])} className="text-[10px] font-bold text-primary hover:opacity-70 transition-opacity">LIMPAR</button>
+                                                    </div>
+                                                    <div className="max-h-64 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                                                        {settings.classifications.map(cat => (
+                                                            <label key={cat} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-sm normal-case font-medium group/item text-slate-600 dark:text-slate-400 hover:text-foreground">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="rounded-[4px] border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20 size-3.5 transition-all"
+                                                                    checked={selectedClassifications.includes(cat)}
+                                                                    onChange={() => handleClassFilterToggle(cat)}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                />
+                                                                <span className="truncate">{cat}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 border-b border-border/40 bg-transparent group relative">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary" onClick={() => handleSort("Asset")}>
+                                            {t("settings.asset")}
+                                            {renderSortIcon("Asset")}
+                                        </div>
+                                        <div className="relative" ref={assetFilterRef}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setIsAssetFilterOpen(!isAssetFilterOpen); }}
+                                                className={`flex items-center justify-center size-6 rounded-md transition-all cursor-pointer ${selectedAssets.length > 0 ? "bg-primary text-white scale-110" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-300 hover:text-slate-500"}`}
+                                            >
+                                                <span className="material-symbols-outlined text-[14px]">filter_alt</span>
+                                            </button>
+                                            {isAssetFilterOpen && (
+                                                <div className="absolute right-0 mt-3 w-64 p-4 bg-surface border border-border/60 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("settings.assets")}</span>
+                                                        <button onClick={() => setSelectedAssets([])} className="text-[10px] font-bold text-primary hover:opacity-70 transition-opacity">LIMPAR</button>
+                                                    </div>
+                                                    <div className="max-h-64 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                                                        {settings.assets.map(cat => (
+                                                            <label key={cat} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-sm normal-case font-medium group/item text-slate-600 dark:text-slate-400 hover:text-foreground">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="rounded-[4px] border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20 size-3.5 transition-all"
+                                                                    checked={selectedAssets.includes(cat)}
+                                                                    onChange={() => handleAssetFilterToggle(cat)}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                />
+                                                                <span className="truncate">{cat}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 border-b border-border/40 bg-transparent text-right group cursor-pointer select-none transition-colors hover:text-primary" onClick={() => handleSort("Value")}>
+                                    <div className="flex items-center justify-end gap-2 text-right">
+                                        {t("settings.value")}
+                                        {renderSortIcon("Value")}
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 border-b border-border/40 bg-transparent text-center">{t("common.actions")}</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/20 text-sm">
+                            {filteredAndSortedData.map((row) => {
+                                const originalIndex = data.indexOf(row);
+                                return (
+                                    <tr key={`${row.Date}-${row.Asset}-${originalIndex}`} className="hover:bg-blue-50/30 dark:hover:bg-white/5 transition-all group/row">
+                                        <td className="px-6 py-1.5 text-xs text-slate-500 font-medium tabular-nums">
+                                            {editingRowIndex === originalIndex ? (
+                                                <input
+                                                    type="date"
+                                                    value={csvDateToInputDate(row.Date)}
+                                                    onChange={(e) => handleDataChange(originalIndex, "Date", inputDateToCsvDate(e.target.value))}
+                                                    className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs transition-colors"
+                                                />
+                                            ) : (
+                                                row.Date
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
+                                            {editingRowIndex === originalIndex ? (
+                                                <select
+                                                    value={row.Classification}
+                                                    onChange={(e) => handleDataChange(originalIndex, "Classification", e.target.value)}
+                                                    className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs font-bold transition-colors appearance-none"
+                                                >
+                                                    <option value={row.Classification}>{row.Classification}</option>
+                                                    {settings.classifications
+                                                        .filter((c: string) => c !== row.Classification)
+                                                        .sort((a, b) => a.localeCompare(b))
+                                                        .map(c => (
+                                                            <option key={c} value={c}>{c}</option>
+                                                        ))}
+                                                </select>
+                                            ) : (
+                                                row.Classification
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
+                                            {editingRowIndex === originalIndex ? (
+                                                <select
+                                                    value={row.Asset}
+                                                    onChange={(e) => handleDataChange(originalIndex, "Asset", e.target.value)}
+                                                    className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs font-bold transition-colors appearance-none"
+                                                >
+                                                    <option value={row.Asset}>{row.Asset}</option>
+                                                    {settings.assets
+                                                        .filter((a: string) => a !== row.Asset)
+                                                        .sort((a, b) => a.localeCompare(b))
+                                                        .map(a => (
+                                                            <option key={a} value={a}>{a}</option>
+                                                        ))}
+                                                </select>
+                                            ) : (
+                                                row.Asset
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-1.5 text-sm font-bold text-right tabular-nums">
+                                            {editingRowIndex === originalIndex ? (
+                                                <FormattedNumberInput
+                                                    value={row.Value}
+                                                    onChange={(n: number) => handleDataChange(originalIndex, "Value", String(n))}
+                                                    compactSpinner
+                                                    className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-right tabular-nums font-bold text-foreground"
+                                                />
+                                            ) : (
+                                                <span className="text-foreground">{formatCurrency(row.Value)}</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-1.5 text-center">
+                                            <div className="flex justify-center gap-2">
+                                                {editingRowIndex === originalIndex ? (
+                                                    <div className="flex justify-center gap-3">
+                                                        <button onClick={() => setEditingRowIndex(null)} className="text-primary hover:opacity-70 transition-all scale-110">
+                                                            <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                                                        </button>
+                                                        <button onClick={() => setEditingRowIndex(null)} className="text-slate-300 hover:text-slate-500 transition-all">
+                                                            <span className="material-symbols-outlined text-[20px]">cancel</span>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex justify-center gap-2 opacity-0 group-hover/row:opacity-100 transition-all transform translate-x-1 group-hover/row:translate-x-0">
+                                                        <button onClick={() => setEditingRowIndex(originalIndex)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-all">
+                                                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                        </button>
+                                                        <button onClick={(e) => deleteRow(e, originalIndex)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all">
+                                                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
