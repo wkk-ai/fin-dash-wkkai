@@ -11,14 +11,25 @@ import { DataReviewModal, ProcessedRow } from "./DataReviewModal";
 interface Props {
     movements: MovementEntry[];
     onUpdate: () => void;
+    selectedCategories: string[];
+    onFilterChange: (categories: string[]) => void;
 }
 
-export default function MovementsTable({ movements, onUpdate }: Props) {
+type SortKey = "Date" | "Description" | "Category" | "Value";
+type SortDirection = "asc" | "desc";
+
+export default function MovementsTable({ movements, onUpdate, selectedCategories, onFilterChange }: Props) {
     const { t, formatCurrency } = useTranslation();
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<MovementEntry | null>(null);
     const [loading, setLoading] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
+        key: "Date",
+        direction: "desc",
+    });
+    const filterRef = useRef<HTMLDivElement>(null);
     const [modalConfig, setModalConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -36,6 +47,16 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
 
     const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+                setIsFilterOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const parseCustomDate = (dateStr: string) => {
         if (!dateStr) return new Date();
@@ -78,6 +99,21 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
             })
             .catch(err => console.error(err));
     }, []);
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === "desc" ? "asc" : "desc",
+        }));
+    };
+
+    const handleFilterToggle = (category: string) => {
+        if (selectedCategories.includes(category)) {
+            onFilterChange(selectedCategories.filter(c => c !== category));
+        } else {
+            onFilterChange([...selectedCategories, category]);
+        }
+    };
 
     const handleEdit = (index: number) => {
         setEditingId(index);
@@ -128,16 +164,36 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
 
 
 
-    const downloadFile = (type: "csv" | "xlsx") => {
-        setIsDownloadOpen(false);
-        const sortedData = [...movements].sort((a, b) => {
-            const dateSort = parseCustomDate(b.Date).getTime() - parseCustomDate(a.Date).getTime();
-            if (dateSort !== 0) return dateSort;
-            return b.Value - a.Value;
+    const allCategories = Array.from(new Set(movements.map(m => m.Category))).sort();
+
+    const sortedMovements = [...movements]
+        .map((m, originalIndex) => ({ ...m, originalIndex }))
+        .filter(m => selectedCategories.length === 0 || selectedCategories.includes(m.Category))
+        .sort((a, b) => {
+            let result = 0;
+            switch (sortConfig.key) {
+                case "Date":
+                    result = parseCustomDate(a.Date).getTime() - parseCustomDate(b.Date).getTime();
+                    break;
+                case "Description":
+                    result = a.Description.localeCompare(b.Description);
+                    break;
+                case "Category":
+                    result = a.Category.localeCompare(b.Category);
+                    break;
+                case "Value":
+                    result = a.Value - b.Value;
+                    break;
+            }
+            return sortConfig.direction === "asc" ? result : -result;
         });
 
+    const downloadFile = (type: "csv" | "xlsx") => {
+        setIsDownloadOpen(false);
+        const dataToExport = sortedMovements.map(({ originalIndex, ...rest }) => rest);
+
         if (type === "csv") {
-            const csv = Papa.unparse(sortedData);
+            const csv = Papa.unparse(dataToExport);
             const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
@@ -146,17 +202,26 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
             link.click();
             document.body.removeChild(link);
         } else {
-            const worksheet = XLSX.utils.json_to_sheet(sortedData);
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Movements");
             XLSX.writeFile(workbook, `movements-${new Date().toISOString().slice(0, 10)}.xlsx`);
         }
     };
 
+    const renderSortIcon = (key: SortKey) => {
+        if (sortConfig.key !== key) return <span className="material-symbols-outlined text-[14px] opacity-20 group-hover:opacity-100">unfold_more</span>;
+        return (
+            <span className="material-symbols-outlined text-[14px] text-primary">
+                {sortConfig.direction === "asc" ? "expand_less" : "expand_more"}
+            </span>
+        );
+    };
+
     return (
-        <div className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-background/50">
-                <h3 className="text-lg font-bold text-foreground">{t("movements.history")}</h3>
+        <div className="bg-surface border border-border/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.07)] rounded-xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-border/40 flex justify-between items-center bg-background/30 backdrop-blur-sm">
+                <h3 className="text-base font-bold text-foreground tracking-tight">{t("movements.history")}</h3>
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
@@ -179,9 +244,9 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                             }
                         }}
                         disabled={loading}
-                        className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                        className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
                     >
-                        <span className="material-symbols-outlined text-[10px]">save</span>
+                        <span className="material-symbols-outlined text-[14px]">save</span>
                         {loading ? t("settings.saving") : t("settings.saveChanges")}
                     </button>
 
@@ -189,9 +254,9 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                         <button
                             type="button"
                             onClick={() => setIsDownloadOpen(!isDownloadOpen)}
-                            className="flex items-center gap-2 bg-surface border border-border hover:bg-border text-foreground px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-colors cursor-pointer"
+                            className="flex items-center gap-2 bg-surface border border-border/60 hover:bg-border/40 text-foreground px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm transition-all cursor-pointer"
                         >
-                            <span className="material-symbols-outlined text-[18px]">download</span>
+                            <span className="material-symbols-outlined text-[16px]">download</span>
                             {t("settings.downloadData")}
                         </button>
 
@@ -219,32 +284,77 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                     </div>
                 </div>
             </div>
-            <div className="overflow-x-auto max-h-[320px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+            <div className="overflow-x-auto max-h-[360px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200/50 dark:scrollbar-thumb-slate-800/50">
                 <table className="w-full text-left border-separate border-spacing-0">
-                    <thead className="sticky top-0 z-10 shadow-sm font-bold">
-                        <tr className="text-xs uppercase text-slate-500 tracking-wider">
-                            <th className="px-6 py-3 w-32 bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.date")}</th>
-                            <th className="px-6 py-3 bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.descriptionTable")}</th>
-                            <th className="px-6 py-3 w-48 bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.category")}</th>
-                            <th className="px-6 py-3 w-40 text-right bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.value")}</th>
-                            <th className="px-6 py-3 w-32 text-center bg-surface/95 backdrop-blur-sm border-b border-border">{t("movements.actions")}</th>
+                    <thead className="sticky top-0 z-10 font-bold">
+                        <tr className="text-[10px] uppercase text-slate-400 tracking-[0.1em]">
+                            <th className="px-6 py-3 w-40 bg-surface/95 backdrop-blur-md border-b border-border/40 group cursor-pointer select-none transition-colors hover:text-primary" onClick={() => handleSort("Date")}>
+                                <div className="flex items-center gap-2">
+                                    {t("movements.date")}
+                                    {renderSortIcon("Date")}
+                                </div>
+                            </th>
+                            <th className="px-6 py-3 bg-surface/95 backdrop-blur-md border-b border-border/40 group cursor-pointer select-none transition-colors hover:text-primary" onClick={() => handleSort("Description")}>
+                                <div className="flex items-center gap-2">
+                                    {t("movements.descriptionTable")}
+                                    {renderSortIcon("Description")}
+                                </div>
+                            </th>
+                            <th className="px-6 py-3 w-56 bg-surface/95 backdrop-blur-md border-b border-border/40 group relative">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary" onClick={() => handleSort("Category")}>
+                                        {t("movements.category")}
+                                        {renderSortIcon("Category")}
+                                    </div>
+                                    <div className="relative" ref={filterRef}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setIsFilterOpen(!isFilterOpen); }}
+                                            className={`flex items-center justify-center size-6 rounded-md transition-all cursor-pointer ${selectedCategories.length > 0 ? "bg-primary text-white scale-110" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-300 hover:text-slate-500"}`}
+                                        >
+                                            <span className="material-symbols-outlined text-[14px]">filter_alt</span>
+                                        </button>
+                                        {isFilterOpen && (
+                                            <div className="absolute right-0 mt-3 w-64 p-4 bg-surface border border-border/60 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("settings.categories") || "Categorias"}</span>
+                                                    <button onClick={() => onFilterChange([])} className="text-[10px] font-bold text-primary hover:opacity-70 transition-opacity">LIMPAR</button>
+                                                </div>
+                                                <div className="max-h-64 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                                                    {allCategories.map(cat => (
+                                                        <label key={cat} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-sm normal-case font-medium group/item text-slate-600 dark:text-slate-400 hover:text-foreground">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="rounded-[4px] border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20 size-3.5 transition-all"
+                                                                checked={selectedCategories.includes(cat)}
+                                                                onChange={() => handleFilterToggle(cat)}
+                                                                onClick={e => e.stopPropagation()}
+                                                            />
+                                                            <span className="truncate">{cat}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </th>
+                            <th className="px-6 py-3 w-40 text-right bg-surface/95 backdrop-blur-md border-b border-border/40 group cursor-pointer select-none transition-colors hover:text-primary" onClick={() => handleSort("Value")}>
+                                <div className="flex items-center justify-end gap-2 text-right">
+                                    {t("movements.value")}
+                                    {renderSortIcon("Value")}
+                                </div>
+                            </th>
+                            <th className="px-6 py-3 w-32 text-center bg-surface/95 backdrop-blur-md border-b border-border/40">{t("movements.actions")}</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
-                        {movements
-                            .map((m, originalIndex) => ({ ...m, originalIndex }))
-                            .sort((a, b) => {
-                                const dateSort = parseCustomDate(b.Date).getTime() - parseCustomDate(a.Date).getTime();
-                                if (dateSort !== 0) return dateSort;
-                                return b.Value - a.Value;
-                            })
-                            .map((movement) => (
-                                <tr key={movement.originalIndex} className="hover:bg-blue-50/50 dark:hover:bg-white/5 transition-colors group">
-                                    <td className="px-6 py-1.5 text-sm text-slate-600 dark:text-slate-400">
+                    <tbody className="divide-y divide-border/20">
+                        {sortedMovements.map((movement) => (
+                                <tr key={movement.originalIndex} className="hover:bg-blue-50/30 dark:hover:bg-white/5 transition-all group/row">
+                                    <td className="px-6 py-1.5 text-xs text-slate-500 font-medium tabular-nums">
                                         {editingId === movement.originalIndex ? (
                                             <input
                                                 type="date"
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-sm"
+                                                className="bg-background border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs transition-colors"
                                                 value={csvDateToInputDate(editData?.Date || "")}
                                                 onChange={e => setEditData(prev => prev ? { ...prev, Date: inputDateToCsvDate(e.target.value) } : null)}
                                             />
@@ -252,11 +362,11 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                             movement.Date
                                         )}
                                     </td>
-                                    <td className="px-6 py-1.5 text-sm font-medium text-foreground">
+                                    <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
                                         {editingId === movement.originalIndex ? (
                                             <input
                                                 type="text"
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-sm"
+                                                className="bg-background border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs transition-colors"
                                                 value={editData?.Description}
                                                 onChange={e => setEditData(prev => prev ? { ...prev, Description: e.target.value } : null)}
                                             />
@@ -267,7 +377,7 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                     <td className="px-6 py-1.5">
                                         {editingId === movement.originalIndex ? (
                                             <select
-                                                className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-full text-sm font-medium"
+                                                className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs font-bold transition-colors appearance-none"
                                                 value={editData?.Category}
                                                 onChange={e => setEditData(prev => prev ? { ...prev, Category: e.target.value } : null)}
                                             >
@@ -276,16 +386,16 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                                 ))}
                                             </select>
                                         ) : (
-                                            <span className="text-sm font-medium text-foreground">
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                                 {movement.Category}
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-1.5 text-sm font-bold text-right">
+                                    <td className="px-6 py-1.5 text-sm font-bold text-right tabular-nums">
                                         {editingId === movement.originalIndex ? (
-                                            <div className="flex flex-col gap-1 items-end">
+                                            <div className="flex flex-col gap-1.5 items-end">
                                                 <select
-                                                    className="bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 text-[10px] w-20"
+                                                    className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-0.5 text-[9px] w-20 appearance-none font-bold uppercase text-slate-400"
                                                     value={editData?.Type}
                                                     onChange={e => {
                                                         const newType = e.target.value as any;
@@ -302,34 +412,34 @@ export default function MovementsTable({ movements, onUpdate }: Props) {
                                                 </select>
                                                 <input
                                                     type="number"
-                                                    className={`bg-background border-b border-border focus:border-primary focus:outline-none py-0.5 w-24 text-right ${editData?.Type === "Income" ? "text-green-500" : "text-red-500"}`}
+                                                    className={`bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-24 text-right tabular-nums font-bold ${editData?.Type === "Income" ? "text-green-500" : "text-red-500"}`}
                                                     value={editData?.Value}
                                                     onChange={e => setEditData(prev => prev ? { ...prev, Value: Number(e.target.value) } : null)}
                                                 />
                                             </div>
                                         ) : (
-                                            <span className={movement.Type === "Income" ? "text-green-500" : "text-red-500"}>
+                                            <span className={`tracking-tight ${movement.Type === "Income" ? "text-green-500" : "text-red-500"}`}>
                                                 {`${movement.Type === "Income" ? "+" : "-"}${formatCurrency(movement.Value)}`}
                                             </span>
                                         )}
                                     </td>
                                     <td className="px-6 py-1.5 text-center">
                                         {editingId === movement.originalIndex ? (
-                                            <div className="flex justify-center gap-2">
-                                                <button onClick={handleSave} disabled={loading} className="text-green-500 hover:text-green-600 transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">check_circle</span>
+                                            <div className="flex justify-center gap-3">
+                                                <button onClick={handleSave} disabled={loading} className="text-primary hover:opacity-70 transition-all scale-110">
+                                                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
                                                 </button>
-                                                <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-slate-500">
-                                                    <span className="material-symbols-outlined text-lg">cancel</span>
+                                                <button onClick={() => setEditingId(null)} className="text-slate-300 hover:text-slate-500 transition-all">
+                                                    <span className="material-symbols-outlined text-[20px]">cancel</span>
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="flex justify-center gap-2">
-                                                <button onClick={() => handleEdit(movement.originalIndex)} className="text-primary hover:text-primary/80 transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">edit</span>
+                                            <div className="flex justify-center gap-2 opacity-0 group-hover/row:opacity-100 transition-all transform translate-x-1 group-hover/row:translate-x-0">
+                                                <button onClick={() => handleEdit(movement.originalIndex)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-primary/10 text-slate-400 hover:text-primary transition-all">
+                                                    <span className="material-symbols-outlined text-[16px]">edit</span>
                                                 </button>
-                                                <button onClick={() => handleDelete(movement.originalIndex)} className="text-slate-400 hover:text-red-500 transition-colors">
-                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                <button onClick={() => handleDelete(movement.originalIndex)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-slate-300 hover:text-red-500 transition-all">
+                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
                                                 </button>
                                             </div>
                                         )}
