@@ -164,11 +164,11 @@ export default function AIImportModal({ onClose }: Props) {
                 const action = importType === "patrimonio" ? "updateAll" : "updateMovements";
                 const dataToSend = currentData.map(r => {
                     const dateObj = parseCustomDate(r.Date || "");
-                    const normalizedDate = dateObj.toLocaleDateString("en-US", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "2-digit"
-                    }).replace(/ /g, "/"); // Standardize to DD/MMM/YY
+                    const day = String(dateObj.getUTCDate()).padStart(2, "0");
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const month = months[dateObj.getUTCMonth()];
+                    const year = String(dateObj.getUTCFullYear()).slice(-2);
+                    const normalizedDate = `${day}/${month}/${year}`; // Standardize to DD/MMM/YY
 
                     if (importType === "patrimonio") {
                         return {
@@ -201,11 +201,11 @@ export default function AIImportModal({ onClose }: Props) {
                 // Append: add each row individually
                 for (const r of currentData) {
                     const dateObj = parseCustomDate(r.Date || "");
-                    const normalizedDate = dateObj.toLocaleDateString("en-US", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "2-digit"
-                    }).replace(/ /g, "/");
+                    const day = String(dateObj.getUTCDate()).padStart(2, "0");
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const month = months[dateObj.getUTCMonth()];
+                    const year = String(dateObj.getUTCFullYear()).slice(-2);
+                    const normalizedDate = `${day}/${month}/${year}`;
 
                     const rowData = importType === "patrimonio"
                         ? { Date: normalizedDate, Classification: r.Classification || "", Asset: r.Asset || "", Value: r.Value }

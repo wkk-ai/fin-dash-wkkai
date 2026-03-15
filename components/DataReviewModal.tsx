@@ -57,33 +57,100 @@ export function DataReviewModal({ type, initialData, onClose, onImport, isImport
     // Date helpers
     const dbDateToInputDate = (dbDate: string) => {
         if (!dbDate) return "";
-        const parts = dbDate.split("/");
-        if (parts.length !== 3) return dbDate;
+        const cleanStr = String(dbDate).trim();
 
-        const day = parts[0].padStart(2, "0");
-        const monthStr = parts[1].toLowerCase().replace(".", "");
-        const yearShort = parts[2];
-        const year = `20${yearShort}`;
+        // Already YYYY-MM-DD
+        const regexStandard = /^(\d{4})-(\d{2})-(\d{2})$/;
+        if (cleanStr.match(regexStandard)) return cleanStr;
 
-        const months: Record<string, string> = {
-            jan: "01", feb: "02", fev: "02", mar: "03", apr: "04", abr: "04",
-            may: "05", mai: "05", jun: "06", jul: "07", aug: "08", ago: "08",
-            sep: "09", set: "09", oct: "10", out: "10", nov: "11", dec: "12", dez: "12"
-        };
-        const month = months[monthStr.toLowerCase().slice(0, 3)] || "01";
-        return `${year}-${month}-${day}`;
+        // Is it DD/MMM/YY format?
+        const regexAlphaDate = /^(\d{1,2})[\/\-]([A-Za-z]{3,})[\/\-](\d{2,4})$/;
+        const matchAlpha = cleanStr.match(regexAlphaDate);
+        if (matchAlpha) {
+            const day = matchAlpha[1].padStart(2, "0");
+            const monthStr = matchAlpha[2].toLowerCase().slice(0, 3);
+            const months: Record<string, string> = {
+                jan: "01", feb: "02", fev: "02", mar: "03", apr: "04", abr: "04",
+                may: "05", mai: "05", jun: "06", jul: "07", aug: "08", ago: "08",
+                sep: "09", set: "09", oct: "10", out: "10", nov: "11", dec: "12", dez: "12"
+            };
+            const month = months[monthStr] || "01";
+            let year = matchAlpha[3];
+            if (year.length === 2) year = `20${year}`;
+            return `${year}-${month}-${day}`;
+        }
+
+        // Is it weird format like Dec/28,/25 or Dec/28/25?
+        const regexWeird = /^([A-Za-z]{3})\/(\d{1,2}),?\/(\d{2,4})$/;
+        const matchWeird = cleanStr.match(regexWeird);
+        if (matchWeird) {
+            const monthStr = matchWeird[1].toLowerCase().slice(0, 3);
+            const day = matchWeird[2].padStart(2, "0");
+            const months: Record<string, string> = {
+                jan: "01", feb: "02", fev: "02", mar: "03", apr: "04", abr: "04",
+                may: "05", mai: "05", jun: "06", jul: "07", aug: "08", ago: "08",
+                sep: "09", set: "09", oct: "10", out: "10", nov: "11", dec: "12", dez: "12"
+            };
+            const month = months[monthStr] || "01";
+            let year = matchWeird[3];
+            if (year.length === 2) year = `20${year}`;
+            return `${year}-${month}-${day}`;
+        }
+
+        // Fallback split
+        const parts = cleanStr.split("/");
+        if (parts.length === 3) {
+            const day = parts[0].padStart(2, "0");
+            const monthStr = parts[1].toLowerCase().replace(".", "").slice(0, 3);
+            const yearShort = parts[2].slice(-2);
+            const year = `20${yearShort}`;
+            const months: Record<string, string> = {
+                jan: "01", feb: "02", fev: "02", mar: "03", apr: "04", abr: "04",
+                may: "05", mai: "05", jun: "06", jul: "07", aug: "08", ago: "08",
+                sep: "09", set: "09", oct: "10", out: "10", nov: "11", dec: "12", dez: "12"
+            };
+            const month = months[monthStr] || "01";
+            return `${year}-${month}-${day}`;
+        }
+
+        return cleanStr;
     };
 
     const inputDateToDbDate = (inputDate: string) => {
         if (!inputDate) return "";
+        const cleanStr = String(inputDate).trim();
+
+        // 1. Is it in YYYY-MM-DD input date format? (from the <input type="date">)
+        const regexStandard = /^(\d{4})-(\d{2})-(\d{2})$/;
+        const matchStandard = cleanStr.match(regexStandard);
+        if (matchStandard) {
+            const year = matchStandard[1].slice(-2);
+            const monthNum = parseInt(matchStandard[2], 10) - 1;
+            const day = matchStandard[3];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthStr = months[monthNum] || "Jan";
+            return `${day}/${monthStr}/${year}`;
+        }
+
+        // 2. Check for weird format like Dec/28,/25 directly from the AI
+        const regexWeird = /^([A-Za-z]{3})\/(\d{1,2}),?\/(\d{2,4})$/;
+        const matchWeird = cleanStr.match(regexWeird);
+        if (matchWeird) {
+            const monthStr = matchWeird[1].charAt(0).toUpperCase() + matchWeird[1].slice(1, 3).toLowerCase();
+            const day = matchWeird[2].padStart(2, '0');
+            let year = matchWeird[3];
+            if (year.length === 2) year = "20" + year;
+            return `${day}/${monthStr}/${year.slice(2)}`;
+        }
+
+        // Fallback custom parse
         const dateObj = parseCustomDate(inputDate);
         if (isNaN(dateObj.getTime())) return inputDate;
-
-        const day = String(dateObj.getUTCDate()).padStart(2, "0");
-        const month = dateObj.toLocaleString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace(".", "");
-        const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
-        const year = String(dateObj.getUTCFullYear()).slice(-2);
-        return `${day}/${capitalizedMonth}/${year}`;
+        const dayF = String(dateObj.getUTCDate()).padStart(2, "0");
+        const monthsF = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const monthF = monthsF[dateObj.getUTCMonth()];
+        const yearF = String(dateObj.getUTCFullYear()).slice(-2);
+        return `${dayF}/${monthF}/${yearF}`;
     };
 
     const handleDeleteRow = (id: string) => {
