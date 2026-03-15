@@ -18,6 +18,7 @@ export default function MovementsPage() {
     const [budgets, setBudgets] = useState<BudgetEntry[]>([]);
     const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
     const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
     const tooltipBorder = isDark ? "var(--border)" : "#e2e8f0";
@@ -47,11 +48,16 @@ export default function MovementsPage() {
         return () => window.removeEventListener("movement-added", fetchData);
     }, []);
 
+    // Filter movements globally based on selected categories
+    const filteredMovements = movements.filter(m => 
+        selectedCategories.length === 0 || selectedCategories.includes(m.Category)
+    );
+
     // Process Data for KPIs
     // Identify the latest month in the data
     const getLatestDate = () => {
-        if (movements.length === 0) return new Date();
-        const dates = movements
+        if (filteredMovements.length === 0) return new Date();
+        const dates = filteredMovements
             .map(m => parseCustomDate(m.Date))
             .filter(d => !isNaN(d.getTime()));
         if (dates.length === 0) return new Date();
@@ -73,8 +79,8 @@ export default function MovementsPage() {
         return monthPart === targetMonth && parts[2] === y;
     };
 
-    const currentMovements = movements.filter(m => matchMonth(m.Date, currentMonth, currentYear));
-    const previousMovements = movements.filter(m => matchMonth(m.Date, prevMonth, prevYear));
+    const currentMovements = filteredMovements.filter(m => matchMonth(m.Date, currentMonth, currentYear));
+    const previousMovements = filteredMovements.filter(m => matchMonth(m.Date, prevMonth, prevYear));
 
     const getTotals = (list: MovementEntry[]) => {
         const income = list.filter(m => m.Type === "Income").reduce((acc, m) => acc + m.Value, 0);
@@ -100,7 +106,7 @@ export default function MovementsPage() {
 
     // Process Data for Income vs Expenses Bar Chart (aggregated by Month/Year)
     const aggregatedByMonth: Record<string, { monthYear: string, income: number, expense: number, sortKey: string }> = {};
-    movements.forEach(m => {
+    filteredMovements.forEach(m => {
         const parts = m.Date.split('/'); // DD/MMM/YY
         const monthYear = parts[1] + '/' + parts[2]; // MMM/YY
 
@@ -169,15 +175,15 @@ export default function MovementsPage() {
     const activeExpenseCategories = settings?.expenseCategories || [];
     const allCategories = activeExpenseCategories;
 
-    const budgetVsActual = allCategories.map(category => ({
+    const budgetVsActual = allCategories.map((category: string) => ({
         category,
         actual: categoryAgg[category] || 0,
         budget: budgetMap[category] || 0
-    })).sort((a, b) => b.budget - a.budget); // Sort by largest budget first
+    })).sort((a: any, b: any) => b.budget - a.budget); // Sort by largest budget first
 
     // Process Top Vendors (by Description)
     const vendorAgg: Record<string, { value: number, count: number }> = {};
-    currentMovements.filter(m => m.Type === "Expense").forEach(m => {
+    currentMovements.filter((m: MovementEntry) => m.Type === "Expense").forEach((m: MovementEntry) => {
         if (!vendorAgg[m.Description]) vendorAgg[m.Description] = { value: 0, count: 0 };
         vendorAgg[m.Description].value += Math.abs(m.Value);
         vendorAgg[m.Description].count += 1;
@@ -189,7 +195,7 @@ export default function MovementsPage() {
 
     // Net Cash Flow (Monthly result)
     const monthlyNetAgg: Record<string, { monthKey: string, date: string, income: number, expense: number }> = {};
-    movements.forEach(m => {
+    filteredMovements.forEach(m => {
         const dateObj = parseCustomDate(m.Date);
         const monthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
         const displayDate = dateObj.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
@@ -495,9 +501,14 @@ export default function MovementsPage() {
                 </div>
             </div>
 
-            <DailyTrackingChart movements={movements} t={t} formatCurrency={formatCurrency} />
+            <DailyTrackingChart movements={filteredMovements} t={t} formatCurrency={formatCurrency} />
 
-            <MovementsTable movements={movements} onUpdate={fetchData} />
+            <MovementsTable 
+                movements={movements} 
+                onUpdate={fetchData} 
+                selectedCategories={selectedCategories}
+                onFilterChange={setSelectedCategories}
+            />
         </div>
     );
 }
