@@ -11,29 +11,76 @@ export default function Home() {
   const { t } = useTranslation();
   const [data, setData] = useState<AssetEntry[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // --- Projection Logic (Lifted) ---
-  const [monthlyAddition, setMonthlyAddition] = useState<string>("5000");
+  const [monthlyAddition, setMonthlyAddition] = useState<string>("1000");
   const [annualRate, setAnnualRate] = useState<string>("10");
   const [yearsToProject, setYearsToProject] = useState<string>("10");
+  const [suggestedAddition, setSuggestedAddition] = useState<number>(1000);
 
-  const fetchData = () => {
-    fetch("/api/database", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((json: AssetEntry[]) => {
-        setData(json);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to load data", err);
-        setLoading(false);
-      });
+  const fetchData = async () => {
+    try {
+      const dbRes = await fetch("/api/database", { cache: "no-store" });
+      const dbData: AssetEntry[] = await dbRes.json();
+      setData(dbData);
+
+      const mvRes = await fetch("/api/movements");
+      const mvData = await mvRes.json();
+      const movements = mvData.movements || [];
+
+      // --- 1. Calculate suggested contribution ---
+      
+      // A. Remaining Budget (OR)
+      const movementDates = movements.map((m: any) => parseCustomDate(m.Date)).filter((d: any) => !isNaN(d.getTime()));
+      let or = 0;
+      if (movementDates.length > 0) {
+        const latestMvDate = new Date(Math.max(...movementDates.map((d: any) => d.getTime())));
+        const currentMonth = latestMvDate.toLocaleString('en-US', { month: 'short' });
+        const currentYear = String(latestMvDate.getFullYear()).slice(-2);
+
+        const matchMonth = (dateStr: string, m: string, y: string) => {
+          const parts = dateStr.split('/');
+          const monthPart = parts[1]?.replace(".", "")?.toLowerCase() || "";
+          const targetMonth = m.toLowerCase().replace(".", "");
+          return monthPart === targetMonth && parts[2] === y;
+        };
+
+        const currentMovements = movements.filter((m: any) => matchMonth(m.Date, currentMonth, currentYear));
+        const income = currentMovements.filter((m: any) => m.Type === "Income").reduce((acc: number, m: any) => acc + m.Value, 0);
+        const expenses = Math.abs(currentMovements.filter((m: any) => m.Type === "Expense").reduce((acc: number, m: any) => acc + m.Value, 0));
+        or = income - expenses;
+      }
+
+      // B. Net Worth Variation (VNW)
+      const uniqueDates = Array.from(new Set(dbData.map((d) => d.Date)));
+      uniqueDates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
+      const dateValues: Record<string, number> = {};
+      dbData.forEach((d) => { dateValues[d.Date] = (dateValues[d.Date] || 0) + d.Value; });
+      const latestDateStr = uniqueDates[uniqueDates.length - 1];
+      const prevDateStr = uniqueDates.length > 1 ? uniqueDates[uniqueDates.length - 2] : null;
+      const currentWealth = dateValues[latestDateStr] || 0;
+      const prevWealth = prevDateStr ? dateValues[prevDateStr] : 0;
+      const vnw = currentWealth - prevWealth;
+
+      // C. Decision Matrix
+      let suggestion = 1000;
+      if (or < 0) {
+        suggestion = 1000;
+      } else if (vnw < 0) {
+        suggestion = or;
+      } else {
+        suggestion = vnw - or;
+      }
+      
+      setSuggestedAddition(suggestion);
+      setMonthlyAddition(String(Math.round(suggestion)));
+      setLoading(false);
+    } catch (err) {
+      console.error("Failed to load data", err);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchData();
-
-    // Handle updates from AddAssetModal (client-side event)
     const handleAdd = () => fetchData();
     window.addEventListener("asset-added", handleAdd);
     return () => window.removeEventListener("asset-added", handleAdd);
@@ -104,6 +151,7 @@ export default function Home() {
           currentWealth={currentWealth}
           params={{ monthlyAddition, annualRate, yearsToProject }}
           setParams={{ setMonthlyAddition, setAnnualRate, setYearsToProject }}
+          suggestedAddition={suggestedAddition}
         />
       </section>
     </div>
