@@ -11,7 +11,7 @@ const databasePath = path.resolve(
 );
 const customClassPath = path.resolve(process.cwd(), "data/custom_classifications.csv");
 const customAssetsPath = path.resolve(process.cwd(), "data/custom_assets.csv");
-const REQUIRED_COLUMNS = ["Date", "Classification", "Asset", "Value"] as const;
+const REQUIRED_COLUMNS = ["Date", "Classification", "Institution", "Asset", "Value"] as const;
 
 function formatDateToCsv(date: Date): string {
     const day = String(date.getDate()).padStart(2, "0");
@@ -139,17 +139,20 @@ function normalizeRows(rows: Record<string, unknown>[]): { data: AssetEntry[]; e
         const r = rows[i];
         const date = parseDateValue(r.Date);
         const classification = String(r.Classification ?? "").trim();
+        const institution = String(r.Institution ?? "").trim();
         const asset = String(r.Asset ?? "").trim();
         const value = parseNumberValue(r.Value);
 
         if (!date) return { data: [], error: `Row ${i + 2}: invalid Date value.` };
         if (!classification) return { data: [], error: `Row ${i + 2}: Classification is empty.` };
+        if (!institution) return { data: [], error: `Row ${i + 2}: Institution is empty.` };
         if (!asset) return { data: [], error: `Row ${i + 2}: Asset is empty.` };
         if (value === null) return { data: [], error: `Row ${i + 2}: invalid Value.` };
 
         out.push({
             Date: date,
             Classification: classification,
+            Institution: institution,
             Asset: asset,
             Value: value,
         });
@@ -186,12 +189,13 @@ export async function GET() {
                 skipEmptyLines: true,
             });
             data = (parsed.data as string[][])
-                .filter((row) => row.length >= 4 && !isNaN(Number(row[3])))
+                .filter((row) => row.length >= 5 && !isNaN(Number(row[4])))
                 .map((row) => ({
                     Date: row[0].trim(),
                     Classification: row[1].trim(),
-                    Asset: row[2].trim(),
-                    Value: Number(row[3]),
+                    Institution: row[2].trim(),
+                    Asset: row[3].trim(),
+                    Value: Number(row[4]),
                 }));
         } else {
             // Has header row (Date, Classification, Asset, Value)
@@ -204,6 +208,7 @@ export async function GET() {
                 .map((row: any) => ({
                     Date: String(row.Date).trim(),
                     Classification: String(row.Classification).trim(),
+                    Institution: String(row.Institution ?? "").trim(),
                     Asset: String(row.Asset).trim(),
                     Value: Number(row.Value),
                 }));
@@ -286,8 +291,9 @@ export async function POST(request: Request) {
                 rows = bodyRows.map((r) => ({
                     Date: r[0],
                     Classification: r[1],
-                    Asset: r[2],
-                    Value: r[3],
+                    Institution: r[2],
+                    Asset: r[3],
+                    Value: r[4],
                 }));
             } else {
                 return NextResponse.json({ errorCode: "UNSUPPORTED_FILE_TYPE" }, { status: 400 });
@@ -328,12 +334,12 @@ export async function POST(request: Request) {
             const lineEnding = fileContent.includes("\r\n") ? "\r\n" : "\n";
             // Strip any trailing whitespace/newlines from the file before appending
             const trimmedContent = fileContent.trimEnd();
-            const newRow = `${lineEnding}${body.data.Date},${body.data.Classification},${body.data.Asset},${body.data.Value}`;
+            const newRow = `${lineEnding}${body.data.Date},${body.data.Classification},${body.data.Institution},${body.data.Asset},${body.data.Value}`;
             updatedCsv = trimmedContent + newRow;
 
         } else if (body.action === "updateAll") {
             updatedCsv = Papa.unparse({
-                fields: ["Date", "Classification", "Asset", "Value"],
+                fields: ["Date", "Classification", "Institution", "Asset", "Value"],
                 data: body.data
             }, {
                 header: true

@@ -3,22 +3,25 @@ import path from "path";
 import { getUniqueValuesFromDatabase, getUniqueMovementValues, readCustomCsv, writeCustomCsv } from "@/lib/csv-utils";
 
 const customClassPath = path.resolve(process.cwd(), "data/custom_classifications.csv");
+const customInstitutionsPath = path.resolve(process.cwd(), "data/custom_institutions.csv");
 const customAssetsPath = path.resolve(process.cwd(), "data/custom_assets.csv");
 const customIncomePath = path.resolve(process.cwd(), "data/custom_income_categories.csv");
 const customExpensePath = path.resolve(process.cwd(), "data/custom_expense_categories.csv");
 
 export async function GET() {
     try {
-        const { classifications: dbClasses, assets: dbAssets } = getUniqueValuesFromDatabase();
+        const { classifications: dbClasses, institutions: dbInstitutions, assets: dbAssets } = getUniqueValuesFromDatabase();
         const { incomeCategories: dbIncomeCats, expenseCategories: dbExpenseCats } = getUniqueMovementValues();
 
         const customClasses = readCustomCsv(customClassPath);
+        const customInstitutions = readCustomCsv(customInstitutionsPath);
         const customAssets = readCustomCsv(customAssetsPath);
         const customIncome = readCustomCsv(customIncomePath);
         const customExpense = readCustomCsv(customExpensePath);
 
         return NextResponse.json({
             classifications: Array.from(new Set([...dbClasses, ...customClasses])).sort(),
+            institutions: Array.from(new Set([...dbInstitutions, ...customInstitutions])).sort(),
             assets: Array.from(new Set([...dbAssets, ...customAssets])).sort(),
             incomeCategories: Array.from(new Set([...dbIncomeCats, ...customIncome])).sort(),
             expenseCategories: Array.from(new Set([...dbExpenseCats, ...customExpense])).sort(),
@@ -30,14 +33,19 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const { classifications, assets, incomeCategories, expenseCategories } = await request.json();
-        const { classifications: dbClasses, assets: dbAssets } = getUniqueValuesFromDatabase();
+        const { classifications, institutions, assets, incomeCategories, expenseCategories } = await request.json();
+        const { classifications: dbClasses, institutions: dbInstitutions, assets: dbAssets } = getUniqueValuesFromDatabase();
         const { incomeCategories: dbIncomeCats, expenseCategories: dbExpenseCats } = getUniqueMovementValues();
 
         // Save only values NOT in the database (custom ones)
         if (classifications) {
             const customClasses = classifications.filter((c: string) => !dbClasses.includes(c));
             writeCustomCsv(customClassPath, customClasses);
+        }
+
+        if (institutions) {
+            const customInstitutions = institutions.filter((i: string) => !dbInstitutions.includes(i));
+            writeCustomCsv(customInstitutionsPath, customInstitutions);
         }
 
         if (assets) {
@@ -60,3 +68,4 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to save settings", details: error.message }, { status: 500 });
     }
 }
+

@@ -5,9 +5,9 @@ import Papa from "papaparse";
 const databasePath = path.resolve(process.cwd(), "data/net-worth.csv");
 const movementsPath = path.resolve(process.cwd(), "data/movements.csv");
 
-export function getUniqueValuesFromDatabase(): { classifications: string[], assets: string[] } {
+export function getUniqueValuesFromDatabase(): { classifications: string[], institutions: string[], assets: string[] } {
     try {
-        if (!fs.existsSync(databasePath)) return { classifications: [], assets: [] };
+        if (!fs.existsSync(databasePath)) return { classifications: [], institutions: [], assets: [] };
 
         const fileContent = fs.readFileSync(databasePath, "utf-8");
         const parsed = Papa.parse(fileContent, {
@@ -16,20 +16,23 @@ export function getUniqueValuesFromDatabase(): { classifications: string[], asse
         });
 
         const classifications = new Set<string>();
+        const institutions = new Set<string>();
         const assets = new Set<string>();
 
         (parsed.data as any[]).forEach(row => {
             if (row.Classification) classifications.add(row.Classification.trim());
+            if (row.Institution) institutions.add(row.Institution.trim());
             if (row.Asset) assets.add(row.Asset.trim());
         });
 
         return {
             classifications: Array.from(classifications).sort(),
+            institutions: Array.from(institutions).sort(),
             assets: Array.from(assets).sort(),
         };
     } catch (error) {
         console.error("Error extracting unique values from CSV:", error);
-        return { classifications: [], assets: [] };
+        return { classifications: [], institutions: [], assets: [] };
     }
 }
 

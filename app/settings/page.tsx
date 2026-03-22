@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "@/lib/i18n";
-import { AssetEntry, Classification, Asset, Settings, BudgetEntry } from "@/types/database";
+import { AssetEntry, Classification, Institution, Asset, Settings, BudgetEntry } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { savePendingData, loadPendingData as getPendingData, clearPendingData } from "@/lib/pending-storage";
 import Portal from "@/components/Portal";
@@ -17,6 +17,7 @@ export default function SettingsPage() {
     const [data, setData] = useState<AssetEntry[]>([]);
     const [settings, setSettings] = useState<Settings>({
         classifications: [],
+        institutions: [],
         assets: [],
         incomeCategories: [],
         expenseCategories: []
@@ -25,6 +26,7 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [newClassification, setNewClassification] = useState("");
+    const [newInstitution, setNewInstitution] = useState("");
     const [newAsset, setNewAsset] = useState("");
     const [newIncomeCategory, setNewIncomeCategory] = useState("");
     const [newExpenseCategory, setNewExpenseCategory] = useState("");
@@ -37,10 +39,13 @@ export default function SettingsPage() {
     // Sorting and Filtering State
     const [sortConfig, setSortConfig] = useState<{ key: keyof AssetEntry, direction: "asc" | "desc" } | null>({ key: "Date", direction: "desc" });
     const [selectedClassifications, setSelectedClassifications] = useState<string[]>([]);
+    const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
     const [isClassFilterOpen, setIsClassFilterOpen] = useState(false);
+    const [isInstitutionFilterOpen, setIsInstitutionFilterOpen] = useState(false);
     const [isAssetFilterOpen, setIsAssetFilterOpen] = useState(false);
     const classFilterRef = useRef<HTMLDivElement>(null);
+    const institutionFilterRef = useRef<HTMLDivElement>(null);
     const assetFilterRef = useRef<HTMLDivElement>(null);
 
     const [modalConfig, setModalConfig] = useState<{
@@ -122,6 +127,7 @@ export default function SettingsPage() {
 
     // Derived lists from database to prevent deleting tags actually in use
     const [dbClassifications, setDbClassifications] = useState<string[]>([]);
+    const [dbInstitutions, setDbInstitutions] = useState<string[]>([]);
     const [dbAssets, setDbAssets] = useState<string[]>([]);
     const [dbIncomeCategories, setDbIncomeCategories] = useState<string[]>([]);
     const [dbExpenseCategories, setDbExpenseCategories] = useState<string[]>([]);
@@ -129,8 +135,10 @@ export default function SettingsPage() {
     useEffect(() => {
         if (data.length > 0) {
             const usedClasses = Array.from(new Set(data.map(r => r.Classification))).filter(Boolean);
+            const usedInstitutions = Array.from(new Set(data.map(r => r.Institution))).filter(Boolean);
             const usedAssets = Array.from(new Set(data.map(r => r.Asset))).filter(Boolean);
             setDbClassifications(usedClasses);
+            setDbInstitutions(usedInstitutions);
             setDbAssets(usedAssets);
         }
     }, [data]);
@@ -148,8 +156,10 @@ export default function SettingsPage() {
             });
             setData(sorted);
             const usedClasses = Array.from(new Set(pending.map((r: AssetEntry) => r.Classification))).filter(Boolean) as string[];
+            const usedInstitutions = Array.from(new Set(pending.map((r: AssetEntry) => r.Institution))).filter(Boolean) as string[];
             const usedAssets = Array.from(new Set(pending.map((r: AssetEntry) => r.Asset))).filter(Boolean) as string[];
             setDbClassifications(usedClasses);
+            setDbInstitutions(usedInstitutions);
             setDbAssets(usedAssets);
             // Still need settings (classifications, assets) from API
             fetch("/api/settings")
@@ -178,6 +188,7 @@ export default function SettingsPage() {
                     });
                 });
                 if (newRow.Classification) setDbClassifications(prev => Array.from(new Set([...prev, newRow.Classification])));
+                if (newRow.Institution) setDbInstitutions(prev => Array.from(new Set([...prev, newRow.Institution])));
                 if (newRow.Asset) setDbAssets(prev => Array.from(new Set([...prev, newRow.Asset])));
             } else {
                 clearPendingData();
@@ -191,6 +202,9 @@ export default function SettingsPage() {
         const handleClickOutside = (event: MouseEvent) => {
             if (classFilterRef.current && !classFilterRef.current.contains(event.target as Node)) {
                 setIsClassFilterOpen(false);
+            }
+            if (institutionFilterRef.current && !institutionFilterRef.current.contains(event.target as Node)) {
+                setIsInstitutionFilterOpen(false);
             }
             if (assetFilterRef.current && !assetFilterRef.current.contains(event.target as Node)) {
                 setIsAssetFilterOpen(false);
@@ -236,12 +250,23 @@ export default function SettingsPage() {
         );
     };
 
+    const handleInstitutionFilterToggle = (institution: string) => {
+        setSelectedInstitutions(prev =>
+            prev.includes(institution)
+                ? prev.filter(i => i !== institution)
+                : [...prev, institution]
+        );
+    };
+
     const filteredAndSortedData = (() => {
         let result = [...data];
 
         // Apply filters
         if (selectedClassifications.length > 0) {
             result = result.filter(row => selectedClassifications.includes(row.Classification));
+        }
+        if (selectedInstitutions.length > 0) {
+            result = result.filter(row => selectedInstitutions.includes(row.Institution));
         }
         if (selectedAssets.length > 0) {
             result = result.filter(row => selectedAssets.includes(row.Asset));
@@ -275,12 +300,13 @@ export default function SettingsPage() {
         return <span className="material-symbols-outlined text-[14px] text-primary">{sortConfig.direction === "asc" ? "expand_less" : "expand_more"}</span>;
     };
 
-    const saveSettingsSection = async (type: "class" | "asset" | "income" | "expense") => {
+    const saveSettingsSection = async (type: "class" | "institution" | "asset" | "income" | "expense") => {
         const isClass = type === "class";
+        const isInstitution = type === "institution";
         const isAsset = type === "asset";
         const isIncome = type === "income";
-        const currentList = isClass ? settings.classifications : isAsset ? settings.assets : isIncome ? settings.incomeCategories : settings.expenseCategories;
-        const dbList = isClass ? dbClassifications : isAsset ? dbAssets : isIncome ? dbIncomeCategories : dbExpenseCategories;
+        const currentList = isClass ? settings.classifications : isInstitution ? settings.institutions : isAsset ? settings.assets : isIncome ? settings.incomeCategories : settings.expenseCategories;
+        const dbList = isClass ? dbClassifications : isInstitution ? dbInstitutions : isAsset ? dbAssets : isIncome ? dbIncomeCategories : dbExpenseCategories;
 
         // Safety check: is any item from DB missing in current list?
         const missing = dbList.filter(item => !currentList.includes(item));
@@ -315,6 +341,7 @@ export default function SettingsPage() {
                 body: JSON.stringify(settings),
             });
             let msgKey = "settings.classificationsSaved";
+            if (isInstitution) msgKey = "settings.institutionsSaved";
             if (isAsset) msgKey = "settings.assetsSaved";
             if (isIncome) msgKey = "settings.incomeSaved";
             if (type === "expense") msgKey = "settings.expensesSaved";
@@ -377,6 +404,30 @@ export default function SettingsPage() {
             return;
         }
         setSettings(prev => ({ ...prev, assets: prev.assets.filter(x => x !== a) }));
+    };
+
+    const addInstitution = () => {
+        if (!newInstitution) return;
+        if (settings.institutions.includes(newInstitution)) return;
+        setSettings(prev => ({
+            ...prev,
+            institutions: [...prev.institutions, newInstitution].sort((a, b) => a.localeCompare(b))
+        }));
+        setNewInstitution("");
+    };
+
+    const removeInstitution = (inst: string) => {
+        if (dbInstitutions.includes(inst)) {
+            setModalConfig({
+                isOpen: true,
+                title: t("settings.cannotDelete"),
+                message: t("settings.institutionInUse", { name: inst }),
+                confirmLabel: t("common.understood"),
+                onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false })),
+            });
+            return;
+        }
+        setSettings(prev => ({ ...prev, institutions: prev.institutions.filter(x => x !== inst) }));
     };
 
     const addIncomeCategory = () => {
@@ -679,6 +730,7 @@ export default function SettingsPage() {
         const exportData = filteredAndSortedData.map(row => ({
             Date: row.Date,
             Classification: row.Classification,
+            Institution: row.Institution,
             Asset: row.Asset,
             Value: row.Value
         }));
@@ -783,10 +835,60 @@ export default function SettingsPage() {
                             </div>
                         </div>
 
+                        {/* Institutions */}
+                        <div className="flex flex-col mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">Instituições</h4>
+                                <button
+                                    type="button"
+                                    onClick={() => saveSettingsSection("institution")}
+                                    className="p-1.5 rounded-lg hover:bg-border text-slate-400 hover:text-primary transition-colors cursor-pointer"
+                                    disabled={savingSettings.type === "institution"}
+                                >
+                                    <span className={cn(
+                                        "material-symbols-outlined text-[18px]",
+                                        savingSettings.type === "institution" && "animate-pulse"
+                                    )}>save</span>
+                                </button>
+                            </div>
+                            <div className="flex gap-2 mb-4">
+                                <input
+                                    value={newInstitution}
+                                    onChange={e => setNewInstitution(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addInstitution()}
+                                    placeholder="Ex: Nubank"
+                                    className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <button type="button" onClick={addInstitution} className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer">
+                                    Adicionar
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 min-h-[40px]">
+                                {settings.institutions?.map(inst => {
+                                    const isInUse = dbInstitutions.includes(inst);
+                                    return (
+                                        <div key={inst} className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all",
+                                            isInUse
+                                                ? "bg-primary/10 text-primary border-primary/30"
+                                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-border group hover:border-primary/30"
+                                        )}>
+                                            {inst}
+                                            {!isInUse && (
+                                                <button type="button" onClick={() => removeInstitution(inst)} className="text-slate-400 hover:text-red-500 transition-colors cursor-pointer">
+                                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         {/* Assets */}
                         <div className="flex flex-col">
                             <div className="flex justify-between items-center mb-4">
-                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">{t("settings.assets")}</h4>
+                                <h4 className="text-sm font-bold text-primary uppercase tracking-wider">Ativos</h4>
                                 <button
                                     type="button"
                                     onClick={() => saveSettingsSection("asset")}
@@ -804,7 +906,7 @@ export default function SettingsPage() {
                                     value={newAsset}
                                     onChange={e => setNewAsset(e.target.value)}
                                     onKeyDown={e => e.key === "Enter" && addAsset()}
-                                    placeholder={t("settings.assetPlaceholder")}
+                                    placeholder="Ex: CDB 100%"
                                     className="flex-1 rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                                 />
                                 <button type="button" onClick={addAsset} className="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer">
@@ -1148,6 +1250,44 @@ export default function SettingsPage() {
                                 </th>
                                 <th className="px-6 py-3 border-b border-border/40 bg-transparent group relative">
                                     <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary" onClick={() => handleSort("Institution")}>
+                                            Instituição
+                                            {renderSortIcon("Institution")}
+                                        </div>
+                                        <div className="relative" ref={institutionFilterRef}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setIsInstitutionFilterOpen(!isInstitutionFilterOpen); }}
+                                                className={`flex items-center justify-center size-6 rounded-md transition-all cursor-pointer ${selectedInstitutions.length > 0 ? "bg-primary text-white scale-110" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-300 hover:text-slate-500"}`}
+                                            >
+                                                <span className="material-symbols-outlined text-[14px]">filter_alt</span>
+                                            </button>
+                                            {isInstitutionFilterOpen && (
+                                                <div className="absolute right-0 mt-3 w-64 p-4 bg-surface border border-border/60 rounded-xl shadow-2xl z-50 animate-in fade-in zoom-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+                                                    <div className="flex justify-between items-center mb-4">
+                                                        <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Instituições</span>
+                                                        <button onClick={() => setSelectedInstitutions([])} className="text-[10px] font-bold text-primary hover:opacity-70 transition-opacity">LIMPAR</button>
+                                                    </div>
+                                                    <div className="max-h-64 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                                                        {settings.institutions.map(inst => (
+                                                            <label key={inst} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer text-sm normal-case font-medium group/item text-slate-600 dark:text-slate-400 hover:text-foreground">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="rounded-[4px] border-slate-300 dark:border-slate-700 text-primary focus:ring-primary/20 size-3.5 transition-all"
+                                                                    checked={selectedInstitutions.includes(inst)}
+                                                                    onChange={() => handleInstitutionFilterToggle(inst)}
+                                                                    onClick={e => e.stopPropagation()}
+                                                                />
+                                                                <span className="truncate">{inst}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 border-b border-border/40 bg-transparent group relative">
+                                    <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary" onClick={() => handleSort("Asset")}>
                                             {t("settings.asset")}
                                             {renderSortIcon("Asset")}
@@ -1227,6 +1367,25 @@ export default function SettingsPage() {
                                                 </select>
                                             ) : (
                                                 row.Classification
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
+                                            {editingRowIndex === originalIndex ? (
+                                                <select
+                                                    value={row.Institution}
+                                                    onChange={(e) => handleDataChange(originalIndex, "Institution", e.target.value)}
+                                                    className="bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs font-bold transition-colors appearance-none"
+                                                >
+                                                    <option value={row.Institution}>{row.Institution}</option>
+                                                    {settings.institutions
+                                                        .filter((inst: string) => inst !== row.Institution)
+                                                        .sort((a, b) => a.localeCompare(b))
+                                                        .map(inst => (
+                                                            <option key={inst} value={inst}>{inst}</option>
+                                                        ))}
+                                                </select>
+                                            ) : (
+                                                row.Institution
                                             )}
                                         </td>
                                         <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
