@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate } from "@/lib/utils";
@@ -77,6 +77,17 @@ export default function Portfolio() {
     const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
     const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
 
+    // Expand/collapse state for institutions (collapsed by default)
+    const [expandedInstitutions, setExpandedInstitutions] = useState<Set<string>>(new Set());
+    const toggleInstitution = (key: string) => {
+        setExpandedInstitutions(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
@@ -101,7 +112,7 @@ export default function Portfolio() {
     const getPrevValue = (asset: AssetEntry) => {
         if (!prevDateStr) return null;
         const prev = data.find(
-            d => d.Date === prevDateStr && d.Asset === asset.Asset && d.Classification === asset.Classification
+            d => d.Date === prevDateStr && d.Institution === asset.Institution && d.Asset === asset.Asset && d.Classification === asset.Classification
         );
         return prev ? prev.Value : null;
     };
@@ -180,6 +191,21 @@ export default function Portfolio() {
                             return sum + (prev !== null ? asset.Value - prev : 0);
                         }, 0) : null);
 
+                        // Group assets by institution within this classification
+                        const institutionGrouped: Record<string, AssetEntry[]> = {};
+                        assets.forEach(asset => {
+                            const inst = asset.Institution || asset.Asset;
+                            if (!institutionGrouped[inst]) institutionGrouped[inst] = [];
+                            institutionGrouped[inst].push(asset);
+                        });
+                        const sortedInstitutions = Object.entries(institutionGrouped)
+                            .map(([inst, instAssets]) => ({
+                                institution: inst,
+                                assets: instAssets.sort((a, b) => b.Value - a.Value),
+                                total: instAssets.reduce((sum, a) => sum + a.Value, 0),
+                            }))
+                            .sort((a, b) => b.total - a.total);
+
                         return (
                             <div key={classification} className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
                                 <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
@@ -221,68 +247,137 @@ export default function Portfolio() {
                                     <table className="w-full text-left border-collapse table-fixed">
                                         <thead>
                                             <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                                <th className="px-4 py-3 w-[25%] sm:w-[30%]">{t("portfolio.assetInstitution")}</th>
+                                                <th className="px-4 py-3 w-[20%] sm:w-[22%]">Instituição</th>
+                                                <th className="px-4 py-3 w-[18%] sm:w-[18%]">Ativo</th>
                                                 <th className="px-4 py-3 text-right w-[18%] sm:w-[15%]">{t("portfolio.currentValue")}</th>
-                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.monthAbsVar")}</th>
-                                                <th className="px-4 py-3 text-right w-[12%] sm:w-[10%]">{t("portfolio.monthVar")}</th>
-                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.weightInCategory")}</th>
-                                                <th className="px-4 py-3 text-right w-[15%] sm:w-[12%]">{t("portfolio.weightTotal")}</th>
+                                                <th className="px-4 py-3 text-right w-[14%] sm:w-[12%]">{t("portfolio.monthAbsVar")}</th>
+                                                <th className="px-4 py-3 text-right w-[10%] sm:w-[10%]">{t("portfolio.monthVar")}</th>
+                                                <th className="px-4 py-3 text-right w-[10%] sm:w-[12%]">{t("portfolio.weightInCategory")}</th>
+                                                <th className="px-4 py-3 text-right w-[10%] sm:w-[11%]">{t("portfolio.weightTotal")}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border text-xs sm:text-sm">
-                                            {assets.sort((a, b) => b.Value - a.Value).map((asset, idx) => {
-                                                const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
-                                                const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
-                                                const prevValue = getPrevValue(asset);
-                                                const variation = prevValue !== null ? asset.Value - prevValue : null;
-                                                const variationPct =
-                                                    prevValue !== null && prevValue !== 0
-                                                        ? (variation! / prevValue) * 100
-                                                        : null;
+                                            {sortedInstitutions.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                                const instKey = `${classification}-${institution}`;
+                                                const isExpanded = expandedInstitutions.has(instKey);
+                                                const hasMultipleAssets = instAssets.length > 1;
+                                                const instWeightInClass = classTotal > 0 ? (instTotal / classTotal) * 100 : 0;
+                                                const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
 
-                                                const rowHover = "group-hover:bg-slate-100 dark:group-hover:bg-slate-800";
-                                                return (
-                                                    <tr key={`${asset.Asset}-${idx}`} className="group transition-colors">
-                                                        <td className={`px-4 py-4 font-medium text-foreground flex items-center gap-2 sm:gap-3 truncate ${rowHover}`}>
-                                                            <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors shrink-0 text-[10px] sm:text-sm">
-                                                                {asset.Asset.charAt(0).toUpperCase()}
-                                                            </div>
-                                                            <span className="truncate">{asset.Asset}</span>
-                                                        </td>
-                                                        <td className={`px-4 py-4 text-right font-medium text-foreground ${rowHover}`}>
-                                                            {formatCurrency(asset.Value)}
-                                                        </td>
-                                                        <td className={`px-4 py-4 text-right ${rowHover}`}>
-                                                            {variation !== null ? (
-                                                                <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                    {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
-                                                            )}
-                                                        </td>
-                                                        <td className={`px-4 py-4 text-right ${rowHover}`}>
-                                                            {variationPct !== null ? (
-                                                                <span
-                                                                    className={`font-medium ${variationPct >= 0
-                                                                        ? "text-green-600 dark:text-green-400"
-                                                                        : "text-red-500 dark:text-red-400"
-                                                                        }`}
-                                                                >
-                                                                    {variationPct >= 0 ? "+" : ""}
-                                                                    {variationPct.toFixed(1)}%
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
-                                                            )}
-                                                        </td>
-                                                        <td className={`px-4 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
-                                                            {weightInClass.toFixed(1)}%
-                                                        </td>
-                                                        <td className={`px-4 py-4 text-right text-slate-500 dark:text-slate-400 ${rowHover}`}>
-                                                            {weightInTotal.toFixed(1)}%
-                                                        </td>
-                                                    </tr>
+                                                // Institution-level prev value
+                                                const instPrevTotal = instAssets.reduce((sum, a) => {
+                                                    const pv = getPrevValue(a);
+                                                    return sum + (pv ?? 0);
+                                                }, 0);
+                                                const instHasPrev = instAssets.some(a => getPrevValue(a) !== null);
+                                                const instVariation = instHasPrev ? instTotal - instPrevTotal : null;
+                                                const instVariationPct = instHasPrev && instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
+
+                                                 return (
+                                                    <React.Fragment key={instKey}>
+                                                        {/* Institution summary row */}
+                                                        <tr
+                                                            key={instKey}
+                                                            className={`group transition-colors ${hasMultipleAssets ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
+                                                            onClick={() => hasMultipleAssets && toggleInstitution(instKey)}
+                                                        >
+                                                            <td className="px-4 py-4 font-medium text-foreground">
+                                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                                    {hasMultipleAssets && (
+                                                                        <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                                                                            chevron_right
+                                                                        </span>
+                                                                    )}
+                                                                    <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-[10px] sm:text-sm">
+                                                                        {institution.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                    <span className="truncate font-semibold">{institution}</span>
+                                                                    {hasMultipleAssets && (
+                                                                        <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full font-bold">{instAssets.length}</span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-4 text-slate-400 dark:text-slate-500 text-xs">
+                                                                {hasMultipleAssets ? (isExpanded ? "" : `${instAssets.length} ativos`) : instAssets[0]?.Asset}
+                                                            </td>
+                                                            <td className="px-4 py-4 text-right font-medium text-foreground">
+                                                                {formatCurrency(instTotal)}
+                                                            </td>
+                                                            <td className="px-4 py-4 text-right">
+                                                                {instVariation !== null ? (
+                                                                    <span className={`font-medium ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                        {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-4 text-right">
+                                                                {instVariationPct !== null ? (
+                                                                    <span className={`font-medium ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                        {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">
+                                                                {instWeightInClass.toFixed(1)}%
+                                                            </td>
+                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">
+                                                                {instWeightInTotal.toFixed(1)}%
+                                                            </td>
+                                                        </tr>
+                                                        {/* Expanded asset rows */}
+                                                        {isExpanded && hasMultipleAssets && instAssets.map((asset, idx) => {
+                                                            const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
+                                                            const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
+                                                            const prevValue = getPrevValue(asset);
+                                                            const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                            const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+
+                                                            return (
+                                                                <tr key={`${instKey}-${asset.Asset}-${idx}`} className="bg-slate-50/50 dark:bg-slate-900/30 transition-colors group">
+                                                                    <td className="px-4 py-3 pl-16"></td>
+                                                                    <td className="px-4 py-3 font-medium text-foreground/80 text-xs">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                                {asset.Asset.charAt(0).toUpperCase()}
+                                                                            </div>
+                                                                            <span className="truncate">{asset.Asset}</span>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right font-medium text-foreground/80 text-xs">
+                                                                        {formatCurrency(asset.Value)}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right text-xs">
+                                                                        {variation !== null ? (
+                                                                            <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right text-xs">
+                                                                        {variationPct !== null ? (
+                                                                            <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
+                                                                        {weightInClass.toFixed(1)}%
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
+                                                                        {weightInTotal.toFixed(1)}%
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </React.Fragment>
                                                 );
                                             })}
                                         </tbody>
