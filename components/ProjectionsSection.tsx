@@ -20,9 +20,10 @@ interface ProjectionsSectionProps {
         setAnnualRate: (val: string) => void;
         setYearsToProject: (val: string) => void;
     };
+    suggestedAddition?: number;
 }
 
-export default function ProjectionsSection({ currentWealth, params, setParams }: ProjectionsSectionProps) {
+export default function ProjectionsSection({ currentWealth, params, setParams, suggestedAddition }: ProjectionsSectionProps) {
     const { t, formatCurrency } = useTranslation();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
@@ -86,11 +87,21 @@ export default function ProjectionsSection({ currentWealth, params, setParams }:
                 <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col gap-4">
                     <h3 className="text-lg font-bold text-foreground">{t("projections.parameters")}</h3>
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-1">{t("projections.monthlyAddition")}</label>
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <label className="text-sm font-medium text-foreground">{t("projections.monthlyAddition")}</label>
+                            <div className="group relative pt-0.5">
+                                <span className="material-symbols-outlined text-slate-400 cursor-help" style={{ fontSize: 16 }}>info</span>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-slate-900 dark:bg-slate-800 text-[11px] text-white dark:text-slate-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] w-[220px] leading-relaxed border border-white/10 backdrop-blur-sm">
+                                    {t("projections.monthlyAdditionTooltip")}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+                                </div>
+                            </div>
+                        </div>
                         <FormattedNumberInput
                             value={Number(monthlyAddition) || 0}
                             onChange={n => setMonthlyAddition(String(Math.round(n)))}
-                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            placeholder={formatCurrency(suggestedAddition || 1000).replace("R$", "")}
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-10"
                         />
                     </div>
                     <div>

@@ -159,7 +159,8 @@
     "interestEarned": "Juros Ganhos: {amount}",
     "projectedGrowth": "Crescimento Projetado",
     "compoundInterest": "Juros Compostos + Aportes Mensais",
-    "invested": "Investido"
+    "invested": "Investido",
+    "monthlyAdditionTooltip": "O cálculo sugerido é baseado na (Variação do Net Worth) - (Orçamento Restante). Se a variação for negativa, usamos apenas o orçamento. Se o orçamento for negativo, o padrão é R$/$ 1.000."
   },
   "movements": {
     "title": "Movimentações",
