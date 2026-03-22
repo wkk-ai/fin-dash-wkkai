@@ -22,16 +22,18 @@ export default function NewEntryModal({ onClose }: Props) {
     // Patrimônio states
     const [patrimonioTab, setPatrimonioTab] = useState<"single" | "multiple">("single");
     const [classifications, setClassifications] = useState<string[]>([]);
+    const [institutions, setInstitutions] = useState<string[]>([]);
     const [assets, setAssets] = useState<string[]>([]);
 
     const [singleAsset, setSingleAsset] = useState({
         Date: new Date().toISOString().split("T")[0],
         Classification: "",
+        Institution: "",
         Asset: "",
         Value: "",
     });
-    const [multipleAssets, setMultipleAssets] = useState<{ id: string, Date: string, Classification: string, Asset: string, Value: string }[]>([
-        { id: Math.random().toString(36).substr(2, 9), Date: new Date().toISOString().split("T")[0], Classification: "", Asset: "", Value: "" }
+    const [multipleAssets, setMultipleAssets] = useState<{ id: string, Date: string, Classification: string, Institution: string, Asset: string, Value: string }[]>([
+        { id: Math.random().toString(36).substr(2, 9), Date: new Date().toISOString().split("T")[0], Classification: "", Institution: "", Asset: "", Value: "" }
     ]);
 
     // Movimentação states
@@ -59,13 +61,19 @@ export default function NewEntryModal({ onClose }: Props) {
             .then(data => {
                 // Patrimônio Data
                 const sortedClasses = (data.classifications || []).sort((a: string, b: string) => a.localeCompare(b));
+                const sortedInstitutions = (data.institutions || []).sort((a: string, b: string) => a.localeCompare(b));
                 const sortedAssets = (data.assets || []).sort((a: string, b: string) => a.localeCompare(b));
                 setClassifications(sortedClasses);
+                setInstitutions(sortedInstitutions);
                 setAssets(sortedAssets);
 
                 if (sortedClasses.length > 0) {
                     setSingleAsset(prev => ({ ...prev, Classification: sortedClasses[0] }));
                     setMultipleAssets(prev => prev.map(row => ({ ...row, Classification: sortedClasses[0] })));
+                }
+                if (sortedInstitutions.length > 0) {
+                    setSingleAsset(prev => ({ ...prev, Institution: sortedInstitutions[0] }));
+                    setMultipleAssets(prev => prev.map(row => ({ ...row, Institution: sortedInstitutions[0] })));
                 }
                 if (sortedAssets.length > 0) {
                     setSingleAsset(prev => ({ ...prev, Asset: sortedAssets[0] }));
@@ -124,6 +132,7 @@ export default function NewEntryModal({ onClose }: Props) {
         const newRow: AssetEntry = {
             Date: formatDBDate(singleAsset.Date),
             Classification: singleAsset.Classification,
+            Institution: singleAsset.Institution,
             Asset: singleAsset.Asset,
             Value: Number(singleAsset.Value) || 0,
         };
@@ -153,6 +162,7 @@ export default function NewEntryModal({ onClose }: Props) {
             .map(row => ({
                 Date: formatDBDate(row.Date),
                 Classification: row.Classification,
+                Institution: row.Institution,
                 Asset: row.Asset,
                 Value: Number(row.Value),
             }));
@@ -185,6 +195,7 @@ export default function NewEntryModal({ onClose }: Props) {
             id: Math.random().toString(36).substr(2, 9),
             Date: new Date().toISOString().split("T")[0],
             Classification: classifications[0] || "",
+            Institution: institutions[0] || "",
             Asset: assets[0] || "",
             Value: ""
         }]);
@@ -523,16 +534,29 @@ export default function NewEntryModal({ onClose }: Props) {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
-                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Ativo/Instituição</label>
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Instituição</label>
+                                        <CustomCombobox
+                                            options={institutions}
+                                            required
+                                            placeholder="Ex: Nubank"
+                                            value={singleAsset.Institution}
+                                            onChange={val => setSingleAsset({ ...singleAsset, Institution: val })}
+                                            className="w-full bg-slate-50 dark:bg-[#0f172a] border-2 border-slate-100 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-0 focus:border-primary transition-all outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Ativo</label>
                                         <CustomCombobox
                                             options={assets}
                                             required
-                                            placeholder="Ex: Tesouro Direto"
+                                            placeholder="Ex: CDB 100%"
                                             value={singleAsset.Asset}
                                             onChange={val => setSingleAsset({ ...singleAsset, Asset: val })}
                                             className="w-full bg-slate-50 dark:bg-[#0f172a] border-2 border-slate-100 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:ring-0 focus:border-primary transition-all outline-none"
                                         />
                                     </div>
+                                </div>
+                                <div className="grid grid-cols-1 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Valor Total (R$)</label>
                                         <FormattedNumberInput
@@ -553,9 +577,10 @@ export default function NewEntryModal({ onClose }: Props) {
                                     <table className="w-full text-left min-w-[800px]">
                                         <thead>
                                             <tr className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                                                <th className="pb-3 pr-4 w-1/5">Data</th>
-                                                <th className="pb-3 pr-4 w-1/4">Classificação</th>
-                                                <th className="pb-3 pr-4 w-1/4">Ativo/Instituição</th>
+                                                <th className="pb-3 pr-4 w-[15%]">Data</th>
+                                                <th className="pb-3 pr-4 w-[20%]">Classificação</th>
+                                                <th className="pb-3 pr-4 w-[20%]">Instituição</th>
+                                                <th className="pb-3 pr-4 w-[20%]">Ativo</th>
                                                 <th className="pb-3 pr-4 w-1/5 text-right">Valor Total (R$)</th>
                                                 <th className="pb-3 w-10"></th>
                                             </tr>
@@ -578,6 +603,15 @@ export default function NewEntryModal({ onClose }: Props) {
                                                             placeholder="Adicionar..."
                                                             value={row.Classification}
                                                             onChange={val => updateAssetRow(row.id, "Classification", val)}
+                                                            className="w-full bg-slate-50 dark:bg-[#0f172a] border-2 border-slate-100 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-0 focus:border-primary transition-all outline-none"
+                                                        />
+                                                    </td>
+                                                    <td className="py-2 pr-4">
+                                                        <CustomCombobox
+                                                            options={institutions}
+                                                            placeholder="Adicionar..."
+                                                            value={row.Institution}
+                                                            onChange={val => updateAssetRow(row.id, "Institution", val)}
                                                             className="w-full bg-slate-50 dark:bg-[#0f172a] border-2 border-slate-100 dark:border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-0 focus:border-primary transition-all outline-none"
                                                         />
                                                     </td>
