@@ -7,6 +7,7 @@ import { useTranslation } from "@/lib/i18n";
 import { MovementEntry } from "@/types/database";
 import { ConfirmModal } from "./ConfirmModal";
 import { DataReviewModal, ProcessedRow } from "./DataReviewModal";
+import { fetchSettings as fetchSettingsData, replaceMovements } from "@/lib/supabase-data";
 
 interface Props {
     movements: MovementEntry[];
@@ -91,8 +92,7 @@ export default function MovementsTable({ movements, onUpdate, selectedCategories
     };
 
     useEffect(() => {
-        fetch("/api/settings")
-            .then(res => res.json())
+        fetchSettingsData()
             .then(data => {
                 setIncomeCategories(data.incomeCategories || []);
                 setExpenseCategories(data.expenseCategories || []);
@@ -128,11 +128,7 @@ export default function MovementsTable({ movements, onUpdate, selectedCategories
         updatedMovements[editingId] = editData;
 
         try {
-            await fetch("/api/movements", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "updateMovements", data: updatedMovements }),
-            });
+            await replaceMovements(updatedMovements);
             setEditingId(null);
             onUpdate();
         } catch (error) {
@@ -149,11 +145,7 @@ export default function MovementsTable({ movements, onUpdate, selectedCategories
         const updatedMovements = movements.filter((_, i) => i !== index);
 
         try {
-            await fetch("/api/movements", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "updateMovements", data: updatedMovements }),
-            });
+            await replaceMovements(updatedMovements);
             onUpdate();
         } catch (error) {
             console.error("Error deleting movement:", error);
@@ -228,11 +220,7 @@ export default function MovementsTable({ movements, onUpdate, selectedCategories
                         onClick={async () => {
                             setLoading(true);
                             try {
-                                await fetch("/api/movements", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ action: "updateMovements", data: movements }),
-                                });
+                                await replaceMovements(movements);
                                 window.dispatchEvent(new CustomEvent("show-success-toast", {
                                     detail: { message: t("settings.dbSaved") }
                                 }));

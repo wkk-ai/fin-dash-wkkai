@@ -5,6 +5,7 @@ import { useTranslation } from "@/lib/i18n";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
 import { CustomCombobox } from "@/components/CustomCombobox";
 import { AssetEntry, MovementEntry } from "@/types/database";
+import { fetchSettings as fetchSettingsData, appendNetWorth, appendNetWorthBatch, appendMovement } from "@/lib/supabase-data";
 
 import Portal from "./Portal";
 
@@ -56,8 +57,7 @@ export default function NewEntryModal({ onClose }: Props) {
 
     // Data Fetching
     useEffect(() => {
-        fetch("/api/settings")
-            .then(res => res.json())
+        fetchSettingsData()
             .then(data => {
                 // Patrimônio Data
                 const sortedClasses = (data.classifications || []).sort((a: string, b: string) => a.localeCompare(b));
@@ -138,11 +138,7 @@ export default function NewEntryModal({ onClose }: Props) {
         };
 
         try {
-            await fetch("/api/database", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "append", data: newRow }),
-            });
+            await appendNetWorth(newRow);
             window.dispatchEvent(new CustomEvent("asset-added-success"));
             window.dispatchEvent(new CustomEvent("asset-added", { detail: newRow }));
             setTimeout(onClose, 50);
@@ -173,13 +169,7 @@ export default function NewEntryModal({ onClose }: Props) {
         }
 
         try {
-            for (const row of newRows) {
-                await fetch("/api/database", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "append", data: row }),
-                });
-            }
+            await appendNetWorthBatch(newRows);
             window.dispatchEvent(new CustomEvent("asset-added-success"));
             window.dispatchEvent(new CustomEvent("asset-added", { detail: newRows[0] }));
             setTimeout(onClose, 50);
@@ -235,11 +225,7 @@ export default function NewEntryModal({ onClose }: Props) {
 
         try {
             for (const item of itemsToSave) {
-                await fetch("/api/movements", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "append", data: item }),
-                });
+                await appendMovement(item as MovementEntry);
             }
             window.dispatchEvent(new CustomEvent("movement-added-success"));
             window.dispatchEvent(new CustomEvent("movement-added"));
