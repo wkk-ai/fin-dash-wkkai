@@ -6,6 +6,7 @@ import { parseCustomDate } from "@/lib/utils";
 import Portal from "./Portal";
 import { FormattedNumberInput } from "./FormattedNumberInput";
 import { CustomCombobox } from "./CustomCombobox";
+import { fetchSettings as fetchSettingsData } from "@/lib/supabase-data";
 
 export interface ProcessedRow {
     id: string;
@@ -41,8 +42,7 @@ export function DataReviewModal({ type, initialData, onClose, onImport, isImport
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
 
     useEffect(() => {
-        fetch("/api/settings")
-            .then(res => res.json())
+        fetchSettingsData()
             .then(data => {
                 setClassifications((data.classifications || []).sort((a: string, b: string) => a.localeCompare(b)));
                 setAssets((data.assets || []).sort((a: string, b: string) => a.localeCompare(b)));

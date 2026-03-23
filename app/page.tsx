@@ -6,6 +6,7 @@ import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate } from "@/lib/utils";
 import DashboardSection from "@/components/DashboardSection";
 import ProjectionsSection from "@/components/ProjectionsSection";
+import { fetchNetWorth, fetchMovements } from "@/lib/supabase-data";
 
 export default function Home() {
   const { t } = useTranslation();
@@ -18,13 +19,11 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const dbRes = await fetch("/api/database", { cache: "no-store" });
-      const dbData: AssetEntry[] = await dbRes.json();
+      const dbData = await fetchNetWorth();
       setData(dbData);
 
-      const mvRes = await fetch("/api/movements");
-      const mvData = await mvRes.json();
-      const movements = mvData.movements || [];
+      const { movements } = await fetchMovements();
+
 
       // --- 1. Calculate suggested contribution ---
       

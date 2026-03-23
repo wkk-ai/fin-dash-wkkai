@@ -8,6 +8,7 @@ import { savePendingData, loadPendingData as getPendingData, clearPendingData } 
 import Portal from "@/components/Portal";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormattedNumberInput } from "@/components/FormattedNumberInput";
+import { fetchNetWorth, fetchMovements as fetchMovementsData, fetchSettings as fetchSettingsData, replaceNetWorth, replaceMovements as replaceMovementsData, replaceBudgets as replaceBudgetsData, saveCustomTags } from "@/lib/supabase-data";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { DataReviewModal, ProcessedRow } from "@/components/DataReviewModal";
@@ -98,15 +99,13 @@ export default function SettingsPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [dbRes, settingsRes, movementsRes] = await Promise.all([
-                fetch("/api/database"),
-                fetch("/api/settings"),
-                fetch("/api/movements")
+            const [dbData, settingsData, movementsResult] = await Promise.all([
+                fetchNetWorth(),
+                fetchSettingsData(),
+                fetchMovementsData()
             ]);
 
-            const dbData = await dbRes.json();
-            const settingsData = await settingsRes.json();
-            const movementsData = await movementsRes.json();
+            const movementsData = { movements: movementsResult.movements, budgets: movementsResult.budgets };
 
             setData(dbData);
             setSettings(settingsData);
@@ -161,9 +160,8 @@ export default function SettingsPage() {
             setDbClassifications(usedClasses);
             setDbInstitutions(usedInstitutions);
             setDbAssets(usedAssets);
-            // Still need settings (classifications, assets) from API
-            fetch("/api/settings")
-                .then(res => res.json())
+            // Still need settings from Supabase
+            fetchSettingsData()
                 .then(setSettings)
                 .catch(console.error);
             setLoading(false);
@@ -327,19 +325,18 @@ export default function SettingsPage() {
             // Prune budgets for categories that no longer exist if expense categories are being saved
             if (type === "expense") {
                 const activeBudgets = budgets.filter(b => settings.expenseCategories.includes(b.Category));
-                await fetch("/api/movements", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action: "updateBudgets", data: activeBudgets }),
-                });
-                setBudgets(activeBudgets); // Update local state after pruning
+                await replaceBudgetsData(activeBudgets);
+                setBudgets(activeBudgets);
             }
 
-            await fetch("/api/settings", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(settings),
-            });
+            // Save each tag type to Supabase
+            await Promise.all([
+                saveCustomTags('classification', settings.classifications),
+                saveCustomTags('institution', settings.institutions),
+                saveCustomTags('asset', settings.assets),
+                saveCustomTags('income_category', settings.incomeCategories),
+                saveCustomTags('expense_category', settings.expenseCategories),
+            ]);
             let msgKey = "settings.classificationsSaved";
             if (isInstitution) msgKey = "settings.institutionsSaved";
             if (isAsset) msgKey = "settings.assetsSaved";
@@ -492,11 +489,7 @@ export default function SettingsPage() {
     const saveBudgets = async () => {
         setSavingSettings({ type: "budget" });
         try {
-            await fetch("/api/movements", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "updateBudgets", data: budgets }),
-            });
+            await replaceBudgetsData(budgets);
             window.dispatchEvent(
                 new CustomEvent("show-success-toast", {
                     detail: { message: t("settings.goalsSaved") }
@@ -532,11 +525,7 @@ export default function SettingsPage() {
                 setModalConfig(prev => ({ ...prev, isOpen: false }));
                 setSaving(true);
                 try {
-                    await fetch("/api/database", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "updateAll", data }),
-                    });
+                    await replaceNetWorth(data);
                     hasUserEditedRef.current = false;
                     clearPendingData();
                     window.dispatchEvent(new CustomEvent("pending-saved"));

@@ -8,6 +8,7 @@ import { parseCustomDate } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
 import MovementsTable from "@/components/MovementsTable";
 import DailyTrackingChart from "@/components/DailyTrackingChart";
+import { fetchMovements as fetchMovementsData, fetchSettings as fetchSettingsData } from "@/lib/supabase-data";
 
 export default function MovementsPage() {
     const { t, formatCurrency } = useTranslation();
@@ -27,13 +28,11 @@ export default function MovementsPage() {
 
     const fetchData = async () => {
         try {
-            const res = await fetch("/api/movements");
-            const data = await res.json();
-            setMovements(data.movements || []);
-            setBudgets(data.budgets || []);
+            const { movements: mvData, budgets: budData } = await fetchMovementsData();
+            setMovements(mvData);
+            setBudgets(budData);
 
-            const settingsRes = await fetch("/api/settings");
-            const settingsData = await settingsRes.json();
+            const settingsData = await fetchSettingsData();
             setSettings(settingsData);
         } catch (error) {
             console.error("Error fetching movements:", error);
@@ -179,7 +178,7 @@ export default function MovementsPage() {
         category,
         actual: categoryAgg[category] || 0,
         budget: budgetMap[category] || 0
-    })).sort((a: any, b: any) => b.budget - a.budget); // Sort by largest budget first
+    })).sort((a: { budget: number }, b: { budget: number }) => b.budget - a.budget);
 
     // Process Top Vendors (by Description)
     const vendorAgg: Record<string, { value: number, count: number }> = {};
@@ -394,7 +393,7 @@ export default function MovementsPage() {
                 <div className="lg:col-span-1 rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col h-[400px]">
                     <h3 className="text-lg font-bold text-foreground mb-6">{t("movements.budgetVsActual")}</h3>
                     <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 space-y-6">
-                        {budgetVsActual.map((item) => {
+                        {budgetVsActual.map((item: { category: string; actual: number; budget: number }) => {
                             const actualPct = item.budget > 0 ? (item.actual / item.budget) * 100 : (item.actual > 0 ? 100 : 0);
                             const displayPct = Math.min(100, actualPct);
                             const isOver = item.actual > item.budget && item.budget > 0;
