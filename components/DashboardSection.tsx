@@ -6,6 +6,7 @@ import { useTranslation } from "@/lib/i18n";
 import { AssetEntry } from "@/types/database";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
+import { fetchMarketData } from "@/lib/supabase-data";
 
 interface DashboardSectionProps {
     data: AssetEntry[];
@@ -115,12 +116,9 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
     const [marketData, setMarketData] = useState<{ selic: string | null; ipca: string | null } | null>(null);
 
     useEffect(() => {
-        fetch("/api/market")
-            .then(res => res.json())
+        fetchMarketData()
             .then(data => {
-                if (!data.error) {
-                    setMarketData({ selic: data.selic, ipca: data.ipca });
-                }
+                setMarketData({ selic: data.selic, ipca: data.ipca });
             })
             .catch(err => console.error("Error fetching market data:", err));
     }, []);

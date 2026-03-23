@@ -5,6 +5,8 @@ import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate } from "@/lib/utils";
 import Portal from "./Portal";
 import { DataReviewModal, ProcessedRow } from "./DataReviewModal";
+import { fetchSettings as fetchSettingsData, appendNetWorth, appendNetWorthBatch, appendMovement, replaceNetWorth, replaceMovements } from "@/lib/supabase-data";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
     onClose: () => void;
@@ -36,8 +38,7 @@ export default function AIImportModal({ onClose }: Props) {
     const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
 
     useEffect(() => {
-        fetch("/api/settings")
-            .then(res => res.json())
+        fetchSettingsData()
             .then(data => {
                 setClassifications((data.classifications || []).sort((a: string, b: string) => a.localeCompare(b)));
                 setAssets((data.assets || []).sort((a: string, b: string) => a.localeCompare(b)));
@@ -117,10 +118,18 @@ export default function AIImportModal({ onClose }: Props) {
             formData.append("file", file);
             formData.append("type", importType);
 
-            const res = await fetch("/api/ai-import", {
-                method: "POST",
-                body: formData,
-            });
+            // Call Supabase Edge Function for AI import
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-import`,
+                {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        Authorization: `Bearer ${session?.access_token}`,
+                    },
+                }
+            );
 
             const data = await res.json();
 
@@ -157,23 +166,22 @@ export default function AIImportModal({ onClose }: Props) {
         setError(null);
 
         try {
-            const endpoint = importType === "patrimonio" ? "/api/database" : "/api/movements";
+
 
             if (currentMode === "overwrite") {
-                // Overwrite: send all data at once
-                const action = importType === "patrimonio" ? "updateAll" : "updateMovements";
                 const dataToSend = currentData.map(r => {
                     const dateObj = parseCustomDate(r.Date || "");
                     const day = String(dateObj.getUTCDate()).padStart(2, "0");
                     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                     const month = months[dateObj.getUTCMonth()];
                     const year = String(dateObj.getUTCFullYear()).slice(-2);
-                    const normalizedDate = `${day}/${month}/${year}`; // Standardize to DD/MMM/YY
+                    const normalizedDate = `${day}/${month}/${year}`;
 
                     if (importType === "patrimonio") {
                         return {
                             Date: normalizedDate,
                             Classification: r.Classification || "",
+                            Institution: "",
                             Asset: r.Asset || "",
                             Value: r.Value
                         };
@@ -182,23 +190,17 @@ export default function AIImportModal({ onClose }: Props) {
                         Date: normalizedDate,
                         Description: r.Description,
                         Category: r.Category,
-                        Type: r.Value >= 0 ? "Income" : "Expense",
+                        Type: r.Value >= 0 ? "Income" as const : "Expense" as const,
                         Value: r.Value
                     };
                 });
 
-                const res = await fetch(endpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ action, data: dataToSend }),
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || errorData.details || "Erro ao substituir dados no servidor");
+                if (importType === "patrimonio") {
+                    await replaceNetWorth(dataToSend as any);
+                } else {
+                    await replaceMovements(dataToSend as any);
                 }
             } else {
-                // Append: add each row individually
                 for (const r of currentData) {
                     const dateObj = parseCustomDate(r.Date || "");
                     const day = String(dateObj.getUTCDate()).padStart(2, "0");
@@ -207,19 +209,22 @@ export default function AIImportModal({ onClose }: Props) {
                     const year = String(dateObj.getUTCFullYear()).slice(-2);
                     const normalizedDate = `${day}/${month}/${year}`;
 
-                    const rowData = importType === "patrimonio"
-                        ? { Date: normalizedDate, Classification: r.Classification || "", Asset: r.Asset || "", Value: r.Value }
-                        : { Date: normalizedDate, Description: r.Description, Category: r.Category, Type: r.Value >= 0 ? "Income" : "Expense", Value: r.Value };
-
-                    const res = await fetch(endpoint, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "append", data: rowData }),
-                    });
-
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        throw new Error(errorData.error || errorData.details || "Erro ao adicionar registro no servidor");
+                    if (importType === "patrimonio") {
+                        await appendNetWorth({
+                            Date: normalizedDate,
+                            Classification: r.Classification || "",
+                            Institution: "",
+                            Asset: r.Asset || "",
+                            Value: r.Value,
+                        });
+                    } else {
+                        await appendMovement({
+                            Date: normalizedDate,
+                            Description: r.Description,
+                            Category: r.Category,
+                            Type: r.Value >= 0 ? "Income" : "Expense",
+                            Value: r.Value,
+                        });
                     }
                 }
             }

@@ -7,6 +7,7 @@ import { parseCustomDate } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
+import { fetchNetWorth } from "@/lib/supabase-data";
 
 export default function Portfolio() {
     const { t, formatCurrency } = useTranslation();
@@ -22,10 +23,9 @@ export default function Portfolio() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch("/api/database")
-            .then((res) => res.json())
-            .then((json: AssetEntry[]) => {
-                setData(json);
+        fetchNetWorth()
+            .then((data) => {
+                setData(data);
                 setLoading(false);
             })
             .catch((err) => {
