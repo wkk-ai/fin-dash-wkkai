@@ -119,22 +119,12 @@ export default function AIImportModal({ onClose }: Props) {
             formData.append("type", importType);
 
             // Call Supabase Edge Function for AI import
-            const { data: { session } } = await supabase.auth.getSession();
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ai-import`,
-                {
-                    method: "POST",
-                    body: formData,
-                    headers: {
-                        Authorization: `Bearer ${session?.access_token}`,
-                    },
-                }
-            );
+            const { data, error: funcError } = await supabase.functions.invoke("ai-import", {
+                body: formData,
+            });
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || "Erro ao processar arquivo");
+            if (funcError) {
+                throw new Error(funcError.message || "Erro ao processar arquivo");
             }
 
             const rows: ProcessedRow[] = (data.rows || []).map((r: any, i: number) => ({
