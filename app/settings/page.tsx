@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "@/lib/i18n";
 import { AssetEntry, Classification, Institution, Asset, Settings, BudgetEntry } from "@/types/database";
-import { cn } from "@/lib/utils";
+import { cn, parseCustomDate, formatCustomDate } from "@/lib/utils";
 import { savePendingData, loadPendingData as getPendingData, clearPendingData } from "@/lib/pending-storage";
 import Portal from "@/components/Portal";
 import { ConfirmModal } from "@/components/ConfirmModal";
@@ -77,23 +77,17 @@ export default function SettingsPage() {
         }).format(value);
     };
 
-    const parseCustomDate = (dateStr: string) => {
-        const [day, month, year] = dateStr.split("/").map(Number);
-        return new Date(year, month - 1, day);
-    };
-
     const csvDateToInputDate = (csvDate: string) => {
         if (!csvDate) return "";
-        const parts = csvDate.split("/");
-        if (parts.length !== 3) return csvDate;
-        return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+        const d = parseCustomDate(csvDate);
+        if (isNaN(d.getTime())) return "";
+        return d.toISOString().split("T")[0];
     };
 
     const inputDateToCsvDate = (inputDate: string) => {
         if (!inputDate) return "";
-        const parts = inputDate.split("-");
-        if (parts.length !== 3) return inputDate;
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        const d = new Date(`${inputDate}T12:00:00Z`); // Use midday UTC to avoid timezone shifts
+        return formatCustomDate(d);
     };
 
     const fetchData = async () => {

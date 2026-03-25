@@ -8,6 +8,7 @@ import { MovementEntry } from "@/types/database";
 import { ConfirmModal } from "./ConfirmModal";
 import { DataReviewModal, ProcessedRow } from "./DataReviewModal";
 import { fetchSettings as fetchSettingsData, replaceMovements } from "@/lib/supabase-data";
+import { parseCustomDate, formatCustomDate } from "@/lib/utils";
 
 interface Props {
     movements: MovementEntry[];
@@ -59,36 +60,19 @@ export default function MovementsTable({ movements, onUpdate, selectedCategories
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const parseCustomDate = (dateStr: string) => {
-        if (!dateStr) return new Date();
-        const parts = dateStr.split('/');
-        if (parts.length < 3) return new Date();
-        const day = parseInt(parts[0], 10);
-        const monthStr = parts[1];
-        const year = parseInt(`20${parts[2]}`, 10);
-        const months: Record<string, number> = {
-            Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11
-        };
-        return new Date(year, months[monthStr], day);
-    };
-
     const csvDateToInputDate = (csvDate: string): string => {
         const d = parseCustomDate(csvDate);
         if (Number.isNaN(d.getTime())) return "";
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
+        const year = d.getUTCFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(d.getUTCDate()).padStart(2, "0");
         return `${year}-${month}-${day}`;
     };
 
     const inputDateToCsvDate = (inputDate: string): string => {
         if (!inputDate) return "";
-        const d = new Date(`${inputDate}T00:00:00`);
-        if (Number.isNaN(d.getTime())) return "";
-        const day = String(d.getDate()).padStart(2, "0");
-        const month = d.toLocaleString("en-US", { month: "short" });
-        const year = String(d.getFullYear()).slice(-2);
-        return `${day}/${month}/${year}`;
+        const d = new Date(`${inputDate}T12:00:00Z`);
+        return formatCustomDate(d);
     };
 
     useEffect(() => {

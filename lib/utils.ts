@@ -77,6 +77,14 @@ export function parseCustomDate(dateStr: string): Date {
     return isNaN(fallback.getTime()) ? new Date() : fallback;
 }
 
+export function formatCustomDate(date: Date): string {
+    if (isNaN(date.getTime())) return "";
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    const year = String(date.getUTCFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+}
+
 export function formatCurrency(value: number) {
     return new Intl.NumberFormat("en-US", {
         style: "currency",
