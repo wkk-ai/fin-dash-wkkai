@@ -41,7 +41,8 @@
     "evolutionChart": "Evolución Detallada",
     "filterByClassAsset": "Filtra por clase o institución",
     "allClassifications": "Todas las clases",
-    "allAssets": "Todas las instituciones"
+    "allInstitutions": "Todas las instituciones",
+    "allAssets": "Todos los activos"
   },
   "settings": {
     "title": "Configuración y Base de Datos",
