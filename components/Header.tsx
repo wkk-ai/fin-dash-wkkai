@@ -95,43 +95,7 @@ export default function Header() {
                         })}
                     </nav>
 
-                    {/* Menu hamburger para telas estreitas */}
-                    <div className="relative md:hidden" ref={navMenuRef}>
-                        <button
-                            type="button"
-                            onClick={() => setIsNavOpen((v) => !v)}
-                            className="flex size-10 items-center justify-center rounded-lg bg-border text-foreground hover:text-primary transition-colors cursor-pointer"
-                            aria-label={isNavOpen ? t("nav.closeMenu") : t("nav.openMenu")}
-                            aria-expanded={isNavOpen}
-                        >
-                            <span className="material-symbols-outlined text-2xl">
-                                {isNavOpen ? "close" : "menu"}
-                            </span>
-                        </button>
-                        {isNavOpen && (
-                            <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-border bg-surface shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-                                {navLinks.map((link) => {
-                                    const isActive = pathname === link.href;
-                                    return (
-                                        <Link
-                                            key={link.name}
-                                            href={link.href}
-                                            onClick={() => setIsNavOpen(false)}
-                                            className={cn(
-                                                "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
-                                                isActive
-                                                    ? "text-primary bg-primary/10"
-                                                    : "text-slate-600 dark:text-slate-400 hover:bg-border hover:text-foreground"
-                                            )}
-                                        >
-                                            <span className={cn("material-symbols-outlined text-[20px]", isActive ? "text-primary" : "")}>{link.icon}</span>
-                                            {link.name}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
+
 
                     <div className="h-6 w-px bg-border-light dark:bg-border-dark mx-2 hidden md:block"></div>
 
@@ -175,6 +139,43 @@ export default function Header() {
                     </div>
                 </div>
             </header>
+
+            {/* Bottom Navigation for Mobile */}
+            <nav 
+                className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-surface border-t border-border px-4 pt-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}
+            >
+                {navLinks.slice(0, 2).map((link) => {
+                    const isActive = pathname === link.href;
+                    return (
+                        <Link key={link.name} href={link.href} className={cn("flex flex-col items-center p-2 min-w-[60px]", isActive ? "text-primary" : "text-slate-500 dark:text-slate-400")}>
+                            <span className={cn("material-symbols-outlined text-[24px] mb-1", isActive && "font-bold")}>{link.icon}</span>
+                            <span className="text-[10px] font-medium leading-none">{link.name}</span>
+                        </Link>
+                    );
+                })}
+                
+                {/* Spacer for FAB */}
+                <div className="w-[60px]"></div>
+
+                {navLinks.slice(2, 4).map((link) => {
+                    const isActive = pathname === link.href;
+                    return (
+                        <Link key={link.name} href={link.href} className={cn("flex flex-col items-center p-2 min-w-[60px]", isActive ? "text-primary" : "text-slate-500 dark:text-slate-400")}>
+                            <span className={cn("material-symbols-outlined text-[24px] mb-1", isActive && "font-bold")}>{link.icon}</span>
+                            <span className="text-[10px] font-medium leading-none">{link.name}</span>
+                        </Link>
+                    );
+                })}
+
+                {/* FAB */}
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center justify-center size-14 rounded-full bg-primary text-white shadow-[0_4px_14px_rgba(59,130,246,0.5)] border-4 border-surface outline-none transition-transform active:scale-95"
+                >
+                    <span className="material-symbols-outlined text-3xl">add</span>
+                </button>
+            </nav>
 
             {isModalOpen && (
                 <NewEntryModal onClose={() => setIsModalOpen(false)} />

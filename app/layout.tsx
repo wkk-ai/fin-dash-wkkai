@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -8,9 +8,25 @@ import AuthProvider from "@/components/AuthProvider";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
+export const viewport: Viewport = {
+  themeColor: "#020617",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1, // Prevents iOS input auto-zoom
+};
+
 export const metadata: Metadata = {
   title: "Financial Dashboard",
   description: "Your local finance central",
+  manifest: "/fin-dash-wkkai/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Finance",
+  },
+  icons: {
+    apple: "/fin-dash-wkkai/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
