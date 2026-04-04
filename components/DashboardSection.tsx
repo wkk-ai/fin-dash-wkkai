@@ -210,7 +210,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                         <div ref={variationLineRef} className="relative mt-2 w-full">
                             <div
                                 ref={variationProbeRef}
-                                className="absolute invisible pointer-events-none whitespace-nowrap text-sm font-medium"
+                                className="absolute invisible pointer-events-none whitespace-nowrap text-xs md:text-sm font-medium"
                             >
                                 <span className={topGainer && topGainer.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
                                     {topGainer && topGainer.pct >= 0 ? "+" : ""}{topGainer?.pct.toFixed(1)}%
@@ -222,7 +222,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                 </span>
                                 <span className="ml-1">{topLoserFullLabel}</span>
                             </div>
-                            <div className="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+                            <div className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
                                 <span className={topGainer && topGainer.pct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
                                     {topGainer && topGainer.pct >= 0 ? "+" : ""}{topGainer?.pct.toFixed(1)}%
                                 </span>
@@ -271,7 +271,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                         </div>
                     </div>
                     <div
-                        className="flex-1 min-h-[300px] w-full relative cursor-crosshair select-none"
+                        className="flex-1 min-h-[250px] md:min-h-[300px] w-full relative cursor-crosshair select-none"
                         {...wealthBrush.containerHandlers}
                     >
                         {wealthBrush.variation && (

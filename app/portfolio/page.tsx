@@ -291,7 +291,7 @@ export default function Portfolio() {
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse table-fixed">
+                                    <table className="w-full min-w-[700px] text-left border-collapse table-fixed">
                                         <thead>
                                             <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
                                                 <th className="px-4 py-3 w-[20%] sm:w-[22%]">Instituição</th>
@@ -477,7 +477,7 @@ export default function Portfolio() {
                                 </div>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse table-fixed">
+                                <table className="w-full min-w-[700px] text-left border-collapse table-fixed">
                                     <thead>
                                         <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
                                             <th className="px-4 py-3 w-[25%] sm:w-[25%]">Instituição</th>
