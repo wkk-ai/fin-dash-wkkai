@@ -43,7 +43,8 @@
     "evolutionChart": "Evolução Detalhada",
     "filterByClassAsset": "Filtre por classe ou instituição",
     "allClassifications": "Todas as classes",
-    "allAssets": "Todas as instituições"
+    "allInstitutions": "Todas as instituições",
+    "allAssets": "Todos os ativos"
   },
   "settings": {
     "title": "Configurações e Banco de Dados",

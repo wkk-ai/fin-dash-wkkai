@@ -14,11 +14,18 @@ export default function Portfolio() {
     const { resolvedTheme } = useTheme();
     const [data, setData] = useState<AssetEntry[]>([]);
     const [filterClassification, setFilterClassification] = useState<string>("");
+    const [filterInstitution, setFilterInstitution] = useState<string>("");
     const [filterAsset, setFilterAsset] = useState<string>("");
 
     const setClassification = (v: string) => {
         setFilterClassification(v);
+        setFilterInstitution(""); // reset institution when class changes
         setFilterAsset(""); // reset asset when class changes
+    };
+
+    const setInstitution = (v: string) => {
+        setFilterInstitution(v);
+        setFilterAsset(""); // reset asset when institution changes
     };
     const [loading, setLoading] = useState(true);
 
@@ -50,6 +57,7 @@ export default function Portfolio() {
             const filtered = data.filter((d) => {
                 if (d.Date !== dateStr) return false;
                 if (filterClassification && d.Classification !== filterClassification) return false;
+                if (filterInstitution && d.Institution !== filterInstitution && d.Asset !== filterInstitution) return false;
                 if (filterAsset && d.Asset !== filterAsset) return false;
                 return true;
             });
@@ -59,14 +67,25 @@ export default function Portfolio() {
                 value,
             };
         });
-    }, [data, uniqueDates, dateObjects, filterClassification, filterAsset]);
+    }, [data, uniqueDates, dateObjects, filterClassification, filterInstitution, filterAsset]);
     const classifications = useMemo(() => Array.from(new Set(data.map((d) => d.Classification))).sort(), [data]);
-    const assetsList = useMemo(() => {
+    const institutionsList = useMemo(() => {
         const filtered = filterClassification
             ? data.filter((d) => d.Classification === filterClassification)
             : data;
-        return Array.from(new Set(filtered.map((d) => d.Asset))).sort();
+        return Array.from(new Set(filtered.map((d) => d.Institution || d.Asset))).sort();
     }, [data, filterClassification]);
+
+    const assetsList = useMemo(() => {
+        let filtered = data;
+        if (filterClassification) {
+            filtered = filtered.filter((d) => d.Classification === filterClassification);
+        }
+        if (filterInstitution) {
+            filtered = filtered.filter((d) => (d.Institution || d.Asset) === filterInstitution);
+        }
+        return Array.from(new Set(filtered.map((d) => d.Asset))).sort();
+    }, [data, filterClassification, filterInstitution]);
 
     const isDark = resolvedTheme === "dark";
     const portfolioBrush = useChartBrush(chartData, "value");
@@ -152,6 +171,34 @@ export default function Portfolio() {
             classTotal: assets.reduce((sum, item) => sum + item.Value, 0),
         }))
         .sort((a, b) => b.classTotal - a.classTotal);
+
+    // Group assets by institution globally
+    const prevTotalWealth = previousAssets.reduce((sum, item) => sum + item.Value, 0);
+    const wealthVariationAbs = prevTotalWealth > 0 ? totalWealth - prevTotalWealth : null;
+    const wealthVariationPct = prevTotalWealth > 0 ? ((totalWealth - prevTotalWealth) / prevTotalWealth) * 100 : null;
+
+    const institutionGroupedTotals: Record<string, AssetEntry[]> = {};
+    currentAssets.forEach((asset) => {
+        const inst = asset.Institution || asset.Asset;
+        if (!institutionGroupedTotals[inst]) {
+            institutionGroupedTotals[inst] = [];
+        }
+        institutionGroupedTotals[inst].push(asset);
+    });
+
+    const prevInstTotals: Record<string, number> = {};
+    previousAssets.forEach((asset) => {
+        const inst = asset.Institution || asset.Asset;
+        prevInstTotals[inst] = (prevInstTotals[inst] || 0) + asset.Value;
+    });
+
+    const sortedInstGrouped = Object.entries(institutionGroupedTotals)
+        .map(([institution, assets]) => ({
+            institution,
+            assets: assets.sort((a, b) => b.Value - a.Value),
+            total: assets.reduce((sum, item) => sum + item.Value, 0),
+        }))
+        .sort((a, b) => b.total - a.total);
 
     return (
         <div className="mx-auto max-w-7xl flex flex-col gap-8">
@@ -388,6 +435,171 @@ export default function Portfolio() {
                     })
                 )}
 
+                {/* Evolução por Instituição Section */}
+                {sortedInstGrouped.length > 0 && (
+                    <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-5 fade-in duration-700 mt-4">
+                        <div className="flex items-center gap-4">
+                            <div className="h-px bg-border flex-1"></div>
+                            <h2 className="text-xl font-bold text-foreground">Evolução por Instituição</h2>
+                            <div className="h-px bg-border flex-1"></div>
+                        </div>
+
+                        <div className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
+                            <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary text-[20px]">account_balance</span>
+                                    <h3 className="text-lg font-bold text-foreground">Resumo por Instituições</h3>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm">
+                                    <span className="font-bold text-foreground">{formatCurrency(totalWealth)}</span>
+                                    <span className="text-slate-400 dark:text-slate-500">|</span>
+                                    {wealthVariationAbs !== null && (
+                                        <>
+                                            <span className={`font-semibold ${wealthVariationAbs >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                {wealthVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(wealthVariationAbs)}
+                                            </span>
+                                            <span className="text-slate-400 dark:text-slate-500">|</span>
+                                        </>
+                                    )}
+                                    {wealthVariationPct === null ? (
+                                        <span className="font-semibold text-slate-400 dark:text-slate-500">—</span>
+                                    ) : (
+                                        <span className="font-semibold flex items-center gap-1">
+                                            <span className={`material-symbols-outlined text-[16px] ${wealthVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                {wealthVariationPct >= 0 ? "trending_up" : "trending_down"}
+                                            </span>
+                                            <span className={wealthVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                                {wealthVariationPct >= 0 ? "+" : ""}{wealthVariationPct.toFixed(1)}%
+                                            </span>
+                                            <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">{t("dashboard.vsLastMonth")}</span>
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse table-fixed">
+                                    <thead>
+                                        <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
+                                            <th className="px-4 py-3 w-[25%] sm:w-[25%]">Instituição</th>
+                                            <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.currentValue")}</th>
+                                            <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.monthAbsVar")}</th>
+                                            <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.monthVar")}</th>
+                                            <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">Peso Carteira</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border text-xs sm:text-sm">
+                                        {sortedInstGrouped.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                            const globalInstKey = `global-inst-${institution}`;
+                                            const isExpanded = expandedInstitutions.has(globalInstKey);
+                                            const hasMultipleAssets = instAssets.length > 1;
+                                            const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
+
+                                            const instPrevTotal = prevInstTotals[institution] || 0;
+                                            const instVariation = instPrevTotal > 0 ? instTotal - instPrevTotal : null;
+                                            const instVariationPct = instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
+
+                                            return (
+                                                <React.Fragment key={globalInstKey}>
+                                                    <tr
+                                                        className={`group transition-colors ${hasMultipleAssets ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
+                                                        onClick={() => hasMultipleAssets && toggleInstitution(globalInstKey)}
+                                                    >
+                                                        <td className="px-4 py-4 font-medium text-foreground">
+                                                            <div className="flex items-center gap-2 sm:gap-3">
+                                                                {hasMultipleAssets ? (
+                                                                    <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                                                                        chevron_right
+                                                                    </span>
+                                                                ) : (
+                                                                    <div className="size-6 sm:size-8 rounded-full bg-transparent flex items-center justify-center border-transparent shrink-0 text-[10px] sm:text-sm w-[16px] opacity-0 pointer-events-none"></div>
+                                                                )}
+                                                                <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-[10px] sm:text-sm">
+                                                                    {institution.charAt(0).toUpperCase()}
+                                                                </div>
+                                                                <span className="truncate font-semibold">{institution}</span>
+                                                                {hasMultipleAssets && (
+                                                                    <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full font-bold">{instAssets.length}</span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-4 text-right font-medium text-foreground">
+                                                            {formatCurrency(instTotal)}
+                                                        </td>
+                                                        <td className="px-4 py-4 text-right">
+                                                            {instVariation !== null ? (
+                                                                <span className={`font-medium ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                    {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-4 text-right">
+                                                            {instVariationPct !== null ? (
+                                                                <span className={`font-medium ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                    {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">
+                                                            {instWeightInTotal.toFixed(1)}%
+                                                        </td>
+                                                    </tr>
+                                                    {isExpanded && hasMultipleAssets && instAssets.map((asset, aIdx) => {
+                                                        const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
+                                                        const prevValue = getPrevValue(asset);
+                                                        const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                        const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+
+                                                        return (
+                                                            <tr key={`${globalInstKey}-${asset.Asset}-${aIdx}`} className="bg-slate-50/50 dark:bg-slate-900/30 transition-colors group">
+                                                                <td className="px-4 py-3 pl-14 sm:pl-16 font-medium text-foreground/80 text-xs">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                            {asset.Asset.charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                        <span className="truncate">{asset.Asset}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right font-medium text-foreground/80 text-xs">
+                                                                    {formatCurrency(asset.Value)}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right text-xs">
+                                                                    {variation !== null ? (
+                                                                        <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                            {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right text-xs">
+                                                                    {variationPct !== null ? (
+                                                                        <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                            {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
+                                                                    {weightInTotal.toFixed(1)}%
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </React.Fragment>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Evolution Chart with Filters */}
                 {uniqueDates.length > 0 && (
                     <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
@@ -402,6 +614,17 @@ export default function Portfolio() {
                                     <option value="">{t("portfolio.allClassifications")}</option>
                                     {classifications.map((c) => (
                                         <option key={c} value={c}>{c}</option>
+                                    ))}
+                                </select>
+                                <span className="text-slate-400 text-sm">/</span>
+                                <select
+                                    value={filterInstitution}
+                                    onChange={(e) => setInstitution(e.target.value)}
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                >
+                                    <option value="">{t("portfolio.allInstitutions")}</option>
+                                    {institutionsList.map((i) => (
+                                        <option key={i} value={i}>{i}</option>
                                     ))}
                                 </select>
                                 <span className="text-slate-400 text-sm">/</span>
