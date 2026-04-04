@@ -60,7 +60,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     <AuthContext.Provider value={{ session, user: session.user, signOut }}>
       <div className="layout-container flex h-full min-h-screen flex-col">
         <Header />
-        <main className="flex-1 px-4 py-8 lg:px-40 pt-24">
+        <main className="flex-1 px-4 pt-24 pb-24 md:pb-8 lg:px-40">
           {children}
         </main>
         <AddAssetSuccessToast />

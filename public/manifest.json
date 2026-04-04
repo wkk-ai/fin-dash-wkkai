@@ -1,0 +1,16 @@
+{
+  "name": "WKK AI Finance",
+  "short_name": "Finance",
+  "description": "Your local finance central dashboard",
+  "start_url": "/fin-dash-wkkai/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "/fin-dash-wkkai/apple-touch-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
