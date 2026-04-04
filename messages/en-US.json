@@ -43,7 +43,8 @@
     "evolutionChart": "Detailed Evolution",
     "filterByClassAsset": "Filter by class or institution",
     "allClassifications": "All classes",
-    "allAssets": "All institutions"
+    "allInstitutions": "All institutions",
+    "allAssets": "All assets"
   },
   "settings": {
     "title": "Settings and Database",
