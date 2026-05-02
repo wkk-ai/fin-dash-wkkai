@@ -16,6 +16,7 @@ export default function Portfolio() {
     const [filterClassification, setFilterClassification] = useState<string>("");
     const [filterInstitution, setFilterInstitution] = useState<string>("");
     const [filterAsset, setFilterAsset] = useState<string>("");
+    const [selectedDateStr, setSelectedDateStr] = useState<string>("");
 
     const setClassification = (v: string) => {
         setFilterClassification(v);
@@ -115,17 +116,19 @@ export default function Portfolio() {
         );
     }
 
-    // Determine latest date and previous date for MoM variation
-    let latestDateStr = "";
+    // Determine current date and previous date for MoM variation
+    let currentDateStr = "";
     let prevDateStr: string | null = null;
+    let allDates: string[] = [];
     if (data.length > 0) {
-        const dates = Array.from(new Set(data.map(d => d.Date)));
-        dates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
-        latestDateStr = dates[dates.length - 1];
-        prevDateStr = dates.length > 1 ? dates[dates.length - 2] : null;
+        allDates = Array.from(new Set(data.map(d => d.Date)));
+        allDates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
+        currentDateStr = selectedDateStr || allDates[allDates.length - 1];
+        const currentIdx = allDates.indexOf(currentDateStr);
+        prevDateStr = currentIdx > 0 ? allDates[currentIdx - 1] : null;
     }
 
-    const currentAssets = data.filter(d => d.Date === latestDateStr);
+    const currentAssets = data.filter(d => d.Date === currentDateStr);
     const previousAssets = prevDateStr ? data.filter(d => d.Date === prevDateStr) : [];
 
     const getPrevValue = (asset: AssetEntry) => {
@@ -207,18 +210,36 @@ export default function Portfolio() {
                 <div>
                     <h1 className="text-3xl font-bold text-foreground">{t("portfolio.title")}</h1>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                        {t("portfolio.subtitle", { date: latestDateStr })}
+                        {t("portfolio.subtitle", { date: currentDateStr })}
                     </p>
                 </div>
-                <div className="flex bg-surface border border-border px-4 py-2 rounded-xl shadow-sm items-center gap-3">
-                    <div className="flex items-center justify-center p-2 bg-primary/10 rounded-lg text-primary size-10">
-                        <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
-                    </div>
-                    <div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.totalCurrent")}</p>
-                        <p className="text-lg font-bold text-foreground leading-none">
-                            {formatCurrency(totalWealth)}
-                        </p>
+                <div className="flex flex-col md:flex-row items-center gap-4">
+                    {allDates.length > 0 && (
+                        <div className="relative flex items-center">
+                            <select
+                                value={currentDateStr}
+                                onChange={(e) => setSelectedDateStr(e.target.value)}
+                                className="appearance-none rounded-xl border border-border bg-surface pl-4 pr-10 py-2 text-sm font-semibold text-foreground shadow-sm focus:border-primary focus:outline-none h-[54px] cursor-pointer"
+                            >
+                                {allDates.map((d) => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 pointer-events-none text-slate-400 text-[20px]">
+                                calendar_month
+                            </span>
+                        </div>
+                    )}
+                    <div className="flex bg-surface border border-border px-4 py-2 rounded-xl shadow-sm items-center gap-3">
+                        <div className="flex items-center justify-center p-2 bg-primary/10 rounded-lg text-primary size-10">
+                            <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.totalCurrent")}</p>
+                            <p className="text-lg font-bold text-foreground leading-none">
+                                {formatCurrency(totalWealth)}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

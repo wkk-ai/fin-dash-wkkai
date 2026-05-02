@@ -30,6 +30,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
+    }).catch((error) => {
+      console.error("Error getting session:", error);
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
