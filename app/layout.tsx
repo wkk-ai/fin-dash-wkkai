@@ -25,7 +25,13 @@ export const metadata: Metadata = {
     title: "Finance",
   },
   icons: {
-    apple: "/fin-dash-wkkai/apple-touch-icon.png",
+    icon: [
+      { url: "/fin-dash-wkkai/favicon.svg", type: "image/svg+xml" },
+      { url: "/fin-dash-wkkai/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/fin-dash-wkkai/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [{ url: "/fin-dash-wkkai/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: "/fin-dash-wkkai/favicon.png",
   },
 };
 
