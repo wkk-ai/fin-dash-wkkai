@@ -7,7 +7,6 @@ import { MovementEntry, BudgetEntry } from "@/types/database";
 import { parseCustomDate } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
 import MovementsTable from "@/components/MovementsTable";
-import DailyTrackingChart from "@/components/DailyTrackingChart";
 import { fetchMovements as fetchMovementsData, fetchSettings as fetchSettingsData } from "@/lib/supabase-data";
 
 export default function MovementsPage() {
@@ -444,7 +443,7 @@ export default function MovementsPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-foreground truncate cursor-help">{vendor.name}</p>
-                                    <p className="text-xs text-slate-500"><span className="font-bold text-slate-700 dark:text-slate-300">{vendor.count}</span> Transactions</p>
+                                    <p className="text-xs text-slate-500"><span className="font-bold text-slate-700 dark:text-slate-300">{vendor.count}</span> {t("movements.transactions")}</p>
                                 </div>
                                 <span className="text-sm font-bold text-red-500">-{formatCurrency(vendor.value)}</span>
 
@@ -499,8 +498,6 @@ export default function MovementsPage() {
                     </div>
                 </div>
             </div>
-
-            <DailyTrackingChart movements={filteredMovements} t={t} formatCurrency={formatCurrency} />
 
             <MovementsTable 
                 movements={movements} 
