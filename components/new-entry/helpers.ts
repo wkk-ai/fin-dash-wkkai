@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { AssetEntry, MovementEntry } from "@/types/database";
-import { formatCustomDate, parseCustomDate, normalizeDbDateToMonthStart } from "@/lib/utils";
+import { formatCustomDate, parseCustomDate, normalizeDbDateToMonthStart, pickMonthlySnapshotDates } from "@/lib/utils";
 
 export function todayInputDate(): string {
   return new Date().toISOString().split("T")[0];
@@ -269,4 +269,31 @@ export function latestSnapshotAssets(data: AssetEntry[]): {
     .filter((d) => d.Date === dateStr)
     .sort((a, b) => b.Value - a.Value);
   return { dateStr, assets };
+}
+
+/** Latest monthly snapshot strictly before the given DB date (usually day-1 of selected month). */
+export function snapshotBeforeDate(
+  data: AssetEntry[],
+  beforeDateStr: string
+): { dateStr: string; assets: AssetEntry[] } | null {
+  if (data.length === 0 || !beforeDateStr) return null;
+  const beforeTs = parseCustomDate(beforeDateStr).getTime();
+  if (isNaN(beforeTs)) return null;
+
+  const monthly = pickMonthlySnapshotDates(Array.from(new Set(data.map((d) => d.Date)))).filter(
+    (d) => parseCustomDate(d).getTime() < beforeTs
+  );
+  if (monthly.length === 0) return null;
+  const dateStr = monthly[monthly.length - 1];
+  const assets = data
+    .filter((d) => d.Date === dateStr)
+    .sort((a, b) => b.Value - a.Value);
+  return { dateStr, assets };
+}
+
+/** Assets for an exact snapshot date string. */
+export function assetsOnDate(data: AssetEntry[], dateStr: string): AssetEntry[] {
+  return data
+    .filter((d) => d.Date === dateStr)
+    .sort((a, b) => b.Value - a.Value);
 }

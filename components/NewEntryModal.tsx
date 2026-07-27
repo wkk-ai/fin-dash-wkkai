@@ -19,8 +19,9 @@ import AIImportModal from "./AIImportModal";
 import CsvImportPanel from "./new-entry/CsvImportPanel";
 import {
   buildAssetRelations,
-  latestSnapshotAssets,
   newRowId,
+  snapshotBeforeDate,
+  assetsOnDate,
 } from "./new-entry/helpers";
 import MonthYearPicker from "./MonthYearPicker";
 import { firstOfMonthDbDate, normalizeDbDateToMonthStart, monthKeyFromDbDate } from "@/lib/utils";
@@ -167,31 +168,6 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
           Category: mem.categoryExpense || "",
           Value: 0,
         });
-
-        const snap = latestSnapshotAssets(netWorth);
-        if (snap) {
-          setLastSnapshotLabel(snap.dateStr);
-          setAssetDrafts(
-            snap.assets.map((a) => ({
-              id: newRowId(),
-              Classification: a.Classification,
-              Institution: a.Institution || a.Asset,
-              Asset: a.Asset,
-              Value: 0,
-              prevValue: a.Value,
-            }))
-          );
-        } else {
-          setAssetDrafts([
-            {
-              id: newRowId(),
-              Classification: "",
-              Institution: "",
-              Asset: "",
-              Value: 0,
-            },
-          ]);
-        }
         setDataReady(true);
       })
       .catch(() => {
@@ -199,6 +175,55 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         setDataReady(true);
       });
   }, []);
+
+  // Rebuild "Antes" relative to the selected month (latest snapshot before it)
+  useEffect(() => {
+    if (!dataReady) return;
+    const target = firstOfMonthDbDate(selectedYear, selectedMonth);
+    const ref = snapshotBeforeDate(history, target);
+    const existing = assetsOnDate(history, target);
+
+    setLastSnapshotLabel(ref?.dateStr ?? null);
+
+    const refMap = new Map<string, AssetEntry>();
+    (ref?.assets || []).forEach((a) => {
+      refMap.set(`${a.Classification}|${a.Institution || a.Asset}|${a.Asset}`, a);
+    });
+    const existingMap = new Map<string, AssetEntry>();
+    existing.forEach((a) => {
+      existingMap.set(`${a.Classification}|${a.Institution || a.Asset}|${a.Asset}`, a);
+    });
+
+    const keys = new Set([...refMap.keys(), ...existingMap.keys()]);
+    if (keys.size === 0) {
+      setAssetDrafts([
+        {
+          id: newRowId(),
+          Classification: "",
+          Institution: "",
+          Asset: "",
+          Value: 0,
+        },
+      ]);
+      return;
+    }
+
+    const drafts = Array.from(keys).map((key) => {
+      const cur = existingMap.get(key);
+      const prev = refMap.get(key);
+      const base = cur || prev!;
+      return {
+        id: newRowId(),
+        Classification: base.Classification,
+        Institution: base.Institution || base.Asset,
+        Asset: base.Asset,
+        Value: cur ? cur.Value : 0,
+        prevValue: prev ? prev.Value : undefined,
+      };
+    });
+    drafts.sort((a, b) => (b.prevValue || b.Value || 0) - (a.prevValue || a.Value || 0));
+    setAssetDrafts(drafts);
+  }, [dataReady, history, selectedYear, selectedMonth]);
 
   useEffect(() => {
     const cats = movimentacaoType === "Income" ? incomeCategories : expenseCategories;
@@ -722,7 +747,10 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                       </li>
                       <li>
                         {lastSnapshotLabel
-                          ? t("entry.updateHowRef", { date: lastSnapshotLabel })
+                          ? t("entry.updateHowRef", {
+                              date: lastSnapshotLabel,
+                              target: targetDateDb,
+                            })
                           : t("entry.updateHowRefNone")}
                       </li>
                       <li>{t("entry.updateHowAntes")}</li>
