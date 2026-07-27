@@ -18,11 +18,11 @@ import AIImportModal from "./AIImportModal";
 import CsvImportPanel from "./new-entry/CsvImportPanel";
 import {
   buildAssetRelations,
-  inputDateToDbDate,
   latestSnapshotAssets,
   newRowId,
-  todayInputDate,
 } from "./new-entry/helpers";
+import MonthYearPicker from "./MonthYearPicker";
+import { firstOfMonthDbDate, normalizeDbDateToMonthStart } from "@/lib/utils";
 
 interface Props {
   onClose: () => void;
@@ -56,7 +56,11 @@ const labelClass =
   "text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1";
 
 export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
-  const { formatCurrency } = useTranslation();
+  const { t, formatCurrency } = useTranslation();
+
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0–11
 
   const [step, setStep] = useState<"intent" | "form">(
     startAt === "intent" || startAt === "ai" ? (startAt === "ai" ? "intent" : "intent") : "form"
@@ -85,8 +89,6 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
   const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
   const [history, setHistory] = useState<AssetEntry[]>([]);
   const [dataReady, setDataReady] = useState(false);
-
-  const [sharedDate, setSharedDate] = useState(todayInputDate());
 
   // Single portfolio
   const [singleAsset, setSingleAsset] = useState({
@@ -191,7 +193,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         setDataReady(true);
       })
       .catch(() => {
-        setError("Não foi possível carregar suas listas. Tente de novo.");
+        setError(t("entry.errLoadLists"));
         setDataReady(true);
       });
   }, []);
@@ -323,15 +325,15 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
     setError(null);
     setSuccessHint(null);
     try {
-      const dateDb = inputDateToDbDate(sharedDate);
+      const dateDb = firstOfMonthDbDate(selectedYear, selectedMonth);
 
       if (portfolioMode === "single") {
         if (!singleAsset.Asset || !singleAsset.Institution || !singleAsset.Classification) {
-          setError("Preencha classificação, instituição e ativo.");
+          setError(t("entry.errFillAssetFields"));
           return;
         }
         if (!singleAsset.Value || singleAsset.Value === 0) {
-          setError("Informe o valor.");
+          setError(t("entry.errValue"));
           return;
         }
         const row: AssetEntry = {
@@ -356,10 +358,13 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
 
       if (portfolioMode === "csv") {
         if (csvAssets.length === 0) {
-          setError("Envie um CSV/JSON válido antes de salvar.");
+          setError(t("entry.errCsv"));
           return;
         }
-        const rows = csvAssets.map((r) => ({ ...r, Date: r.Date || dateDb }));
+        const rows = csvAssets.map((r) => ({
+          ...r,
+          Date: normalizeDbDateToMonthStart(r.Date || dateDb),
+        }));
         await appendNetWorthBatch(rows);
         window.dispatchEvent(new CustomEvent("asset-added-success"));
         window.dispatchEvent(new CustomEvent("asset-added", { detail: rows[0] }));
@@ -381,8 +386,8 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
       if (rows.length === 0) {
         setError(
           portfolioMode === "update"
-            ? "Preencha ao menos um valor novo para atualizar o mês."
-            : "Adicione ao menos uma linha com valor."
+            ? t("entry.errUpdateValues")
+            : t("entry.errBatchValues")
         );
         return;
       }
@@ -398,7 +403,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         resetAfterSave(false);
       }
     } catch {
-      setError("Não foi possível salvar. Tente de novo.");
+      setError(t("entry.errSave"));
     } finally {
       setLoading(false);
     }
@@ -409,15 +414,18 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
     setError(null);
     setSuccessHint(null);
     try {
-      const dateDb = inputDateToDbDate(sharedDate);
+      const dateDb = firstOfMonthDbDate(selectedYear, selectedMonth);
 
       if (movementMode === "csv") {
         if (csvMovements.length === 0) {
-          setError("Envie um CSV/JSON válido antes de salvar.");
+          setError(t("entry.errCsv"));
           return;
         }
         for (const item of csvMovements) {
-          await appendMovement({ ...item, Date: item.Date || dateDb });
+          await appendMovement({
+            ...item,
+            Date: normalizeDbDateToMonthStart(item.Date || dateDb),
+          });
         }
         window.dispatchEvent(new CustomEvent("movement-added-success"));
         window.dispatchEvent(new CustomEvent("movement-added"));
@@ -448,19 +456,19 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
 
       if (movementMode === "single") {
         if (!items[0].Description) {
-          setError("Informe a descrição.");
+          setError(t("entry.errDescription"));
           return;
         }
         if (!items[0].Value) {
-          setError("Informe o valor.");
+          setError(t("entry.errValue"));
           return;
         }
         if (!items[0].Category) {
-          setError("Escolha uma categoria.");
+          setError(t("entry.errCategory"));
           return;
         }
       } else if (items.length === 0) {
-        setError("Adicione ao menos uma movimentação com descrição e valor.");
+        setError(t("entry.errMovementRows"));
         return;
       }
 
@@ -477,7 +485,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         resetAfterSave(false);
       }
     } catch {
-      setError("Não foi possível salvar. Tente de novo.");
+      setError(t("entry.errSave"));
     } finally {
       setLoading(false);
     }
@@ -530,12 +538,12 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
 
   const title =
     step === "intent"
-      ? "Nova entrada"
+      ? t("entry.title")
       : isPortfolio
-        ? "Patrimônio"
+        ? t("entry.portfolio")
         : isIncome
-          ? "Receita"
-          : "Despesa";
+          ? t("entry.income")
+          : t("entry.expense");
 
   return (
     <Portal>
@@ -589,7 +597,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
             {dataReady && step === "intent" && (
               <div className="space-y-3">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  O que você quer fazer?
+                  {t("entry.whatToDo")}
                 </p>
                 <button
                   type="button"
@@ -598,9 +606,9 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                 >
                   <span className="material-symbols-outlined text-blue-500 text-3xl">update</span>
                   <div>
-                    <p className="font-bold text-foreground">Atualizar patrimônio</p>
+                    <p className="font-bold text-foreground">{t("entry.updatePortfolio")}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Edite os valores do último mês — fluxo mensal rápido
+                      {t("entry.updatePortfolioDesc")}
                     </p>
                   </div>
                 </button>
@@ -611,8 +619,8 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                 >
                   <span className="material-symbols-outlined text-rose-500 text-3xl">swap_horiz</span>
                   <div>
-                    <p className="font-bold text-foreground">Receita ou despesa</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Valor primeiro, poucos toques</p>
+                    <p className="font-bold text-foreground">{t("entry.incomeOrExpense")}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{t("entry.incomeOrExpenseDesc")}</p>
                   </div>
                 </button>
                 <div className="grid grid-cols-2 gap-3 pt-2">
@@ -623,9 +631,9 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                   >
                     <span className="material-symbols-outlined text-primary">upload_file</span>
                     <span className="text-xs font-bold text-foreground text-center">
-                      CSV patrimônio
+                      {t("entry.csvPortfolio")}
                     </span>
-                    <span className="text-[10px] text-slate-500 text-center">Financial Reader</span>
+                    <span className="text-[10px] text-slate-500 text-center">{t("entry.financialReader")}</span>
                   </button>
                   <button
                     type="button"
@@ -633,8 +641,8 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                     className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-surface hover:border-primary/40 transition-colors"
                   >
                     <span className="material-symbols-outlined text-primary">auto_awesome</span>
-                    <span className="text-xs font-bold text-foreground text-center">Importar com IA</span>
-                    <span className="text-[10px] text-slate-500 text-center">PDF / planilha</span>
+                    <span className="text-xs font-bold text-foreground text-center">{t("entry.importAI")}</span>
+                    <span className="text-[10px] text-slate-500 text-center">{t("entry.importAIDesc")}</span>
                   </button>
                 </div>
                 <button
@@ -642,7 +650,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                   onClick={() => openForm("patrimonio", "single")}
                   className="w-full text-center text-xs font-medium text-slate-500 hover:text-primary py-2"
                 >
-                  Ou adicionar um ativo novo →
+                  {t("entry.orAddOneAsset")}
                 </button>
               </div>
             )}
@@ -652,12 +660,12 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                 <div className="flex gap-1 p-1 rounded-xl bg-slate-100 dark:bg-[#0f172a] overflow-x-auto">
                   {(
                     [
-                      ["update", "Atualizar mês"],
-                      ["single", "Um ativo"],
-                      ["batch", "Vários"],
-                      ["csv", "CSV"],
+                      ["update", "entry.modeUpdate"],
+                      ["single", "entry.modeSingle"],
+                      ["batch", "entry.modeBatch"],
+                      ["csv", "entry.modeCsv"],
                     ] as const
-                  ).map(([mode, label]) => (
+                  ).map(([mode, key]) => (
                     <button
                       key={mode}
                       type="button"
@@ -671,27 +679,27 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                           : "text-slate-500"
                       }`}
                     >
-                      {label}
+                      {t(key)}
                     </button>
                   ))}
                 </div>
 
                 {portfolioMode !== "csv" && (
-                  <div className="space-y-1.5">
-                    <label className={labelClass}>Data do snapshot</label>
-                    <input
-                      type="date"
-                      value={sharedDate}
-                      onChange={(e) => setSharedDate(e.target.value)}
-                      className={fieldClass}
-                      required
-                    />
-                    {lastSnapshotLabel && portfolioMode === "update" && (
-                      <p className="text-[11px] text-slate-500">
-                        Último registro: {lastSnapshotLabel}. Digite os valores novos abaixo.
-                      </p>
-                    )}
-                  </div>
+                  <MonthYearPicker
+                    year={selectedYear}
+                    month={selectedMonth}
+                    onChange={(y, m) => {
+                      setSelectedYear(y);
+                      setSelectedMonth(m);
+                    }}
+                    label={t("entry.snapshotMonth")}
+                  />
+                )}
+
+                {portfolioMode === "update" && lastSnapshotLabel && (
+                  <p className="text-[11px] text-slate-500 -mt-2">
+                    {t("entry.lastRecord", { date: lastSnapshotLabel })}
+                  </p>
                 )}
 
                 {portfolioMode === "single" && (
@@ -768,7 +776,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                         onClick={fillPrevValues}
                         className="text-xs font-bold text-blue-500 hover:underline"
                       >
-                        Copiar valores do mês anterior
+                        {t("entry.copyPrevValues")}
                       </button>
                     )}
                     {assetDrafts.map((row) => (
@@ -868,7 +876,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                         className={`flex items-center gap-2 text-sm font-bold ${accentText}`}
                       >
                         <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                        Adicionar outro
+                        {t("entry.addAnother")}
                       </button>
                     )}
                   </div>
@@ -922,7 +930,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                         : "text-slate-500"
                     }`}
                   >
-                    Receita
+                    {t("entry.income")}
                   </button>
                   <button
                     type="button"
@@ -933,18 +941,18 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                         : "text-slate-500"
                     }`}
                   >
-                    Despesa
+                    {t("entry.expense")}
                   </button>
                 </div>
 
                 <div className="flex gap-1 p-1 rounded-xl bg-slate-100 dark:bg-[#0f172a]">
                   {(
                     [
-                      ["single", "Uma"],
-                      ["batch", "Várias"],
-                      ["csv", "CSV"],
+                      ["single", "entry.modeOne"],
+                      ["batch", "entry.modeMany"],
+                      ["csv", "entry.modeCsv"],
                     ] as const
-                  ).map(([mode, label]) => (
+                  ).map(([mode, key]) => (
                     <button
                       key={mode}
                       type="button"
@@ -958,21 +966,21 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                           : "text-slate-500"
                       }`}
                     >
-                      {label}
+                      {t(key)}
                     </button>
                   ))}
                 </div>
 
                 {movementMode !== "csv" && (
-                  <div className="space-y-1.5">
-                    <label className={labelClass}>Data</label>
-                    <input
-                      type="date"
-                      value={sharedDate}
-                      onChange={(e) => setSharedDate(e.target.value)}
-                      className={fieldClass}
-                    />
-                  </div>
+                  <MonthYearPicker
+                    year={selectedYear}
+                    month={selectedMonth}
+                    onChange={(y, m) => {
+                      setSelectedYear(y);
+                      setSelectedMonth(m);
+                    }}
+                    label={t("entry.month")}
+                  />
                 )}
 
                 {movementMode === "single" && (
@@ -1095,7 +1103,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                       className={`flex items-center gap-2 text-sm font-bold ${accentText}`}
                     >
                       <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                      Adicionar outra
+                      {t("entry.addAnotherF")}
                     </button>
                   </div>
                 )}
@@ -1156,7 +1164,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                 onClick={onClose}
                 className="px-4 py-3 text-sm font-bold text-slate-500 hover:text-foreground order-3 sm:order-1"
               >
-                Cancelar
+                {t("common.cancel")}
               </button>
               {((isPortfolio && portfolioMode !== "csv") ||
                 (!isPortfolio && movementMode !== "csv")) && (
@@ -1168,7 +1176,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                   }
                   className="px-4 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 border border-border rounded-xl hover:bg-surface order-2 disabled:opacity-50"
                 >
-                  Salvar e outro
+                  {t("entry.saveAndAnother")}
                 </button>
               )}
               <button
@@ -1179,7 +1187,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                 }
                 className={`px-8 py-3 text-white text-sm font-bold rounded-xl shadow-lg transition-all active:scale-[0.97] disabled:opacity-50 order-1 sm:order-3 ${primaryBtn}`}
               >
-                {loading ? "Salvando..." : "Salvar"}
+                {loading ? t("common.saving") : t("common.save")}
               </button>
             </div>
           )}
