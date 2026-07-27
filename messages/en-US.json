@@ -18,7 +18,9 @@
     "movements": "Movements",
     "closeMenu": "Close menu",
     "openMenu": "Open navigation menu",
-    "selectLanguage": "Select language"
+    "selectLanguage": "Select language",
+    "newEntry": "New Entry",
+    "aiImport": "AI Import"
   },
   "app": {
     "title": "Financial Dashboard",
