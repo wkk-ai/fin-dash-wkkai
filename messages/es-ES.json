@@ -29,7 +29,10 @@
     "name": "FinTrack"
   },
   "home": {
-    "noData": "No se encontraron datos en la base de datos."
+    "noData": "No se encontraron datos en la base de datos.",
+    "noDataTitle": "Nada por aquí aún",
+    "noDataDesc": "Añade tu patrimonio para ver el panorama y las proyecciones.",
+    "addFirst": "Añadir patrimonio"
   },
   "portfolio": {
     "title": "Mi Portafolio",
@@ -223,7 +226,7 @@
     "projectedGrowth": "Crecimiento Proyectado",
     "compoundInterest": "Interés Compuesto + Aportes Mensuales",
     "invested": "Invertido",
-    "monthlyAdditionTooltip": "El cálculo sugerido se basa en (Variación del patrimonio) − (Presupuesto restante). Si la variación es negativa, usamos solo el presupuesto. Si el presupuesto es negativo, el valor por defecto es €1.000."
+    "monthlyAdditionTooltip": "Valor por defecto = variación mensual del patrimonio (el mismo número de la tarjeta Variación Mensual)."
   },
   "movements": {
     "title": "Movimientos",
