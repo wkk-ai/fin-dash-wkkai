@@ -29,7 +29,10 @@
     "name": "FinTrack"
   },
   "home": {
-    "noData": "Nenhum dado encontrado no banco de dados."
+    "noData": "Nenhum dado encontrado no banco de dados.",
+    "noDataTitle": "Nada por aqui ainda",
+    "noDataDesc": "Adicione seu patrimônio para ver o panorama e as projeções.",
+    "addFirst": "Adicionar patrimônio"
   },
   "portfolio": {
     "title": "Minha Carteira",
@@ -223,7 +226,7 @@
     "projectedGrowth": "Crescimento Projetado",
     "compoundInterest": "Juros Compostos + Aportes Mensais",
     "invested": "Investido",
-    "monthlyAdditionTooltip": "O cálculo sugerido é baseado na (Variação do Net Worth) - (Orçamento Restante). Se a variação for negativa, usamos apenas o orçamento. Se o orçamento for negativo, o padrão é R$/$ 1.000."
+    "monthlyAdditionTooltip": "Valor padrão = variação mensal do patrimônio (mesmo número do cartão Variação Mensal)."
   },
   "movements": {
     "title": "Movimentações",

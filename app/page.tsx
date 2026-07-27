@@ -6,7 +6,7 @@ import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
 import DashboardSection from "@/components/DashboardSection";
 import ProjectionsSection from "@/components/ProjectionsSection";
-import { fetchNetWorth, fetchMovements } from "@/lib/supabase-data";
+import { fetchNetWorth } from "@/lib/supabase-data";
 
 export default function Home() {
   const { t } = useTranslation();
@@ -22,33 +22,7 @@ export default function Home() {
       const dbData = await fetchNetWorth();
       setData(dbData);
 
-      const { movements } = await fetchMovements();
-
-
-      // --- 1. Calculate suggested contribution ---
-      
-      // A. Remaining Budget (OR)
-      const movementDates = movements.map((m: any) => parseCustomDate(m.Date)).filter((d: any) => !isNaN(d.getTime()));
-      let or = 0;
-      if (movementDates.length > 0) {
-        const latestMvDate = new Date(Math.max(...movementDates.map((d: any) => d.getTime())));
-        const currentMonth = latestMvDate.toLocaleString('en-US', { month: 'short' });
-        const currentYear = String(latestMvDate.getFullYear()).slice(-2);
-
-        const matchMonth = (dateStr: string, m: string, y: string) => {
-          const parts = dateStr.split('/');
-          const monthPart = parts[1]?.replace(".", "")?.toLowerCase() || "";
-          const targetMonth = m.toLowerCase().replace(".", "");
-          return monthPart === targetMonth && parts[2] === y;
-        };
-
-        const currentMovements = movements.filter((m: any) => matchMonth(m.Date, currentMonth, currentYear));
-        const income = currentMovements.filter((m: any) => m.Type === "Income").reduce((acc: number, m: any) => acc + m.Value, 0);
-        const expenses = Math.abs(currentMovements.filter((m: any) => m.Type === "Expense").reduce((acc: number, m: any) => acc + m.Value, 0));
-        or = income - expenses;
-      }
-
-      // B. Net Worth Variation (VNW) — one snapshot per calendar month
+      // Default contribution = monthly wealth variation (same as dashboard MoM)
       const uniqueDates = pickMonthlySnapshotDates(Array.from(new Set(dbData.map((d) => d.Date))));
       const dateValues: Record<string, number> = {};
       dbData.forEach((d) => { dateValues[d.Date] = (dateValues[d.Date] || 0) + d.Value; });
@@ -57,19 +31,10 @@ export default function Home() {
       const currentWealth = dateValues[latestDateStr] || 0;
       const prevWealth = prevDateStr ? dateValues[prevDateStr] : 0;
       const vnw = currentWealth - prevWealth;
+      const suggestion = uniqueDates.length > 1 ? Math.round(vnw) : 1000;
 
-      // C. Decision Matrix
-      let suggestion = 1000;
-      if (or < 0) {
-        suggestion = 1000;
-      } else if (vnw < 0) {
-        suggestion = or;
-      } else {
-        suggestion = vnw - or;
-      }
-      
       setSuggestedAddition(suggestion);
-      setMonthlyAddition(String(Math.round(suggestion)));
+      setMonthlyAddition(String(suggestion));
       setLoading(false);
     } catch (err) {
       console.error("Failed to load data", err);
@@ -93,7 +58,22 @@ export default function Home() {
   }
 
   if (!data?.length) {
-    return <div className="text-center py-20 text-slate-500 font-medium">{t("home.noData")}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20 px-6 text-center">
+        <span className="material-symbols-outlined text-[40px] text-slate-400">account_balance_wallet</span>
+        <div className="space-y-1 max-w-sm">
+          <p className="text-base font-bold text-foreground">{t("home.noDataTitle")}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t("home.noDataDesc")}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-new-entry", { detail: { startAt: "intent" } }))}
+          className="mt-1 px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-sm transition-colors"
+        >
+          {t("home.addFirst")}
+        </button>
+      </div>
+    );
   }
 
   // Build date aggregates — one point per calendar month (fixes mid-month MoM)

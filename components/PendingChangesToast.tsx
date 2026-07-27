@@ -71,7 +71,7 @@ export default function PendingChangesToast() {
         <div
             role="status"
             aria-live="polite"
-            className="fixed bottom-6 left-1/2 z-50 flex flex-col rounded-lg bg-surface border border-border shadow-lg overflow-hidden"
+            className="fixed bottom-24 md:bottom-6 left-1/2 z-50 flex flex-col rounded-lg bg-surface border border-border shadow-lg overflow-hidden max-w-[calc(100%-2rem)]"
             style={
                 exiting
                     ? { animation: "pending-toast-exit 0.35s ease-in forwards" }

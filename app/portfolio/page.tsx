@@ -310,7 +310,119 @@ export default function Portfolio() {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="overflow-x-auto">
+                                <div className="sm:hidden p-4 space-y-3">
+                                    {sortedInstitutions.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                        const instKey = `${classification}-${institution}`;
+                                        const isExpanded = expandedInstitutions.has(instKey);
+                                        const hasMultipleAssets = instAssets.length > 1;
+                                        const instWeightInClass = classTotal > 0 ? (instTotal / classTotal) * 100 : 0;
+                                        const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
+                                        const instPrevTotal = instAssets.reduce((sum, a) => {
+                                            const pv = getPrevValue(a);
+                                            return sum + (pv ?? 0);
+                                        }, 0);
+                                        const instHasPrev = instAssets.some(a => getPrevValue(a) !== null);
+                                        const instVariation = instHasPrev ? instTotal - instPrevTotal : null;
+                                        const instVariationPct = instHasPrev && instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
+
+                                        return (
+                                            <div
+                                                key={instKey}
+                                                className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${hasMultipleAssets ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
+                                                onClick={() => hasMultipleAssets && toggleInstitution(instKey)}
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        {hasMultipleAssets && (
+                                                            <span
+                                                                className="material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0"
+                                                                style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+                                                            >
+                                                                chevron_right
+                                                            </span>
+                                                        )}
+                                                        <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-sm">
+                                                            {institution.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-semibold text-foreground truncate">{institution}</p>
+                                                            {!hasMultipleAssets ? (
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{instAssets[0]?.Asset}</p>
+                                                            ) : !isExpanded ? (
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.nAssets", { count: instAssets.length })}</p>
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-lg font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthAbsVar")}</p>
+                                                        {instVariation !== null ? (
+                                                            <p className={`text-sm font-semibold tabular-nums ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthVar")}</p>
+                                                        {instVariationPct !== null ? (
+                                                            <p className={`text-sm font-semibold tabular-nums ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
+                                                            </p>
+                                                        ) : (
+                                                            <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.weightInCategory")}</p>
+                                                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInClass.toFixed(1)}%</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.weightTotal")}</p>
+                                                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInTotal.toFixed(1)}%</p>
+                                                    </div>
+                                                </div>
+                                                {isExpanded && hasMultipleAssets && (
+                                                    <div className="pt-2 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                                        {instAssets.map((asset, idx) => {
+                                                            const prevValue = getPrevValue(asset);
+                                                            const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                            const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+
+                                                            return (
+                                                                <div key={`${instKey}-m-${asset.Asset}-${idx}`} className="flex items-center justify-between gap-2 py-1.5">
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                            {asset.Asset.charAt(0).toUpperCase()}
+                                                                        </div>
+                                                                        <span className="text-xs font-medium text-foreground/80 truncate">{asset.Asset}</span>
+                                                                    </div>
+                                                                    <div className="text-right shrink-0">
+                                                                        <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(asset.Value)}</p>
+                                                                        <p className="text-[10px] tabular-nums">
+                                                                            {variation !== null ? (
+                                                                                <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                                                                    {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                                    {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                            )}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="hidden sm:block overflow-x-auto">
                                     <table className="w-full min-w-[700px] text-left border-collapse table-fixed">
                                         <thead>
                                             <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
@@ -496,7 +608,108 @@ export default function Portfolio() {
                                     )}
                                 </div>
                             </div>
-                            <div className="overflow-x-auto">
+                            <div className="sm:hidden p-4 space-y-3">
+                                {sortedInstGrouped.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                    const globalInstKey = `global-inst-${institution}`;
+                                    const isExpanded = expandedInstitutions.has(globalInstKey);
+                                    const hasMultipleAssets = instAssets.length > 1;
+                                    const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
+                                    const instPrevTotal = prevInstTotals[institution] || 0;
+                                    const instVariation = instPrevTotal > 0 ? instTotal - instPrevTotal : null;
+                                    const instVariationPct = instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
+
+                                    return (
+                                        <div
+                                            key={`${globalInstKey}-mobile`}
+                                            className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${hasMultipleAssets ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
+                                            onClick={() => hasMultipleAssets && toggleInstitution(globalInstKey)}
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    {hasMultipleAssets && (
+                                                        <span
+                                                            className="material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0"
+                                                            style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+                                                        >
+                                                            chevron_right
+                                                        </span>
+                                                    )}
+                                                    <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-sm">
+                                                        {institution.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-semibold text-foreground truncate">{institution}</p>
+                                                        {hasMultipleAssets && !isExpanded && (
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.nAssets", { count: instAssets.length })}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <p className="text-lg font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthAbsVar")}</p>
+                                                    {instVariation !== null ? (
+                                                        <p className={`text-sm font-semibold tabular-nums ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                            {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthVar")}</p>
+                                                    {instVariationPct !== null ? (
+                                                        <p className={`text-sm font-semibold tabular-nums ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                            {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
+                                                    )}
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.weightTotal")}</p>
+                                                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInTotal.toFixed(1)}%</p>
+                                                </div>
+                                            </div>
+                                            {isExpanded && hasMultipleAssets && (
+                                                <div className="pt-2 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
+                                                    {instAssets.map((asset, aIdx) => {
+                                                        const prevValue = getPrevValue(asset);
+                                                        const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                        const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+
+                                                        return (
+                                                            <div key={`${globalInstKey}-m-${asset.Asset}-${aIdx}`} className="flex items-center justify-between gap-2 py-1.5">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                        {asset.Asset.charAt(0).toUpperCase()}
+                                                                    </div>
+                                                                    <span className="text-xs font-medium text-foreground/80 truncate">{asset.Asset}</span>
+                                                                </div>
+                                                                <div className="text-right shrink-0">
+                                                                    <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(asset.Value)}</p>
+                                                                    <p className="text-[10px] tabular-nums">
+                                                                        {variation !== null ? (
+                                                                            <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                                                                {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                                {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                        )}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="hidden sm:block overflow-x-auto">
                                 <table className="w-full min-w-[700px] text-left border-collapse table-fixed">
                                     <thead>
                                         <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
