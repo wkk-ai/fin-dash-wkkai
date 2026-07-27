@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState, useEffect, useRef } from "react";
 import NewEntryModal from "./NewEntryModal";
-import AIImportModal from "./AIImportModal";
 import LanguageSelector from "./LanguageSelector";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
@@ -16,9 +15,14 @@ export default function Header() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+    const [entryStartAt, setEntryStartAt] = useState<"intent" | "ai">("intent");
     const [isNavOpen, setIsNavOpen] = useState(false);
     const navMenuRef = useRef<HTMLDivElement>(null);
+
+    const openEntry = (startAt: "intent" | "ai" = "intent") => {
+        setEntryStartAt(startAt);
+        setIsModalOpen(true);
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -101,19 +105,20 @@ export default function Header() {
 
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => setIsAIModalOpen(true)}
-                            className="hidden sm:flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-4 py-2 text-sm font-bold text-primary shadow-lg shadow-primary/10 hover:bg-primary/20 transition-all cursor-pointer"
+                            onClick={() => openEntry("ai")}
+                            className="flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-2.5 sm:px-4 py-2 text-sm font-bold text-primary shadow-lg shadow-primary/10 hover:bg-primary/20 transition-all cursor-pointer"
+                            aria-label={t("nav.aiImport")}
                         >
                             <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
-                            <span className="truncate">AI Import</span>
+                            <span className="truncate hidden sm:inline">{t("nav.aiImport")}</span>
                         </button>
 
                         <button
-                            onClick={() => setIsModalOpen(true)}
+                            onClick={() => openEntry("intent")}
                             className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all cursor-pointer"
                         >
                             <span className="material-symbols-outlined text-[20px]">add</span>
-                            <span className="truncate">Nova Entrada</span>
+                            <span className="truncate">{t("nav.newEntry")}</span>
                         </button>
 
                         <button
@@ -168,21 +173,28 @@ export default function Header() {
                     );
                 })}
 
-                {/* FAB */}
+                {/* FAB — long-press opens AI */}
                 <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => openEntry("intent")}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        openEntry("ai");
+                    }}
                     className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center justify-center size-14 rounded-full bg-primary text-white shadow-[0_4px_14px_rgba(59,130,246,0.5)] border-4 border-surface outline-none transition-transform active:scale-95"
+                    aria-label={t("nav.newEntry") || "Nova Entrada"}
                 >
                     <span className="material-symbols-outlined text-3xl">add</span>
                 </button>
             </nav>
 
             {isModalOpen && (
-                <NewEntryModal onClose={() => setIsModalOpen(false)} />
-            )}
-
-            {isAIModalOpen && (
-                <AIImportModal onClose={() => setIsAIModalOpen(false)} />
+                <NewEntryModal
+                    startAt={entryStartAt}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setEntryStartAt("intent");
+                    }}
+                />
             )}
         </>
     );

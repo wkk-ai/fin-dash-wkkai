@@ -17,7 +17,9 @@
     "addAsset": "Añadir Patrimonio",
     "closeMenu": "Cerrar menú",
     "openMenu": "Abrir menú de navegación",
-    "selectLanguage": "Seleccionar idioma"
+    "selectLanguage": "Seleccionar idioma",
+    "newEntry": "Nueva entrada",
+    "aiImport": "Importar IA"
   },
   "app": {
     "title": "Panel Financiero",
