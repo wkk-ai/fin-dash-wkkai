@@ -18,7 +18,9 @@
     "movements": "Movimentações",
     "closeMenu": "Fechar menu",
     "openMenu": "Abrir menu de navegação",
-    "selectLanguage": "Selecionar idioma"
+    "selectLanguage": "Selecionar idioma",
+    "newEntry": "Nova Entrada",
+    "aiImport": "Importar IA"
   },
   "app": {
     "title": "Painel Financeiro",
