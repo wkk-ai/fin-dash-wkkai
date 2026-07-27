@@ -29,6 +29,15 @@ export default function Header() {
     }, []);
 
     useEffect(() => {
+        const openFromElsewhere = (e: Event) => {
+            const detail = (e as CustomEvent<{ startAt?: "intent" | "ai" }>).detail;
+            openEntry(detail?.startAt ?? "intent");
+        };
+        window.addEventListener("open-new-entry", openFromElsewhere);
+        return () => window.removeEventListener("open-new-entry", openFromElsewhere);
+    }, []);
+
+    useEffect(() => {
         setIsNavOpen(false);
     }, [pathname]);
 

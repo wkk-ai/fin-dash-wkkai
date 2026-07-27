@@ -29,7 +29,10 @@
     "name": "FinTrack"
   },
   "home": {
-    "noData": "No data found in the database."
+    "noData": "No data found in the database.",
+    "noDataTitle": "Nothing here yet",
+    "noDataDesc": "Add your wealth to see the overview and projections.",
+    "addFirst": "Add wealth"
   },
   "portfolio": {
     "title": "My Net Worth",
@@ -223,7 +226,7 @@
     "projectedGrowth": "Projected Growth",
     "compoundInterest": "Compound Interest + Monthly Contributions",
     "invested": "Invested",
-    "monthlyAdditionTooltip": "Suggested amount is based on (Net Worth change) − (Remaining budget). If change is negative, we use budget only. If budget is negative, default is $1,000."
+    "monthlyAdditionTooltip": "Default = monthly wealth change (same number as the Monthly Variation card)."
   },
   "movements": {
     "title": "Movements",
