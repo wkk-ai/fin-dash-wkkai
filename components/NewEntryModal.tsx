@@ -10,6 +10,7 @@ import {
   appendNetWorth,
   appendNetWorthBatch,
   appendMovement,
+  replaceNetWorthForDate,
 } from "@/lib/supabase-data";
 import { loadEntryMemory, saveEntryMemory } from "@/lib/entry-memory";
 import { useTranslation } from "@/lib/i18n";
@@ -22,7 +23,7 @@ import {
   newRowId,
 } from "./new-entry/helpers";
 import MonthYearPicker from "./MonthYearPicker";
-import { firstOfMonthDbDate, normalizeDbDateToMonthStart } from "@/lib/utils";
+import { firstOfMonthDbDate, normalizeDbDateToMonthStart, monthKeyFromDbDate } from "@/lib/utils";
 
 interface Props {
   onClose: () => void;
@@ -73,6 +74,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
   const [portfolioMode, setPortfolioMode] = useState<PortfolioMode>(
     startAt === "csv-portfolio" ? "csv" : "update"
   );
+  const [updateWriteMode, setUpdateWriteMode] = useState<"append" | "override">("append");
   const [movementMode, setMovementMode] = useState<MovementMode>(
     startAt === "csv-movement" ? "csv" : "single"
   );
@@ -255,6 +257,13 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
   const categories =
     movimentacaoType === "Income" ? incomeCategories : expenseCategories;
 
+  const targetDateDb = firstOfMonthDbDate(selectedYear, selectedMonth);
+  const targetMonthKey = monthKeyFromDbDate(targetDateDb);
+  const targetMonthHasData = useMemo(
+    () => history.some((h) => monthKeyFromDbDate(h.Date) === targetMonthKey),
+    [history, targetMonthKey]
+  );
+
   const isPortfolio = intent === "patrimonio";
   const isIncome = movimentacaoType === "Income";
   const accent = isPortfolio
@@ -392,12 +401,20 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         return;
       }
 
-      await appendNetWorthBatch(rows);
+      if (portfolioMode === "update" && updateWriteMode === "override") {
+        await replaceNetWorthForDate(dateDb, rows);
+      } else {
+        await appendNetWorthBatch(rows);
+      }
       rememberPortfolio(rows[0]);
       window.dispatchEvent(new CustomEvent("asset-added-success"));
       window.dispatchEvent(new CustomEvent("asset-added", { detail: rows[0] }));
       if (andAnother) {
-        setSuccessHint(`${rows.length} salvo(s). Pode continuar.`);
+        setSuccessHint(
+          updateWriteMode === "override" && portfolioMode === "update"
+            ? t("entry.savedOverride", { date: dateDb, count: rows.length })
+            : t("entry.savedAppend", { date: dateDb, count: rows.length })
+        );
         resetAfterSave(true);
       } else {
         resetAfterSave(false);
@@ -696,8 +713,56 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                   />
                 )}
 
+                {portfolioMode === "update" && (
+                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 space-y-3 text-sm">
+                    <p className="font-bold text-foreground">{t("entry.updateHowTitle")}</p>
+                    <ul className="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 list-disc pl-4">
+                      <li>
+                        {t("entry.updateHowTarget", { date: targetDateDb })}
+                      </li>
+                      <li>
+                        {lastSnapshotLabel
+                          ? t("entry.updateHowRef", { date: lastSnapshotLabel })
+                          : t("entry.updateHowRefNone")}
+                      </li>
+                      <li>{t("entry.updateHowAntes")}</li>
+                    </ul>
+                    {targetMonthHasData && (
+                      <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                        {t("entry.updateMonthExists", { date: targetDateDb })}
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setUpdateWriteMode("append")}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition-all ${
+                          updateWriteMode === "append"
+                            ? "border-primary bg-white dark:bg-slate-800 shadow-sm"
+                            : "border-transparent bg-slate-50 dark:bg-[#0f172a]"
+                        }`}
+                      >
+                        <p className="text-xs font-bold text-foreground">{t("entry.writeAppend")}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{t("entry.writeAppendDesc")}</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUpdateWriteMode("override")}
+                        className={`rounded-xl border-2 px-3 py-2.5 text-left transition-all ${
+                          updateWriteMode === "override"
+                            ? "border-amber-500 bg-white dark:bg-slate-800 shadow-sm"
+                            : "border-transparent bg-slate-50 dark:bg-[#0f172a]"
+                        }`}
+                      >
+                        <p className="text-xs font-bold text-foreground">{t("entry.writeOverride")}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{t("entry.writeOverrideDesc")}</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {portfolioMode === "update" && lastSnapshotLabel && (
-                  <p className="text-[11px] text-slate-500 -mt-2">
+                  <p className="text-[11px] text-slate-500 -mt-1">
                     {t("entry.lastRecord", { date: lastSnapshotLabel })}
                   </p>
                 )}
@@ -850,7 +915,10 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                               </p>
                               {row.prevValue != null && (
                                 <p className="text-[11px] text-slate-400 mt-1">
-                                  Antes: {formatCurrency(row.prevValue)}
+                                  {t("entry.beforeLabel", {
+                                    amount: formatCurrency(row.prevValue),
+                                    date: lastSnapshotLabel || "—",
+                                  })}
                                 </p>
                               )}
                             </div>
