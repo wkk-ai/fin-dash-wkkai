@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 import { AssetEntry, MovementEntry } from "@/types/database";
-import { formatCustomDate, parseCustomDate } from "@/lib/utils";
+import { formatCustomDate, parseCustomDate, normalizeDbDateToMonthStart } from "@/lib/utils";
 
 export function todayInputDate(): string {
   return new Date().toISOString().split("T")[0];
@@ -102,6 +102,8 @@ function mapAssetRow(row: Record<string, unknown>): AssetEntry | null {
     date = isNaN(parsed.getTime()) ? inputDateToDbDate(todayInputDate()) : formatCustomDate(parsed);
   }
 
+  date = normalizeDbDateToMonthStart(date);
+
   return {
     Date: date,
     Classification: mapped.Classification || "",
@@ -143,6 +145,8 @@ function mapMovementRow(row: Record<string, unknown>, defaultType: "Income" | "E
     const parsed = parseCustomDate(date);
     date = isNaN(parsed.getTime()) ? inputDateToDbDate(todayInputDate()) : formatCustomDate(parsed);
   }
+
+  date = normalizeDbDateToMonthStart(date);
 
   return {
     Date: date,
