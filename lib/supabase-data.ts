@@ -42,6 +42,20 @@ export async function appendNetWorthBatch(entries: AssetEntry[]): Promise<void> 
   if (error) throw error;
 }
 
+/** Delete all net-worth rows for an exact snapshot date string (e.g. 01/May/26). */
+export async function deleteNetWorthByDate(date: string): Promise<void> {
+  const { error } = await supabase.from('net_worth').delete().eq('date', date);
+  if (error) throw error;
+}
+
+/** Replace one month snapshot: wipe that date, then insert the new rows. */
+export async function replaceNetWorthForDate(date: string, entries: AssetEntry[]): Promise<void> {
+  await deleteNetWorthByDate(date);
+  if (entries.length > 0) {
+    await appendNetWorthBatch(entries.map((e) => ({ ...e, Date: date })));
+  }
+}
+
 export async function replaceNetWorth(entries: AssetEntry[]): Promise<void> {
   // Delete all existing rows for this user, then insert new ones
   const { error: delError } = await supabase.from('net_worth').delete().neq('id', '00000000-0000-0000-0000-000000000000');

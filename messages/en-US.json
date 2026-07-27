@@ -252,7 +252,20 @@
     "errBatchValues": "Add at least one row with a value.",
     "copyPrevValues": "Copy previous month values",
     "addAnother": "Add another",
-    "addAnotherF": "Add another"
+    "addAnotherF": "Add another",
+    "updateHowTitle": "How this works",
+    "updateHowTarget": "The numbers you type are saved for the selected month: {date} (always day 1).",
+    "updateHowRef": "\"Before\" is only a reference from the last record ({date}) — not the value being changed.",
+    "updateHowRefNone": "There is no previous record to compare yet.",
+    "updateHowAntes": "Choose below whether to append rows or replace the whole month.",
+    "updateMonthExists": "Data already exists for {date}. With \"Replace\", those rows are deleted and swapped for yours.",
+    "writeAppend": "Append",
+    "writeAppendDesc": "Adds new rows for this month. Keeps existing ones.",
+    "writeOverride": "Replace month",
+    "writeOverrideDesc": "Deletes everything in this month and saves only what you filled.",
+    "beforeLabel": "Before ({date}): {amount}",
+    "savedAppend": "{count} row(s) appended to {date}.",
+    "savedOverride": "Month {date} replaced ({count} row(s))."
   },
   "filters": {
     "thisWeek": "This Week",

@@ -252,7 +252,20 @@
     "errBatchValues": "Adicione ao menos uma linha com valor.",
     "copyPrevValues": "Copiar valores do mês anterior",
     "addAnother": "Adicionar outro",
-    "addAnotherF": "Adicionar outra"
+    "addAnotherF": "Adicionar outra",
+    "updateHowTitle": "Como funciona",
+    "updateHowTarget": "Os números que você digitar serão gravados no mês escolhido: {date} (sempre dia 1).",
+    "updateHowRef": "\"Antes\" é só referência do último registro ({date}) — não é o valor que será alterado.",
+    "updateHowRefNone": "Ainda não há registro anterior para comparar.",
+    "updateHowAntes": "Escolha abaixo se quer acrescentar linhas ou substituir o mês inteiro.",
+    "updateMonthExists": "Já existem dados em {date}. Com \"Substituir\", eles serão apagados e trocados pelos novos.",
+    "writeAppend": "Acrescentar",
+    "writeAppendDesc": "Adiciona linhas novas nesse mês. Não apaga o que já existe.",
+    "writeOverride": "Substituir mês",
+    "writeOverrideDesc": "Apaga tudo desse mês e grava só o que você preencheu.",
+    "beforeLabel": "Antes ({date}): {amount}",
+    "savedAppend": "{count} linha(s) acrescentada(s) em {date}.",
+    "savedOverride": "Mês {date} substituído ({count} linha(s))."
   },
   "filters": {
     "thisWeek": "Esta Semana",
