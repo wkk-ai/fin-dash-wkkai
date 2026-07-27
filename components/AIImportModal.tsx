@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "@/lib/i18n";
-import { parseCustomDate } from "@/lib/utils";
+import { parseCustomDate, firstOfMonthDbDate } from "@/lib/utils";
 import Portal from "./Portal";
 import { DataReviewModal, ProcessedRow } from "./DataReviewModal";
 import { fetchSettings as fetchSettingsData, appendNetWorth, appendNetWorthBatch, appendMovement, replaceNetWorth, replaceMovements } from "@/lib/supabase-data";
@@ -161,11 +161,9 @@ export default function AIImportModal({ onClose }: Props) {
             if (currentMode === "overwrite") {
                 const dataToSend = currentData.map(r => {
                     const dateObj = parseCustomDate(r.Date || "");
-                    const day = String(dateObj.getUTCDate()).padStart(2, "0");
-                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const month = months[dateObj.getUTCMonth()];
-                    const year = String(dateObj.getUTCFullYear()).slice(-2);
-                    const normalizedDate = `${day}/${month}/${year}`;
+                    const normalizedDate = isNaN(dateObj.getTime())
+                        ? firstOfMonthDbDate(new Date().getFullYear(), new Date().getMonth())
+                        : firstOfMonthDbDate(dateObj.getUTCFullYear(), dateObj.getUTCMonth());
 
                     if (importType === "patrimonio") {
                         return {
@@ -193,11 +191,9 @@ export default function AIImportModal({ onClose }: Props) {
             } else {
                 for (const r of currentData) {
                     const dateObj = parseCustomDate(r.Date || "");
-                    const day = String(dateObj.getUTCDate()).padStart(2, "0");
-                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const month = months[dateObj.getUTCMonth()];
-                    const year = String(dateObj.getUTCFullYear()).slice(-2);
-                    const normalizedDate = `${day}/${month}/${year}`;
+                    const normalizedDate = isNaN(dateObj.getTime())
+                        ? firstOfMonthDbDate(new Date().getFullYear(), new Date().getMonth())
+                        : firstOfMonthDbDate(dateObj.getUTCFullYear(), dateObj.getUTCMonth());
 
                     if (importType === "patrimonio") {
                         await appendNetWorth({

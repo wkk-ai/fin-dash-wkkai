@@ -8,7 +8,7 @@ import { MovementEntry } from "@/types/database";
 import { ConfirmModal } from "./ConfirmModal";
 import { DataReviewModal, ProcessedRow } from "./DataReviewModal";
 import { fetchSettings as fetchSettingsData, replaceMovements } from "@/lib/supabase-data";
-import { parseCustomDate, formatCustomDate } from "@/lib/utils";
+import { parseCustomDate, firstOfMonthDbDate } from "@/lib/utils";
 
 interface Props {
     movements: MovementEntry[];
@@ -72,7 +72,7 @@ export default function MovementsTable({ movements, onUpdate, selectedCategories
     const inputDateToCsvDate = (inputDate: string): string => {
         if (!inputDate) return "";
         const d = new Date(`${inputDate}T12:00:00Z`);
-        return formatCustomDate(d);
+        return firstOfMonthDbDate(d.getUTCFullYear(), d.getUTCMonth());
     };
 
     useEffect(() => {
