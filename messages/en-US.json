@@ -8,7 +8,8 @@
     "confirm": "Confirm",
     "understood": "Got it",
     "close": "Close",
-    "actions": "Actions"
+    "actions": "Actions",
+    "saving": "Saving..."
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -46,7 +47,12 @@
     "filterByClassAsset": "Filter by class or institution",
     "allClassifications": "All classes",
     "allInstitutions": "All institutions",
-    "allAssets": "All assets"
+    "allAssets": "All assets",
+    "institution": "Institution",
+    "asset": "Asset",
+    "nAssets": "{count} assets",
+    "evolutionByInstitution": "Evolution by Institution",
+    "institutionsSummary": "Summary by Institutions"
   },
   "settings": {
     "title": "Settings and Database",
@@ -162,7 +168,8 @@
     "interestEarned": "Interest Earned: {amount}",
     "projectedGrowth": "Projected Growth",
     "compoundInterest": "Compound Interest + Monthly Contributions",
-    "invested": "Invested"
+    "invested": "Invested",
+    "monthlyAdditionTooltip": "Suggested amount is based on (Net Worth change) − (Remaining budget). If change is negative, we use budget only. If budget is negative, default is $1,000."
   },
   "movements": {
     "title": "Movements",
@@ -194,6 +201,7 @@
     "actions": "Actions",
     "vsLastMonth": "vs last month",
     "fromLastMonth": "from last month",
+    "saveMovement": "Save Movement",
     "singleTab": "One Movement",
     "multipleTab": "Multiple Movements",
     "addNewLine": "Add Line",
@@ -201,7 +209,50 @@
     "dailyTrackingDesc": "Detailed cash flow: Inflows and Outflows",
     "netBalance": "Net Balance",
     "others": "Others",
-    "daysWithData": "Days with Data"
+    "daysWithData": "Days with Data",
+    "transactions": "Transactions"
+  },
+  "entry": {
+    "title": "New entry",
+    "portfolio": "Portfolio",
+    "income": "Income",
+    "expense": "Expense",
+    "whatToDo": "What do you want to do?",
+    "updatePortfolio": "Update portfolio",
+    "updatePortfolioDesc": "Edit last month’s values — fast monthly flow",
+    "incomeOrExpense": "Income or expense",
+    "incomeOrExpenseDesc": "Amount first, few taps",
+    "csvPortfolio": "Portfolio CSV",
+    "financialReader": "Financial Reader",
+    "importAI": "Import with AI",
+    "importAIDesc": "PDF / spreadsheet",
+    "orAddOneAsset": "Or add a new asset →",
+    "modeUpdate": "Update month",
+    "modeSingle": "One asset",
+    "modeBatch": "Several",
+    "modeCsv": "CSV",
+    "modeOne": "One",
+    "modeMany": "Several",
+    "snapshotMonth": "Snapshot month",
+    "month": "Month",
+    "lastRecord": "Last record: {date}. Enter the new values below.",
+    "prevYear": "Previous year",
+    "nextYear": "Next year",
+    "monthStoredAsFirst": "Saved as day 1 of {month}/{year}",
+    "saveAndAnother": "Save & another",
+    "errLoadLists": "Could not load your lists. Try again.",
+    "errFillAssetFields": "Fill classification, institution, and asset.",
+    "errValue": "Enter the amount.",
+    "errCsv": "Upload a valid CSV/JSON before saving.",
+    "errSave": "Could not save. Try again.",
+    "errDescription": "Enter a description.",
+    "errCategory": "Choose a category.",
+    "errMovementRows": "Add at least one movement with description and amount.",
+    "errUpdateValues": "Enter at least one new value to update the month.",
+    "errBatchValues": "Add at least one row with a value.",
+    "copyPrevValues": "Copy previous month values",
+    "addAnother": "Add another",
+    "addAnotherF": "Add another"
   },
   "filters": {
     "thisWeek": "This Week",
