@@ -85,6 +85,59 @@ export function formatCustomDate(date: Date): string {
     return `${day}/${month}/${year}`;
 }
 
+/** Calendar month key YYYY-MM (UTC). */
+export function monthKeyFromDate(date: Date): string {
+    if (isNaN(date.getTime())) return "";
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+}
+
+export function monthKeyFromDbDate(dateStr: string): string {
+    return monthKeyFromDate(parseCustomDate(dateStr));
+}
+
+/** Always day 1 of month — dashboard is month-based. */
+export function firstOfMonthDbDate(year: number, monthIndex: number): string {
+    return formatCustomDate(new Date(Date.UTC(year, monthIndex, 1, 12, 0, 0)));
+}
+
+export function firstOfMonthInputDate(year: number, monthIndex: number): string {
+    const m = String(monthIndex + 1).padStart(2, "0");
+    return `${year}-${m}-01`;
+}
+
+/** Force any DB date to the 1st of its month. */
+export function normalizeDbDateToMonthStart(dateStr: string): string {
+    const d = parseCustomDate(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return firstOfMonthDbDate(d.getUTCFullYear(), d.getUTCMonth());
+}
+
+/**
+ * One snapshot date per calendar month.
+ * Prefers day-1 rows; otherwise the latest date in that month.
+ * Fixes MoM when multiple mid-month uploads exist.
+ */
+export function pickMonthlySnapshotDates(dates: string[]): string[] {
+    const byMonth = new Map<string, string[]>();
+    for (const d of dates) {
+        const key = monthKeyFromDbDate(d);
+        if (!key) continue;
+        if (!byMonth.has(key)) byMonth.set(key, []);
+        byMonth.get(key)!.push(d);
+    }
+    const keys = Array.from(byMonth.keys()).sort();
+    return keys.map((key) => {
+        const group = byMonth.get(key)!;
+        const day1 = group.find((d) => parseCustomDate(d).getUTCDate() === 1);
+        if (day1) return day1;
+        return [...group].sort(
+            (a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime()
+        )[group.length - 1];
+    });
+}
+
 export function formatCurrency(value: number) {
     return new Intl.NumberFormat("en-US", {
         style: "currency",

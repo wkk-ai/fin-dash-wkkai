@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
-import { parseCustomDate } from "@/lib/utils";
+import { parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
 import DashboardSection from "@/components/DashboardSection";
 import ProjectionsSection from "@/components/ProjectionsSection";
 import { fetchNetWorth, fetchMovements } from "@/lib/supabase-data";
@@ -48,9 +48,8 @@ export default function Home() {
         or = income - expenses;
       }
 
-      // B. Net Worth Variation (VNW)
-      const uniqueDates = Array.from(new Set(dbData.map((d) => d.Date)));
-      uniqueDates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
+      // B. Net Worth Variation (VNW) — one snapshot per calendar month
+      const uniqueDates = pickMonthlySnapshotDates(Array.from(new Set(dbData.map((d) => d.Date))));
       const dateValues: Record<string, number> = {};
       dbData.forEach((d) => { dateValues[d.Date] = (dateValues[d.Date] || 0) + d.Value; });
       const latestDateStr = uniqueDates[uniqueDates.length - 1];
@@ -97,9 +96,8 @@ export default function Home() {
     return <div className="text-center py-20 text-slate-500 font-medium">{t("home.noData")}</div>;
   }
 
-  // Build date aggregates from data
-  const uniqueDates = Array.from(new Set(data.map((d) => d.Date)));
-  uniqueDates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
+  // Build date aggregates — one point per calendar month (fixes mid-month MoM)
+  const uniqueDates = pickMonthlySnapshotDates(Array.from(new Set(data.map((d) => d.Date))));
 
   const dateValues: Record<string, number> = {};
   data.forEach((d) => {

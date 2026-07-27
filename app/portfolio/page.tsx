@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
-import { parseCustomDate } from "@/lib/utils";
+import { parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
@@ -42,11 +42,9 @@ export default function Portfolio() {
             });
     }, []);
 
-    // Chart: unique dates + date objects (must run before early return for Rules of Hooks)
+    // Chart: one snapshot per calendar month
     const uniqueDates = useMemo(() => {
-        const dates = Array.from(new Set(data.map((d) => d.Date)));
-        dates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
-        return dates;
+        return pickMonthlySnapshotDates(Array.from(new Set(data.map((d) => d.Date))));
     }, [data]);
     const dateObjects = useMemo(() => {
         const obj: Record<string, Date> = {};
@@ -121,9 +119,10 @@ export default function Portfolio() {
     let prevDateStr: string | null = null;
     let allDates: string[] = [];
     if (data.length > 0) {
-        allDates = Array.from(new Set(data.map(d => d.Date)));
-        allDates.sort((a, b) => parseCustomDate(a).getTime() - parseCustomDate(b).getTime());
-        currentDateStr = selectedDateStr || allDates[allDates.length - 1];
+        allDates = pickMonthlySnapshotDates(Array.from(new Set(data.map(d => d.Date))));
+        currentDateStr = selectedDateStr && allDates.includes(selectedDateStr)
+            ? selectedDateStr
+            : allDates[allDates.length - 1];
         const currentIdx = allDates.indexOf(currentDateStr);
         prevDateStr = currentIdx > 0 ? allDates[currentIdx - 1] : null;
     }
@@ -315,8 +314,8 @@ export default function Portfolio() {
                                     <table className="w-full min-w-[700px] text-left border-collapse table-fixed">
                                         <thead>
                                             <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                                <th className="px-4 py-3 w-[20%] sm:w-[22%]">Instituição</th>
-                                                <th className="px-4 py-3 w-[18%] sm:w-[18%]">Ativo</th>
+                                                <th className="px-4 py-3 w-[20%] sm:w-[22%]">{t("portfolio.institution")}</th>
+                                                <th className="px-4 py-3 w-[18%] sm:w-[18%]">{t("portfolio.asset")}</th>
                                                 <th className="px-4 py-3 text-right w-[18%] sm:w-[15%]">{t("portfolio.currentValue")}</th>
                                                 <th className="px-4 py-3 text-right w-[14%] sm:w-[12%]">{t("portfolio.monthAbsVar")}</th>
                                                 <th className="px-4 py-3 text-right w-[10%] sm:w-[10%]">{t("portfolio.monthVar")}</th>
@@ -366,7 +365,7 @@ export default function Portfolio() {
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 py-4 text-slate-400 dark:text-slate-500 text-xs">
-                                                                {hasMultipleAssets ? (isExpanded ? "" : `${instAssets.length} ativos`) : instAssets[0]?.Asset}
+                                                                {hasMultipleAssets ? (isExpanded ? "" : t("portfolio.nAssets", { count: instAssets.length })) : instAssets[0]?.Asset}
                                                             </td>
                                                             <td className="px-4 py-4 text-right font-medium text-foreground">
                                                                 {formatCurrency(instTotal)}
@@ -461,7 +460,7 @@ export default function Portfolio() {
                     <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-5 fade-in duration-700 mt-4">
                         <div className="flex items-center gap-4">
                             <div className="h-px bg-border flex-1"></div>
-                            <h2 className="text-xl font-bold text-foreground">Evolução por Instituição</h2>
+                            <h2 className="text-xl font-bold text-foreground">{t("portfolio.evolutionByInstitution")}</h2>
                             <div className="h-px bg-border flex-1"></div>
                         </div>
 
@@ -469,7 +468,7 @@ export default function Portfolio() {
                             <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
                                 <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-[20px]">account_balance</span>
-                                    <h3 className="text-lg font-bold text-foreground">Resumo por Instituições</h3>
+                                    <h3 className="text-lg font-bold text-foreground">{t("portfolio.institutionsSummary")}</h3>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm">
                                     <span className="font-bold text-foreground">{formatCurrency(totalWealth)}</span>
@@ -501,11 +500,11 @@ export default function Portfolio() {
                                 <table className="w-full min-w-[700px] text-left border-collapse table-fixed">
                                     <thead>
                                         <tr className="bg-surface text-[10px] sm:text-xs uppercase text-slate-500 font-bold tracking-wider">
-                                            <th className="px-4 py-3 w-[25%] sm:w-[25%]">Instituição</th>
+                                            <th className="px-4 py-3 w-[25%] sm:w-[25%]">{t("portfolio.institution")}</th>
                                             <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.currentValue")}</th>
                                             <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.monthAbsVar")}</th>
                                             <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.monthVar")}</th>
-                                            <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">Peso Carteira</th>
+                                            <th className="px-4 py-3 text-right w-[15%] sm:w-[15%]">{t("portfolio.weightTotal")}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border text-xs sm:text-sm">
