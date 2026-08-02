@@ -1,43 +1,67 @@
 import { supabase } from './supabase';
 import { AssetEntry, MovementEntry, BudgetEntry, Settings } from '@/types/database';
 
-// ─── Net Worth (replaces /api/database) ────────────────────────────
-
-export async function fetchNetWorth(): Promise<AssetEntry[]> {
-  const { data, error } = await supabase
-    .from('net_worth')
-    .select('date, classification, institution, asset, value')
-    .order('date', { ascending: true });
-
-  if (error) throw error;
-  return (data || []).map(row => ({
+function mapNetWorthRow(row: {
+  date: string;
+  classification: string;
+  institution?: string | null;
+  product_type?: string | null;
+  asset: string;
+  value: number | string;
+}): AssetEntry {
+  const asset = row.asset || '';
+  const productType = (row.product_type && String(row.product_type).trim()) || asset;
+  return {
     Date: row.date,
     Classification: row.classification,
     Institution: row.institution || '',
-    Asset: row.asset,
+    ProductType: productType,
+    Asset: asset,
     Value: Number(row.value),
-  }));
+  };
 }
 
-export async function appendNetWorth(entry: AssetEntry): Promise<void> {
-  const { error } = await supabase.from('net_worth').insert({
+function toNetWorthInsert(entry: AssetEntry) {
+  const asset = entry.Asset || '';
+  const productType = (entry.ProductType || asset || '').trim() || asset;
+  return {
     date: entry.Date,
     classification: entry.Classification,
     institution: entry.Institution || '',
-    asset: entry.Asset,
+    product_type: productType,
+    asset,
     value: entry.Value,
-  });
+  };
+}
+
+// ─── Net Worth (replaces /api/database) ────────────────────────────
+
+export async function fetchNetWorth(): Promise<AssetEntry[]> {
+  const withProduct = await supabase
+    .from('net_worth')
+    .select('date, classification, institution, product_type, asset, value')
+    .order('date', { ascending: true });
+
+  if (!withProduct.error) {
+    return (withProduct.data || []).map(mapNetWorthRow);
+  }
+
+  // Pre-migration fallback (column not yet added)
+  const legacy = await supabase
+    .from('net_worth')
+    .select('date, classification, institution, asset, value')
+    .order('date', { ascending: true });
+  if (legacy.error) throw withProduct.error;
+  return (legacy.data || []).map(mapNetWorthRow);
+}
+
+export async function appendNetWorth(entry: AssetEntry): Promise<void> {
+  const { error } = await supabase.from('net_worth').insert(toNetWorthInsert(entry));
   if (error) throw error;
 }
 
 export async function appendNetWorthBatch(entries: AssetEntry[]): Promise<void> {
-  const rows = entries.map(e => ({
-    date: e.Date,
-    classification: e.Classification,
-    institution: e.Institution || '',
-    asset: e.Asset,
-    value: e.Value,
-  }));
+  const rows = entries.map(toNetWorthInsert);
   const { error } = await supabase.from('net_worth').insert(rows);
   if (error) throw error;
 }
@@ -136,14 +160,18 @@ export async function replaceBudgets(entries: BudgetEntry[]): Promise<void> {
 
 export async function fetchSettings(): Promise<Settings> {
   // Get unique values from data tables
-  const [nwRes, movRes, tagsRes] = await Promise.all([
-    supabase.from('net_worth').select('classification, institution, asset'),
+  let nwRes = await supabase.from('net_worth').select('classification, institution, product_type, asset');
+  if (nwRes.error) {
+    nwRes = await supabase.from('net_worth').select('classification, institution, asset');
+  }
+  const [movRes, tagsRes] = await Promise.all([
     supabase.from('movements').select('category, type'),
     supabase.from('custom_tags').select('tag_type, value'),
   ]);
 
   const dbClassifications = new Set<string>();
   const dbInstitutions = new Set<string>();
+  const dbProductTypes = new Set<string>();
   const dbAssets = new Set<string>();
   const dbIncomeCategories = new Set<string>();
   const dbExpenseCategories = new Set<string>();
@@ -151,6 +179,8 @@ export async function fetchSettings(): Promise<Settings> {
   (nwRes.data || []).forEach(row => {
     if (row.classification) dbClassifications.add(row.classification);
     if (row.institution) dbInstitutions.add(row.institution);
+    const pt = (row.product_type && String(row.product_type).trim()) || row.asset;
+    if (pt) dbProductTypes.add(pt);
     if (row.asset) dbAssets.add(row.asset);
   });
 
@@ -166,6 +196,7 @@ export async function fetchSettings(): Promise<Settings> {
     switch (tag.tag_type) {
       case 'classification': dbClassifications.add(tag.value); break;
       case 'institution': dbInstitutions.add(tag.value); break;
+      case 'product_type': dbProductTypes.add(tag.value); break;
       case 'asset': dbAssets.add(tag.value); break;
       case 'income_category': dbIncomeCategories.add(tag.value); break;
       case 'expense_category': dbExpenseCategories.add(tag.value); break;
@@ -175,6 +206,7 @@ export async function fetchSettings(): Promise<Settings> {
   return {
     classifications: Array.from(dbClassifications).sort(),
     institutions: Array.from(dbInstitutions).sort(),
+    productTypes: Array.from(dbProductTypes).sort(),
     assets: Array.from(dbAssets).sort(),
     incomeCategories: Array.from(dbIncomeCategories).sort(),
     expenseCategories: Array.from(dbExpenseCategories).sort(),
@@ -183,16 +215,22 @@ export async function fetchSettings(): Promise<Settings> {
 
 export async function saveCustomTags(tagType: string, values: string[]): Promise<void> {
   // Get values from the data tables to exclude them (only save custom ones)
-  const [nwRes, movRes] = await Promise.all([
-    supabase.from('net_worth').select('classification, institution, asset'),
-    supabase.from('movements').select('category, type'),
-  ]);
+  let nwRes = await supabase.from('net_worth').select('classification, institution, product_type, asset');
+  if (nwRes.error) {
+    nwRes = await supabase.from('net_worth').select('classification, institution, asset');
+  }
+  const movRes = await supabase.from('movements').select('category, type');
 
   const dbValues = new Set<string>();
   if (tagType === 'classification') {
     (nwRes.data || []).forEach(r => { if (r.classification) dbValues.add(r.classification); });
   } else if (tagType === 'institution') {
     (nwRes.data || []).forEach(r => { if (r.institution) dbValues.add(r.institution); });
+  } else if (tagType === 'product_type') {
+    (nwRes.data || []).forEach(r => {
+      const pt = (r.product_type && String(r.product_type).trim()) || r.asset;
+      if (pt) dbValues.add(pt);
+    });
   } else if (tagType === 'asset') {
     (nwRes.data || []).forEach(r => { if (r.asset) dbValues.add(r.asset); });
   } else if (tagType === 'income_category') {

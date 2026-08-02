@@ -170,6 +170,7 @@ export default function AIImportModal({ onClose }: Props) {
                             Date: normalizedDate,
                             Classification: r.Classification || "",
                             Institution: "",
+                            ProductType: r.Asset || "",
                             Asset: r.Asset || "",
                             Value: r.Value
                         };
@@ -200,6 +201,7 @@ export default function AIImportModal({ onClose }: Props) {
                             Date: normalizedDate,
                             Classification: r.Classification || "",
                             Institution: "",
+                            ProductType: r.Asset || "",
                             Asset: r.Asset || "",
                             Value: r.Value,
                         });

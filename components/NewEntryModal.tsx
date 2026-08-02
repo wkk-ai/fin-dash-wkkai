@@ -40,10 +40,78 @@ type AssetDraft = {
   id: string;
   Classification: string;
   Institution: string;
+  ProductType: string;
   Asset: string;
   Value: number;
   prevValue?: number;
 };
+
+type AssetRelations = ReturnType<typeof buildAssetRelations>;
+
+function assetEntryKey(row: {
+  Classification: string;
+  Institution: string;
+  ProductType?: string;
+  Asset: string;
+}): string {
+  const inst = row.Institution || row.Asset;
+  const pt = row.ProductType || row.Asset;
+  return `${row.Classification}|${inst}|${pt}|${row.Asset}`;
+}
+
+function filterProductTypesForRow(
+  productTypes: string[],
+  relations: AssetRelations,
+  institution: string,
+  classification: string
+): string[] {
+  let pool = productTypes;
+  if (institution) {
+    const set = relations.productTypesByInstitution[institution];
+    if (set && set.size > 0) {
+      const narrowed = productTypes.filter((p) => set.has(p));
+      if (narrowed.length) pool = narrowed;
+    }
+  }
+  if (classification) {
+    const set = relations.productTypesByClass[classification];
+    if (set && set.size > 0) {
+      const narrowed = pool.filter((p) => set.has(p));
+      if (narrowed.length) pool = narrowed;
+    }
+  }
+  return pool;
+}
+
+function filterAssetsForRow(
+  assets: string[],
+  relations: AssetRelations,
+  productType: string,
+  institution: string,
+  classification: string
+): string[] {
+  let pool = assets;
+  if (productType) {
+    const set = relations.assetsByProductType[productType];
+    if (set && set.size > 0) {
+      const narrowed = assets.filter((a) => set.has(a));
+      if (narrowed.length) pool = narrowed;
+    }
+  } else if (institution) {
+    const set = relations.assetsByInstitution[institution];
+    if (set && set.size > 0) {
+      const narrowed = assets.filter((a) => set.has(a));
+      if (narrowed.length) pool = narrowed;
+    }
+  } else if (classification) {
+    const set = relations.assetsByClass[classification];
+    if (set && set.size > 0) {
+      const narrowed = assets.filter((a) => set.has(a));
+      if (narrowed.length) pool = narrowed;
+    }
+  }
+  return pool;
+}
 
 type MovementDraft = {
   id: string;
@@ -87,6 +155,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
 
   const [classifications, setClassifications] = useState<string[]>([]);
   const [institutions, setInstitutions] = useState<string[]>([]);
+  const [productTypes, setProductTypes] = useState<string[]>([]);
   const [assets, setAssets] = useState<string[]>([]);
   const [incomeCategories, setIncomeCategories] = useState<string[]>([]);
   const [expenseCategories, setExpenseCategories] = useState<string[]>([]);
@@ -97,6 +166,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
   const [singleAsset, setSingleAsset] = useState({
     Classification: "",
     Institution: "",
+    ProductType: "",
     Asset: "",
     Value: 0,
   });
@@ -148,9 +218,11 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
       .then(([settings, netWorth]) => {
         const sortedClasses = (settings.classifications || []).sort((a, b) => a.localeCompare(b));
         const sortedInstitutions = (settings.institutions || []).sort((a, b) => a.localeCompare(b));
+        const sortedProductTypes = (settings.productTypes || []).sort((a, b) => a.localeCompare(b));
         const sortedAssets = (settings.assets || []).sort((a, b) => a.localeCompare(b));
         setClassifications(sortedClasses);
         setInstitutions(sortedInstitutions);
+        setProductTypes(sortedProductTypes);
         setAssets(sortedAssets);
         setIncomeCategories(settings.incomeCategories || []);
         setExpenseCategories(settings.expenseCategories || []);
@@ -160,6 +232,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         setSingleAsset({
           Classification: mem.classification || "",
           Institution: mem.institution || "",
+          ProductType: mem.productType || "",
           Asset: mem.asset || "",
           Value: 0,
         });
@@ -187,11 +260,11 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
 
     const refMap = new Map<string, AssetEntry>();
     (ref?.assets || []).forEach((a) => {
-      refMap.set(`${a.Classification}|${a.Institution || a.Asset}|${a.Asset}`, a);
+      refMap.set(assetEntryKey(a), a);
     });
     const existingMap = new Map<string, AssetEntry>();
     existing.forEach((a) => {
-      existingMap.set(`${a.Classification}|${a.Institution || a.Asset}|${a.Asset}`, a);
+      existingMap.set(assetEntryKey(a), a);
     });
 
     const keys = new Set([...refMap.keys(), ...existingMap.keys()]);
@@ -201,6 +274,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
           id: newRowId(),
           Classification: "",
           Institution: "",
+          ProductType: "",
           Asset: "",
           Value: 0,
         },
@@ -216,6 +290,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         id: newRowId(),
         Classification: base.Classification,
         Institution: base.Institution || base.Asset,
+        ProductType: base.ProductType || base.Asset,
         Asset: base.Asset,
         Value: cur ? cur.Value : 0,
         prevValue: prev ? prev.Value : undefined,
@@ -259,25 +334,39 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
       : institutions;
   }, [singleAsset.Classification, institutions, relations]);
 
-  const filteredAssets = useMemo(() => {
-    let pool = assets;
-    if (singleAsset.Institution) {
-      const set = relations.assetsByInstitution[singleAsset.Institution];
-      if (set && set.size > 0) {
-        const list = Array.from(set);
-        const narrowed = assets.filter((a) => list.includes(a));
-        if (narrowed.length) pool = narrowed;
-      }
-    } else if (singleAsset.Classification) {
-      const set = relations.assetsByClass[singleAsset.Classification];
-      if (set && set.size > 0) {
-        const list = Array.from(set);
-        const narrowed = assets.filter((a) => list.includes(a));
-        if (narrowed.length) pool = narrowed;
-      }
-    }
-    return pool;
-  }, [singleAsset.Institution, singleAsset.Classification, assets, relations]);
+  const filteredProductTypes = useMemo(
+    () =>
+      filterProductTypesForRow(
+        productTypes,
+        relations,
+        singleAsset.Institution,
+        singleAsset.Classification
+      ),
+    [singleAsset.Institution, singleAsset.Classification, productTypes, relations]
+  );
+
+  const filteredAssets = useMemo(
+    () =>
+      filterAssetsForRow(
+        assets,
+        relations,
+        singleAsset.ProductType,
+        singleAsset.Institution,
+        singleAsset.Classification
+      ),
+    [
+      singleAsset.ProductType,
+      singleAsset.Institution,
+      singleAsset.Classification,
+      assets,
+      relations,
+    ]
+  );
+
+  const productTypeLabel =
+    t("entry.productType") !== "entry.productType"
+      ? t("entry.productType")
+      : t("settings.productType");
 
   const categories =
     movimentacaoType === "Income" ? incomeCategories : expenseCategories;
@@ -341,10 +430,16 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
     }
   };
 
-  const rememberPortfolio = (row: { Classification: string; Institution: string; Asset: string }) => {
+  const rememberPortfolio = (row: {
+    Classification: string;
+    Institution: string;
+    ProductType?: string;
+    Asset: string;
+  }) => {
     saveEntryMemory({
       classification: row.Classification,
       institution: row.Institution,
+      productType: row.ProductType || row.Asset,
       asset: row.Asset,
     });
   };
@@ -374,6 +469,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
           Date: dateDb,
           Classification: singleAsset.Classification,
           Institution: singleAsset.Institution,
+          ProductType: singleAsset.ProductType || singleAsset.Asset,
           Asset: singleAsset.Asset,
           Value: singleAsset.Value,
         };
@@ -413,6 +509,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
           Date: dateDb,
           Classification: r.Classification,
           Institution: r.Institution,
+          ProductType: r.ProductType || r.Asset,
           Asset: r.Asset,
           Value: r.Value,
         }));
@@ -549,6 +646,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
         id: newRowId(),
         Classification: loadEntryMemory().classification || classifications[0] || "",
         Institution: loadEntryMemory().institution || "",
+        ProductType: loadEntryMemory().productType || "",
         Asset: "",
         Value: 0,
       },
@@ -807,46 +905,36 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                         showSpinner={false}
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className={labelClass}>Ativo</label>
-                      <CustomCombobox
-                        options={filteredAssets}
-                        value={singleAsset.Asset}
-                        onChange={(val) => {
-                          const guessClass =
-                            relations.classByAssetInst[
-                              `${singleAsset.Institution}::${val}`
-                            ] || singleAsset.Classification;
-                          setSingleAsset((p) => ({
-                            ...p,
-                            Asset: val,
-                            Classification: guessClass || p.Classification,
-                          }));
-                        }}
-                        placeholder="Ex: Cofrinhos"
-                        className={fieldClass}
-                      />
-                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className={labelClass}>Instituição</label>
+                        <label className={labelClass}>{t("portfolio.institution")}</label>
                         <CustomCombobox
                           options={filteredInstitutions}
                           value={singleAsset.Institution}
                           onChange={(val) =>
-                            setSingleAsset((p) => ({
-                              ...p,
-                              Institution: val,
-                              Asset:
-                                relations.assetsByInstitution[val]?.has(p.Asset) ? p.Asset : "",
-                            }))
+                            setSingleAsset((p) => {
+                              const ptSet = relations.productTypesByInstitution[val];
+                              const keepPt =
+                                p.ProductType && ptSet?.has(p.ProductType) ? p.ProductType : "";
+                              const assetPool = keepPt
+                                ? relations.assetsByProductType[keepPt]
+                                : relations.assetsByInstitution[val];
+                              const keepAsset =
+                                p.Asset && assetPool?.has(p.Asset) ? p.Asset : "";
+                              return {
+                                ...p,
+                                Institution: val,
+                                ProductType: keepPt,
+                                Asset: keepAsset,
+                              };
+                            })
                           }
                           placeholder="Ex: Nubank"
                           className={fieldClass}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className={labelClass}>Classificação</label>
+                        <label className={labelClass}>{t("settings.classification")}</label>
                         <CustomCombobox
                           options={classifications}
                           value={singleAsset.Classification}
@@ -857,6 +945,48 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                           className={fieldClass}
                         />
                       </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>{productTypeLabel}</label>
+                      <CustomCombobox
+                        options={filteredProductTypes}
+                        value={singleAsset.ProductType}
+                        onChange={(val) =>
+                          setSingleAsset((p) => {
+                            const assetSet = relations.assetsByProductType[val];
+                            const keepAsset =
+                              p.Asset && assetSet?.has(p.Asset) ? p.Asset : "";
+                            return { ...p, ProductType: val, Asset: keepAsset };
+                          })
+                        }
+                        placeholder={productTypeLabel}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>{t("portfolio.asset")}</label>
+                      <CustomCombobox
+                        options={filteredAssets}
+                        value={singleAsset.Asset}
+                        onChange={(val) => {
+                          const pt = singleAsset.ProductType || val;
+                          const guessClass =
+                            relations.classByAssetInst[
+                              `${singleAsset.Institution}::${pt}::${val}`
+                            ] ||
+                            relations.classByAssetInst[
+                              `${singleAsset.Institution}::${val}`
+                            ] ||
+                            singleAsset.Classification;
+                          setSingleAsset((p) => ({
+                            ...p,
+                            Asset: val,
+                            Classification: guessClass || p.Classification,
+                          }));
+                        }}
+                        placeholder="Ex: Cofrinhos"
+                        className={fieldClass}
+                      />
                     </div>
                   </div>
                 )}
@@ -872,7 +1002,21 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                         {t("entry.copyPrevValues")}
                       </button>
                     )}
-                    {assetDrafts.map((row) => (
+                    {assetDrafts.map((row) => {
+                      const rowProductTypes = filterProductTypesForRow(
+                        productTypes,
+                        relations,
+                        row.Institution,
+                        row.Classification
+                      );
+                      const rowAssets = filterAssetsForRow(
+                        assets,
+                        relations,
+                        row.ProductType,
+                        row.Institution,
+                        row.Classification
+                      );
+                      return (
                       <div
                         key={row.id}
                         className="rounded-2xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3"
@@ -881,7 +1025,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                           <>
                             <div className="flex justify-between gap-2">
                               <CustomCombobox
-                                options={assets}
+                                options={rowAssets}
                                 value={row.Asset}
                                 onChange={(val) =>
                                   setAssetDrafts((rows) =>
@@ -890,7 +1034,7 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                                     )
                                   )
                                 }
-                                placeholder="Ativo"
+                                placeholder={t("portfolio.asset")}
                                 className={fieldClass}
                               />
                               {assetDrafts.length > 1 && (
@@ -911,12 +1055,28 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                                 value={row.Institution}
                                 onChange={(val) =>
                                   setAssetDrafts((rows) =>
-                                    rows.map((r) =>
-                                      r.id === row.id ? { ...r, Institution: val } : r
-                                    )
+                                    rows.map((r) => {
+                                      if (r.id !== row.id) return r;
+                                      const ptSet = relations.productTypesByInstitution[val];
+                                      const keepPt =
+                                        r.ProductType && ptSet?.has(r.ProductType)
+                                          ? r.ProductType
+                                          : "";
+                                      const assetPool = keepPt
+                                        ? relations.assetsByProductType[keepPt]
+                                        : relations.assetsByInstitution[val];
+                                      const keepAsset =
+                                        r.Asset && assetPool?.has(r.Asset) ? r.Asset : "";
+                                      return {
+                                        ...r,
+                                        Institution: val,
+                                        ProductType: keepPt,
+                                        Asset: keepAsset,
+                                      };
+                                    })
                                   )
                                 }
-                                placeholder="Instituição"
+                                placeholder={t("portfolio.institution")}
                                 className={fieldClass}
                               />
                               <CustomCombobox
@@ -929,27 +1089,59 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                                     )
                                   )
                                 }
-                                placeholder="Classe"
+                                placeholder={t("settings.classification")}
                                 className={fieldClass}
                               />
                             </div>
+                            <CustomCombobox
+                              options={rowProductTypes}
+                              value={row.ProductType}
+                              onChange={(val) =>
+                                setAssetDrafts((rows) =>
+                                  rows.map((r) => {
+                                    if (r.id !== row.id) return r;
+                                    const assetSet = relations.assetsByProductType[val];
+                                    const keepAsset =
+                                      r.Asset && assetSet?.has(r.Asset) ? r.Asset : "";
+                                    return { ...r, ProductType: val, Asset: keepAsset };
+                                  })
+                                )
+                              }
+                              placeholder={productTypeLabel}
+                              className={fieldClass}
+                            />
                           </>
                         ) : (
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="font-bold text-foreground truncate">{row.Asset}</p>
-                              <p className="text-xs text-slate-500 truncate">
-                                {row.Institution} · {row.Classification}
-                              </p>
-                              {row.prevValue != null && (
-                                <p className="text-[11px] text-slate-400 mt-1">
-                                  {t("entry.beforeLabel", {
-                                    amount: formatCurrency(row.prevValue),
-                                    date: lastSnapshotLabel || "—",
-                                  })}
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="font-bold text-foreground truncate">{row.Asset}</p>
+                                <p className="text-xs text-slate-500 truncate">
+                                  {row.Institution} · {row.Classification}
                                 </p>
-                              )}
+                                {row.prevValue != null && (
+                                  <p className="text-[11px] text-slate-400 mt-1">
+                                    {t("entry.beforeLabel", {
+                                      amount: formatCurrency(row.prevValue),
+                                      date: lastSnapshotLabel || "—",
+                                    })}
+                                  </p>
+                                )}
+                              </div>
                             </div>
+                            <CustomCombobox
+                              options={rowProductTypes}
+                              value={row.ProductType}
+                              onChange={(val) =>
+                                setAssetDrafts((rows) =>
+                                  rows.map((r) =>
+                                    r.id === row.id ? { ...r, ProductType: val } : r
+                                  )
+                                )
+                              }
+                              placeholder={productTypeLabel}
+                              className={fieldClass}
+                            />
                           </div>
                         )}
                         <FormattedNumberInput
@@ -964,7 +1156,8 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
                           showSpinner={false}
                         />
                       </div>
-                    ))}
+                    );
+                    })}
                     {portfolioMode === "batch" && (
                       <button
                         type="button"

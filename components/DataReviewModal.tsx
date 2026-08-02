@@ -15,6 +15,8 @@ export interface ProcessedRow {
     Category: string;
     Value: number;
     Classification?: string;
+    Institution?: string;
+    ProductType?: string;
     Asset?: string;
 }
 

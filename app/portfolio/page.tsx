@@ -9,24 +9,66 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCo
 import { useChartBrush } from "@/lib/useChartBrush";
 import { fetchNetWorth } from "@/lib/supabase-data";
 
+type ProductGroup = { product: string; assets: AssetEntry[]; total: number };
+type InstitutionHierarchy = { institution: string; products: ProductGroup[]; assets: AssetEntry[]; total: number };
+
+const resolveProductType = (entry: AssetEntry) => entry.ProductType || entry.Asset;
+const resolveInstitution = (entry: AssetEntry) => entry.Institution || entry.Asset;
+
+function buildInstitutionHierarchy(assets: AssetEntry[]): InstitutionHierarchy[] {
+    const byInst: Record<string, Record<string, AssetEntry[]>> = {};
+    assets.forEach((asset) => {
+        const inst = resolveInstitution(asset);
+        const product = resolveProductType(asset);
+        if (!byInst[inst]) byInst[inst] = {};
+        if (!byInst[inst][product]) byInst[inst][product] = [];
+        byInst[inst][product].push(asset);
+    });
+    return Object.entries(byInst)
+        .map(([institution, productMap]) => {
+            const products = Object.entries(productMap)
+                .map(([product, prodAssets]) => ({
+                    product,
+                    assets: prodAssets.sort((a, b) => b.Value - a.Value),
+                    total: prodAssets.reduce((s, a) => s + a.Value, 0),
+                }))
+                .sort((a, b) => b.total - a.total);
+            const allAssets = products.flatMap((p) => p.assets);
+            return { institution, products, assets: allAssets, total: allAssets.reduce((s, a) => s + a.Value, 0) };
+        })
+        .sort((a, b) => b.total - a.total);
+}
+
+const isInstitutionExpandable = (products: ProductGroup[], assetCount: number) =>
+    products.length > 1 || assetCount > 1;
+const isProductExpandable = (assets: AssetEntry[]) => assets.length > 1;
+
 export default function Portfolio() {
     const { t, formatCurrency } = useTranslation();
     const { resolvedTheme } = useTheme();
     const [data, setData] = useState<AssetEntry[]>([]);
     const [filterClassification, setFilterClassification] = useState<string>("");
     const [filterInstitution, setFilterInstitution] = useState<string>("");
+    const [filterProductType, setFilterProductType] = useState<string>("");
     const [filterAsset, setFilterAsset] = useState<string>("");
     const [selectedDateStr, setSelectedDateStr] = useState<string>("");
 
     const setClassification = (v: string) => {
         setFilterClassification(v);
-        setFilterInstitution(""); // reset institution when class changes
-        setFilterAsset(""); // reset asset when class changes
+        setFilterInstitution("");
+        setFilterProductType("");
+        setFilterAsset("");
     };
 
     const setInstitution = (v: string) => {
         setFilterInstitution(v);
-        setFilterAsset(""); // reset asset when institution changes
+        setFilterProductType("");
+        setFilterAsset("");
+    };
+
+    const setProductTypeFilter = (v: string) => {
+        setFilterProductType(v);
+        setFilterAsset("");
     };
     const [loading, setLoading] = useState(true);
 
@@ -56,7 +98,8 @@ export default function Portfolio() {
             const filtered = data.filter((d) => {
                 if (d.Date !== dateStr) return false;
                 if (filterClassification && d.Classification !== filterClassification) return false;
-                if (filterInstitution && d.Institution !== filterInstitution && d.Asset !== filterInstitution) return false;
+                if (filterInstitution && resolveInstitution(d) !== filterInstitution) return false;
+                if (filterProductType && resolveProductType(d) !== filterProductType) return false;
                 if (filterAsset && d.Asset !== filterAsset) return false;
                 return true;
             });
@@ -66,14 +109,25 @@ export default function Portfolio() {
                 value,
             };
         });
-    }, [data, uniqueDates, dateObjects, filterClassification, filterInstitution, filterAsset]);
+    }, [data, uniqueDates, dateObjects, filterClassification, filterInstitution, filterProductType, filterAsset]);
     const classifications = useMemo(() => Array.from(new Set(data.map((d) => d.Classification))).sort(), [data]);
     const institutionsList = useMemo(() => {
         const filtered = filterClassification
             ? data.filter((d) => d.Classification === filterClassification)
             : data;
-        return Array.from(new Set(filtered.map((d) => d.Institution || d.Asset))).sort();
+        return Array.from(new Set(filtered.map((d) => resolveInstitution(d)))).sort();
     }, [data, filterClassification]);
+
+    const productTypesList = useMemo(() => {
+        let filtered = data;
+        if (filterClassification) {
+            filtered = filtered.filter((d) => d.Classification === filterClassification);
+        }
+        if (filterInstitution) {
+            filtered = filtered.filter((d) => resolveInstitution(d) === filterInstitution);
+        }
+        return Array.from(new Set(filtered.map((d) => resolveProductType(d)))).sort();
+    }, [data, filterClassification, filterInstitution]);
 
     const assetsList = useMemo(() => {
         let filtered = data;
@@ -81,10 +135,13 @@ export default function Portfolio() {
             filtered = filtered.filter((d) => d.Classification === filterClassification);
         }
         if (filterInstitution) {
-            filtered = filtered.filter((d) => (d.Institution || d.Asset) === filterInstitution);
+            filtered = filtered.filter((d) => resolveInstitution(d) === filterInstitution);
+        }
+        if (filterProductType) {
+            filtered = filtered.filter((d) => resolveProductType(d) === filterProductType);
         }
         return Array.from(new Set(filtered.map((d) => d.Asset))).sort();
-    }, [data, filterClassification, filterInstitution]);
+    }, [data, filterClassification, filterInstitution, filterProductType]);
 
     const isDark = resolvedTheme === "dark";
     const portfolioBrush = useChartBrush(chartData, "value");
@@ -95,10 +152,18 @@ export default function Portfolio() {
     const tooltipLabelColor = isDark ? "#94a3b8" : "#64748b";
     const tooltipTextColor = isDark ? "var(--foreground)" : "#0f172a";
 
-    // Expand/collapse state for institutions (collapsed by default)
     const [expandedInstitutions, setExpandedInstitutions] = useState<Set<string>>(new Set());
+    const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
     const toggleInstitution = (key: string) => {
         setExpandedInstitutions(prev => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+    const toggleProduct = (key: string) => {
+        setExpandedProducts(prev => {
             const next = new Set(prev);
             if (next.has(key)) next.delete(key);
             else next.add(key);
@@ -132,10 +197,29 @@ export default function Portfolio() {
 
     const getPrevValue = (asset: AssetEntry) => {
         if (!prevDateStr) return null;
+        const productType = resolveProductType(asset);
         const prev = data.find(
-            d => d.Date === prevDateStr && d.Institution === asset.Institution && d.Asset === asset.Asset && d.Classification === asset.Classification
+            d => d.Date === prevDateStr
+                && d.Institution === asset.Institution
+                && d.Asset === asset.Asset
+                && d.Classification === asset.Classification
+                && resolveProductType(d) === productType
         );
         return prev ? prev.Value : null;
+    };
+
+    const calcGroupVariation = (groupAssets: AssetEntry[]) => {
+        const total = groupAssets.reduce((sum, a) => sum + a.Value, 0);
+        const prevTotal = groupAssets.reduce((sum, a) => {
+            const pv = getPrevValue(a);
+            return sum + (pv ?? 0);
+        }, 0);
+        const hasPrev = groupAssets.some((a) => getPrevValue(a) !== null);
+        return {
+            total,
+            variation: hasPrev ? total - prevTotal : null,
+            variationPct: hasPrev && prevTotal > 0 ? ((total - prevTotal) / prevTotal) * 100 : null,
+        };
     };
 
     const formatAbbreviated = (num: number) => {
@@ -181,7 +265,7 @@ export default function Portfolio() {
 
     const institutionGroupedTotals: Record<string, AssetEntry[]> = {};
     currentAssets.forEach((asset) => {
-        const inst = asset.Institution || asset.Asset;
+        const inst = resolveInstitution(asset);
         if (!institutionGroupedTotals[inst]) {
             institutionGroupedTotals[inst] = [];
         }
@@ -190,17 +274,11 @@ export default function Portfolio() {
 
     const prevInstTotals: Record<string, number> = {};
     previousAssets.forEach((asset) => {
-        const inst = asset.Institution || asset.Asset;
+        const inst = resolveInstitution(asset);
         prevInstTotals[inst] = (prevInstTotals[inst] || 0) + asset.Value;
     });
 
-    const sortedInstGrouped = Object.entries(institutionGroupedTotals)
-        .map(([institution, assets]) => ({
-            institution,
-            assets: assets.sort((a, b) => b.Value - a.Value),
-            total: assets.reduce((sum, item) => sum + item.Value, 0),
-        }))
-        .sort((a, b) => b.total - a.total);
+    const sortedInstGrouped = buildInstitutionHierarchy(currentAssets);
 
     return (
         <div className="mx-auto max-w-7xl flex flex-col gap-8">
@@ -258,20 +336,14 @@ export default function Portfolio() {
                             return sum + (prev !== null ? asset.Value - prev : 0);
                         }, 0) : null);
 
-                        // Group assets by institution within this classification
-                        const institutionGrouped: Record<string, AssetEntry[]> = {};
-                        assets.forEach(asset => {
-                            const inst = asset.Institution || asset.Asset;
-                            if (!institutionGrouped[inst]) institutionGrouped[inst] = [];
-                            institutionGrouped[inst].push(asset);
-                        });
-                        const sortedInstitutions = Object.entries(institutionGrouped)
-                            .map(([inst, instAssets]) => ({
-                                institution: inst,
-                                assets: instAssets.sort((a, b) => b.Value - a.Value),
-                                total: instAssets.reduce((sum, a) => sum + a.Value, 0),
-                            }))
-                            .sort((a, b) => b.total - a.total);
+                        const sortedInstitutions = buildInstitutionHierarchy(assets);
+
+                        const renderAssetVariation = (asset: AssetEntry) => {
+                            const prevValue = getPrevValue(asset);
+                            const variation = prevValue !== null ? asset.Value - prevValue : null;
+                            const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+                            return { prevValue, variation, variationPct };
+                        };
 
                         return (
                             <div key={classification} className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
@@ -311,32 +383,27 @@ export default function Portfolio() {
                                     </div>
                                 </div>
                                 <div className="sm:hidden p-4 space-y-3">
-                                    {sortedInstitutions.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                    {sortedInstitutions.map(({ institution, products, assets: instAssets, total: instTotal }) => {
                                         const instKey = `${classification}-${institution}`;
-                                        const isExpanded = expandedInstitutions.has(instKey);
-                                        const hasMultipleAssets = instAssets.length > 1;
+                                        const isInstExpanded = expandedInstitutions.has(instKey);
+                                        const instExpandable = isInstitutionExpandable(products, instAssets.length);
                                         const instWeightInClass = classTotal > 0 ? (instTotal / classTotal) * 100 : 0;
                                         const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
-                                        const instPrevTotal = instAssets.reduce((sum, a) => {
-                                            const pv = getPrevValue(a);
-                                            return sum + (pv ?? 0);
-                                        }, 0);
-                                        const instHasPrev = instAssets.some(a => getPrevValue(a) !== null);
-                                        const instVariation = instHasPrev ? instTotal - instPrevTotal : null;
-                                        const instVariationPct = instHasPrev && instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
+                                        const { variation: instVariation, variationPct: instVariationPct } = calcGroupVariation(instAssets);
+                                        const singleAsset = instAssets.length === 1 ? instAssets[0] : null;
 
                                         return (
                                             <div
                                                 key={instKey}
-                                                className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${hasMultipleAssets ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
-                                                onClick={() => hasMultipleAssets && toggleInstitution(instKey)}
+                                                className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${instExpandable ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
+                                                onClick={() => instExpandable && toggleInstitution(instKey)}
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-center gap-2 min-w-0">
-                                                        {hasMultipleAssets && (
+                                                        {instExpandable && (
                                                             <span
                                                                 className="material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0"
-                                                                style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+                                                                style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
                                                             >
                                                                 chevron_right
                                                             </span>
@@ -346,9 +413,9 @@ export default function Portfolio() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <p className="text-sm font-semibold text-foreground truncate">{institution}</p>
-                                                            {!hasMultipleAssets ? (
-                                                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{instAssets[0]?.Asset}</p>
-                                                            ) : !isExpanded ? (
+                                                            {!instExpandable && singleAsset ? (
+                                                                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{singleAsset.Asset}</p>
+                                                            ) : !isInstExpanded ? (
                                                                 <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.nAssets", { count: instAssets.length })}</p>
                                                             ) : null}
                                                         </div>
@@ -385,34 +452,70 @@ export default function Portfolio() {
                                                         <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInTotal.toFixed(1)}%</p>
                                                     </div>
                                                 </div>
-                                                {isExpanded && hasMultipleAssets && (
+                                                {isInstExpanded && instExpandable && (
                                                     <div className="pt-2 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                        {instAssets.map((asset, idx) => {
-                                                            const prevValue = getPrevValue(asset);
-                                                            const variation = prevValue !== null ? asset.Value - prevValue : null;
-                                                            const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+                                                        {products.map(({ product, assets: prodAssets, total: prodTotal }) => {
+                                                            const productKey = `${instKey}-${product}`;
+                                                            const isProdExpanded = expandedProducts.has(productKey);
+                                                            const prodExpandable = isProductExpandable(prodAssets);
+                                                            const { variation: prodVariation, variationPct: prodVariationPct } = calcGroupVariation(prodAssets);
 
                                                             return (
-                                                                <div key={`${instKey}-m-${asset.Asset}-${idx}`} className="flex items-center justify-between gap-2 py-1.5">
-                                                                    <div className="flex items-center gap-2 min-w-0">
-                                                                        <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
-                                                                            {asset.Asset.charAt(0).toUpperCase()}
-                                                                        </div>
-                                                                        <span className="text-xs font-medium text-foreground/80 truncate">{asset.Asset}</span>
-                                                                    </div>
-                                                                    <div className="text-right shrink-0">
-                                                                        <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(asset.Value)}</p>
-                                                                        <p className="text-[10px] tabular-nums">
-                                                                            {variation !== null ? (
-                                                                                <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
-                                                                                    {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                                    {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                <div key={productKey} className="space-y-1.5">
+                                                                    <div
+                                                                        className={`flex items-center justify-between gap-2 py-1.5 ${prodExpandable ? "cursor-pointer" : ""}`}
+                                                                        onClick={() => prodExpandable && toggleProduct(productKey)}
+                                                                    >
+                                                                        <div className="flex items-center gap-2 min-w-0">
+                                                                            {prodExpandable && (
+                                                                                <span
+                                                                                    className="material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0"
+                                                                                    style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+                                                                                >
+                                                                                    chevron_right
                                                                                 </span>
-                                                                            ) : (
-                                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                             )}
-                                                                        </p>
+                                                                            <span className="text-xs font-semibold text-foreground/90 truncate">{product}</span>
+                                                                            {!prodExpandable && (
+                                                                                <span className="text-[10px] text-slate-400 truncate">{prodAssets[0]?.Asset}</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="text-right shrink-0">
+                                                                            <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(prodTotal)}</p>
+                                                                            {prodVariation !== null && (
+                                                                                <p className={`text-[10px] tabular-nums ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                    {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
+                                                                                    {prodVariationPct !== null && ` (${prodVariationPct >= 0 ? "+" : ""}${prodVariationPct.toFixed(1)}%)`}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
+                                                                    {isProdExpanded && prodExpandable && prodAssets.map((asset, idx) => {
+                                                                        const { variation, variationPct } = renderAssetVariation(asset);
+                                                                        return (
+                                                                            <div key={`${productKey}-m-${asset.Asset}-${idx}`} className="flex items-center justify-between gap-2 py-1 pl-5">
+                                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                                    <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                                        {asset.Asset.charAt(0).toUpperCase()}
+                                                                                    </div>
+                                                                                    <span className="text-xs font-medium text-foreground/80 truncate">{asset.Asset}</span>
+                                                                                </div>
+                                                                                <div className="text-right shrink-0">
+                                                                                    <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(asset.Value)}</p>
+                                                                                    <p className="text-[10px] tabular-nums">
+                                                                                        {variation !== null ? (
+                                                                                            <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                                                                                {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                                                {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                                            </span>
+                                                                                        ) : (
+                                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                                        )}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             );
                                                         })}
@@ -436,34 +539,25 @@ export default function Portfolio() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border text-xs sm:text-sm">
-                                            {sortedInstitutions.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                            {sortedInstitutions.map(({ institution, products, assets: instAssets, total: instTotal }) => {
                                                 const instKey = `${classification}-${institution}`;
-                                                const isExpanded = expandedInstitutions.has(instKey);
-                                                const hasMultipleAssets = instAssets.length > 1;
+                                                const isInstExpanded = expandedInstitutions.has(instKey);
+                                                const instExpandable = isInstitutionExpandable(products, instAssets.length);
                                                 const instWeightInClass = classTotal > 0 ? (instTotal / classTotal) * 100 : 0;
                                                 const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
+                                                const { variation: instVariation, variationPct: instVariationPct } = calcGroupVariation(instAssets);
+                                                const singleAsset = instAssets.length === 1 ? instAssets[0] : null;
 
-                                                // Institution-level prev value
-                                                const instPrevTotal = instAssets.reduce((sum, a) => {
-                                                    const pv = getPrevValue(a);
-                                                    return sum + (pv ?? 0);
-                                                }, 0);
-                                                const instHasPrev = instAssets.some(a => getPrevValue(a) !== null);
-                                                const instVariation = instHasPrev ? instTotal - instPrevTotal : null;
-                                                const instVariationPct = instHasPrev && instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
-
-                                                 return (
+                                                return (
                                                     <React.Fragment key={instKey}>
-                                                        {/* Institution summary row */}
                                                         <tr
-                                                            key={instKey}
-                                                            className={`group transition-colors ${hasMultipleAssets ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
-                                                            onClick={() => hasMultipleAssets && toggleInstitution(instKey)}
+                                                            className={`group transition-colors ${instExpandable ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
+                                                            onClick={() => instExpandable && toggleInstitution(instKey)}
                                                         >
                                                             <td className="px-4 py-4 font-medium text-foreground">
                                                                 <div className="flex items-center gap-2 sm:gap-3">
-                                                                    {hasMultipleAssets && (
-                                                                        <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                                                                    {instExpandable && (
+                                                                        <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
                                                                             chevron_right
                                                                         </span>
                                                                     )}
@@ -471,17 +565,19 @@ export default function Portfolio() {
                                                                         {institution.charAt(0).toUpperCase()}
                                                                     </div>
                                                                     <span className="truncate font-semibold">{institution}</span>
-                                                                    {hasMultipleAssets && (
+                                                                    {instExpandable && (
                                                                         <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full font-bold">{instAssets.length}</span>
                                                                     )}
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 py-4 text-slate-400 dark:text-slate-500 text-xs">
-                                                                {hasMultipleAssets ? (isExpanded ? "" : t("portfolio.nAssets", { count: instAssets.length })) : instAssets[0]?.Asset}
+                                                                {!instExpandable && singleAsset
+                                                                    ? singleAsset.Asset
+                                                                    : instExpandable && !isInstExpanded
+                                                                        ? t("portfolio.nAssets", { count: instAssets.length })
+                                                                        : ""}
                                                             </td>
-                                                            <td className="px-4 py-4 text-right font-medium text-foreground">
-                                                                {formatCurrency(instTotal)}
-                                                            </td>
+                                                            <td className="px-4 py-4 text-right font-medium text-foreground">{formatCurrency(instTotal)}</td>
                                                             <td className="px-4 py-4 text-right">
                                                                 {instVariation !== null ? (
                                                                     <span className={`font-medium ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
@@ -500,60 +596,100 @@ export default function Portfolio() {
                                                                     <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">
-                                                                {instWeightInClass.toFixed(1)}%
-                                                            </td>
-                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">
-                                                                {instWeightInTotal.toFixed(1)}%
-                                                            </td>
+                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{instWeightInClass.toFixed(1)}%</td>
+                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{instWeightInTotal.toFixed(1)}%</td>
                                                         </tr>
-                                                        {/* Expanded asset rows */}
-                                                        {isExpanded && hasMultipleAssets && instAssets.map((asset, idx) => {
-                                                            const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
-                                                            const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
-                                                            const prevValue = getPrevValue(asset);
-                                                            const variation = prevValue !== null ? asset.Value - prevValue : null;
-                                                            const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+                                                        {isInstExpanded && instExpandable && products.map(({ product, assets: prodAssets, total: prodTotal }) => {
+                                                            const productKey = `${instKey}-${product}`;
+                                                            const isProdExpanded = expandedProducts.has(productKey);
+                                                            const prodExpandable = isProductExpandable(prodAssets);
+                                                            const prodWeightInClass = classTotal > 0 ? (prodTotal / classTotal) * 100 : 0;
+                                                            const prodWeightInTotal = totalWealth > 0 ? (prodTotal / totalWealth) * 100 : 0;
+                                                            const { variation: prodVariation, variationPct: prodVariationPct } = calcGroupVariation(prodAssets);
 
                                                             return (
-                                                                <tr key={`${instKey}-${asset.Asset}-${idx}`} className="bg-slate-50/50 dark:bg-slate-900/30 transition-colors group">
-                                                                    <td className="px-4 py-3 pl-16"></td>
-                                                                    <td className="px-4 py-3 font-medium text-foreground/80 text-xs">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
-                                                                                {asset.Asset.charAt(0).toUpperCase()}
+                                                                <React.Fragment key={productKey}>
+                                                                    <tr
+                                                                        className={`bg-slate-50/30 dark:bg-slate-900/20 transition-colors ${prodExpandable ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
+                                                                        onClick={(e) => { e.stopPropagation(); prodExpandable && toggleProduct(productKey); }}
+                                                                    >
+                                                                        <td className="px-4 py-3 pl-12"></td>
+                                                                        <td className="px-4 py-3 font-medium text-foreground/90 text-xs">
+                                                                            <div className="flex items-center gap-2">
+                                                                                {prodExpandable && (
+                                                                                    <span className="material-symbols-outlined text-[14px] text-slate-400 transition-transform" style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                                                                                        chevron_right
+                                                                                    </span>
+                                                                                )}
+                                                                                <span className="truncate">{product}</span>
+                                                                                {prodExpandable && (
+                                                                                    <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full font-bold">{prodAssets.length}</span>
+                                                                                )}
                                                                             </div>
-                                                                            <span className="truncate">{asset.Asset}</span>
-                                                                        </div>
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right font-medium text-foreground/80 text-xs">
-                                                                        {formatCurrency(asset.Value)}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right text-xs">
-                                                                        {variation !== null ? (
-                                                                            <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                                {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right text-xs">
-                                                                        {variationPct !== null ? (
-                                                                            <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                                {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
-                                                                        )}
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
-                                                                        {weightInClass.toFixed(1)}%
-                                                                    </td>
-                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
-                                                                        {weightInTotal.toFixed(1)}%
-                                                                    </td>
-                                                                </tr>
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-right font-medium text-foreground/90 text-xs">{formatCurrency(prodTotal)}</td>
+                                                                        <td className="px-4 py-3 text-right text-xs">
+                                                                            {prodVariation !== null ? (
+                                                                                <span className={`font-medium ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                    {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-right text-xs">
+                                                                            {prodVariationPct !== null ? (
+                                                                                <span className={`font-medium ${prodVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                    {prodVariationPct >= 0 ? "+" : ""}{prodVariationPct.toFixed(1)}%
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                            )}
+                                                                        </td>
+                                                                        <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{prodWeightInClass.toFixed(1)}%</td>
+                                                                        <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{prodWeightInTotal.toFixed(1)}%</td>
+                                                                    </tr>
+                                                                    {isProdExpanded && prodExpandable && prodAssets.map((asset, idx) => {
+                                                                        const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
+                                                                        const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
+                                                                        const { variation, variationPct } = renderAssetVariation(asset);
+
+                                                                        return (
+                                                                            <tr key={`${productKey}-${asset.Asset}-${idx}`} className="bg-slate-50/50 dark:bg-slate-900/30 transition-colors group">
+                                                                                <td className="px-4 py-3 pl-16"></td>
+                                                                                <td className="px-4 py-3 font-medium text-foreground/80 text-xs">
+                                                                                    <div className="flex items-center gap-2 pl-4">
+                                                                                        <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                                            {asset.Asset.charAt(0).toUpperCase()}
+                                                                                        </div>
+                                                                                        <span className="truncate">{asset.Asset}</span>
+                                                                                    </div>
+                                                                                </td>
+                                                                                <td className="px-4 py-3 text-right font-medium text-foreground/80 text-xs">{formatCurrency(asset.Value)}</td>
+                                                                                <td className="px-4 py-3 text-right text-xs">
+                                                                                    {variation !== null ? (
+                                                                                        <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                            {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className="px-4 py-3 text-right text-xs">
+                                                                                    {variationPct !== null ? (
+                                                                                        <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                            {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{weightInClass.toFixed(1)}%</td>
+                                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{weightInTotal.toFixed(1)}%</td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                                </React.Fragment>
                                                             );
                                                         })}
                                                     </React.Fragment>
@@ -609,10 +745,10 @@ export default function Portfolio() {
                                 </div>
                             </div>
                             <div className="sm:hidden p-4 space-y-3">
-                                {sortedInstGrouped.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                {sortedInstGrouped.map(({ institution, products, assets: instAssets, total: instTotal }) => {
                                     const globalInstKey = `global-inst-${institution}`;
-                                    const isExpanded = expandedInstitutions.has(globalInstKey);
-                                    const hasMultipleAssets = instAssets.length > 1;
+                                    const isInstExpanded = expandedInstitutions.has(globalInstKey);
+                                    const instExpandable = isInstitutionExpandable(products, instAssets.length);
                                     const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
                                     const instPrevTotal = prevInstTotals[institution] || 0;
                                     const instVariation = instPrevTotal > 0 ? instTotal - instPrevTotal : null;
@@ -621,15 +757,15 @@ export default function Portfolio() {
                                     return (
                                         <div
                                             key={`${globalInstKey}-mobile`}
-                                            className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${hasMultipleAssets ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
-                                            onClick={() => hasMultipleAssets && toggleInstitution(globalInstKey)}
+                                            className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${instExpandable ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
+                                            onClick={() => instExpandable && toggleInstitution(globalInstKey)}
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    {hasMultipleAssets && (
+                                                    {instExpandable && (
                                                         <span
                                                             className="material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0"
-                                                            style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+                                                            style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
                                                         >
                                                             chevron_right
                                                         </span>
@@ -639,7 +775,7 @@ export default function Portfolio() {
                                                     </div>
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-semibold text-foreground truncate">{institution}</p>
-                                                        {hasMultipleAssets && !isExpanded && (
+                                                        {instExpandable && !isInstExpanded && (
                                                             <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.nAssets", { count: instAssets.length })}</p>
                                                         )}
                                                     </div>
@@ -672,34 +808,70 @@ export default function Portfolio() {
                                                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInTotal.toFixed(1)}%</p>
                                                 </div>
                                             </div>
-                                            {isExpanded && hasMultipleAssets && (
+                                            {isInstExpanded && instExpandable && (
                                                 <div className="pt-2 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                    {instAssets.map((asset, aIdx) => {
-                                                        const prevValue = getPrevValue(asset);
-                                                        const variation = prevValue !== null ? asset.Value - prevValue : null;
-                                                        const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+                                                    {products.map(({ product, assets: prodAssets, total: prodTotal }) => {
+                                                        const productKey = `${globalInstKey}-${product}`;
+                                                        const isProdExpanded = expandedProducts.has(productKey);
+                                                        const prodExpandable = isProductExpandable(prodAssets);
+                                                        const { variation: prodVariation, variationPct: prodVariationPct } = calcGroupVariation(prodAssets);
 
                                                         return (
-                                                            <div key={`${globalInstKey}-m-${asset.Asset}-${aIdx}`} className="flex items-center justify-between gap-2 py-1.5">
-                                                                <div className="flex items-center gap-2 min-w-0">
-                                                                    <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
-                                                                        {asset.Asset.charAt(0).toUpperCase()}
-                                                                    </div>
-                                                                    <span className="text-xs font-medium text-foreground/80 truncate">{asset.Asset}</span>
-                                                                </div>
-                                                                <div className="text-right shrink-0">
-                                                                    <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(asset.Value)}</p>
-                                                                    <p className="text-[10px] tabular-nums">
-                                                                        {variation !== null ? (
-                                                                            <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
-                                                                                {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                                {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                            <div key={productKey} className="space-y-1.5">
+                                                                <div
+                                                                    className={`flex items-center justify-between gap-2 py-1.5 ${prodExpandable ? "cursor-pointer" : ""}`}
+                                                                    onClick={() => prodExpandable && toggleProduct(productKey)}
+                                                                >
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        {prodExpandable && (
+                                                                            <span
+                                                                                className="material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0"
+                                                                                style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
+                                                                            >
+                                                                                chevron_right
                                                                             </span>
-                                                                        ) : (
-                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                         )}
-                                                                    </p>
+                                                                        <span className="text-xs font-semibold text-foreground/90 truncate">{product}</span>
+                                                                    </div>
+                                                                    <div className="text-right shrink-0">
+                                                                        <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(prodTotal)}</p>
+                                                                        {prodVariation !== null && (
+                                                                            <p className={`text-[10px] tabular-nums ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
+                                                                                {prodVariationPct !== null && ` (${prodVariationPct >= 0 ? "+" : ""}${prodVariationPct.toFixed(1)}%)`}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
+                                                                {isProdExpanded && prodExpandable && prodAssets.map((asset, aIdx) => {
+                                                                    const prevValue = getPrevValue(asset);
+                                                                    const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                                    const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+
+                                                                    return (
+                                                                        <div key={`${productKey}-m-${asset.Asset}-${aIdx}`} className="flex items-center justify-between gap-2 py-1 pl-5">
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                                    {asset.Asset.charAt(0).toUpperCase()}
+                                                                                </div>
+                                                                                <span className="text-xs font-medium text-foreground/80 truncate">{asset.Asset}</span>
+                                                                            </div>
+                                                                            <div className="text-right shrink-0">
+                                                                                <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(asset.Value)}</p>
+                                                                                <p className="text-[10px] tabular-nums">
+                                                                                    {variation !== null ? (
+                                                                                        <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
+                                                                                            {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                                            {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                                    )}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         );
                                                     })}
@@ -721,12 +893,11 @@ export default function Portfolio() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border text-xs sm:text-sm">
-                                        {sortedInstGrouped.map(({ institution, assets: instAssets, total: instTotal }) => {
+                                        {sortedInstGrouped.map(({ institution, products, assets: instAssets, total: instTotal }) => {
                                             const globalInstKey = `global-inst-${institution}`;
-                                            const isExpanded = expandedInstitutions.has(globalInstKey);
-                                            const hasMultipleAssets = instAssets.length > 1;
+                                            const isInstExpanded = expandedInstitutions.has(globalInstKey);
+                                            const instExpandable = isInstitutionExpandable(products, instAssets.length);
                                             const instWeightInTotal = totalWealth > 0 ? (instTotal / totalWealth) * 100 : 0;
-
                                             const instPrevTotal = prevInstTotals[institution] || 0;
                                             const instVariation = instPrevTotal > 0 ? instTotal - instPrevTotal : null;
                                             const instVariationPct = instPrevTotal > 0 ? ((instTotal - instPrevTotal) / instPrevTotal) * 100 : null;
@@ -734,13 +905,13 @@ export default function Portfolio() {
                                             return (
                                                 <React.Fragment key={globalInstKey}>
                                                     <tr
-                                                        className={`group transition-colors ${hasMultipleAssets ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
-                                                        onClick={() => hasMultipleAssets && toggleInstitution(globalInstKey)}
+                                                        className={`group transition-colors ${instExpandable ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
+                                                        onClick={() => instExpandable && toggleInstitution(globalInstKey)}
                                                     >
                                                         <td className="px-4 py-4 font-medium text-foreground">
                                                             <div className="flex items-center gap-2 sm:gap-3">
-                                                                {hasMultipleAssets ? (
-                                                                    <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                                                                {instExpandable ? (
+                                                                    <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
                                                                         chevron_right
                                                                     </span>
                                                                 ) : (
@@ -750,14 +921,12 @@ export default function Portfolio() {
                                                                     {institution.charAt(0).toUpperCase()}
                                                                 </div>
                                                                 <span className="truncate font-semibold">{institution}</span>
-                                                                {hasMultipleAssets && (
+                                                                {instExpandable && (
                                                                     <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full font-bold">{instAssets.length}</span>
                                                                 )}
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-4 text-right font-medium text-foreground">
-                                                            {formatCurrency(instTotal)}
-                                                        </td>
+                                                        <td className="px-4 py-4 text-right font-medium text-foreground">{formatCurrency(instTotal)}</td>
                                                         <td className="px-4 py-4 text-right">
                                                             {instVariation !== null ? (
                                                                 <span className={`font-medium ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
@@ -776,51 +945,92 @@ export default function Portfolio() {
                                                                 <span className="text-slate-400 dark:text-slate-500">—</span>
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">
-                                                            {instWeightInTotal.toFixed(1)}%
-                                                        </td>
+                                                        <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{instWeightInTotal.toFixed(1)}%</td>
                                                     </tr>
-                                                    {isExpanded && hasMultipleAssets && instAssets.map((asset, aIdx) => {
-                                                        const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
-                                                        const prevValue = getPrevValue(asset);
-                                                        const variation = prevValue !== null ? asset.Value - prevValue : null;
-                                                        const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+                                                    {isInstExpanded && instExpandable && products.map(({ product, assets: prodAssets, total: prodTotal }) => {
+                                                        const productKey = `${globalInstKey}-${product}`;
+                                                        const isProdExpanded = expandedProducts.has(productKey);
+                                                        const prodExpandable = isProductExpandable(prodAssets);
+                                                        const prodWeightInTotal = totalWealth > 0 ? (prodTotal / totalWealth) * 100 : 0;
+                                                        const { variation: prodVariation, variationPct: prodVariationPct } = calcGroupVariation(prodAssets);
 
                                                         return (
-                                                            <tr key={`${globalInstKey}-${asset.Asset}-${aIdx}`} className="bg-slate-50/50 dark:bg-slate-900/30 transition-colors group">
-                                                                <td className="px-4 py-3 pl-14 sm:pl-16 font-medium text-foreground/80 text-xs">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
-                                                                            {asset.Asset.charAt(0).toUpperCase()}
+                                                            <React.Fragment key={productKey}>
+                                                                <tr
+                                                                    className={`bg-slate-50/30 dark:bg-slate-900/20 transition-colors ${prodExpandable ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : ""}`}
+                                                                    onClick={(e) => { e.stopPropagation(); prodExpandable && toggleProduct(productKey); }}
+                                                                >
+                                                                    <td className="px-4 py-3 pl-12 font-medium text-foreground/90 text-xs">
+                                                                        <div className="flex items-center gap-2">
+                                                                            {prodExpandable && (
+                                                                                <span className="material-symbols-outlined text-[14px] text-slate-400 transition-transform" style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
+                                                                                    chevron_right
+                                                                                </span>
+                                                                            )}
+                                                                            <span className="truncate">{product}</span>
                                                                         </div>
-                                                                        <span className="truncate">{asset.Asset}</span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-4 py-3 text-right font-medium text-foreground/80 text-xs">
-                                                                    {formatCurrency(asset.Value)}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-right text-xs">
-                                                                    {variation !== null ? (
-                                                                        <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                            {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-right text-xs">
-                                                                    {variationPct !== null ? (
-                                                                        <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                            {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">
-                                                                    {weightInTotal.toFixed(1)}%
-                                                                </td>
-                                                            </tr>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right font-medium text-foreground/90 text-xs">{formatCurrency(prodTotal)}</td>
+                                                                    <td className="px-4 py-3 text-right text-xs">
+                                                                        {prodVariation !== null ? (
+                                                                            <span className={`font-medium ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right text-xs">
+                                                                        {prodVariationPct !== null ? (
+                                                                            <span className={`font-medium ${prodVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                {prodVariationPct >= 0 ? "+" : ""}{prodVariationPct.toFixed(1)}%
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{prodWeightInTotal.toFixed(1)}%</td>
+                                                                </tr>
+                                                                {isProdExpanded && prodExpandable && prodAssets.map((asset, aIdx) => {
+                                                                    const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
+                                                                    const prevValue = getPrevValue(asset);
+                                                                    const variation = prevValue !== null ? asset.Value - prevValue : null;
+                                                                    const variationPct = prevValue !== null && prevValue !== 0 ? (variation! / prevValue) * 100 : null;
+
+                                                                    return (
+                                                                        <tr key={`${productKey}-${asset.Asset}-${aIdx}`} className="bg-slate-50/50 dark:bg-slate-900/30 transition-colors group">
+                                                                            <td className="px-4 py-3 pl-16 font-medium text-foreground/80 text-xs">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="size-5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-[8px] font-bold shrink-0">
+                                                                                        {asset.Asset.charAt(0).toUpperCase()}
+                                                                                    </div>
+                                                                                    <span className="truncate">{asset.Asset}</span>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-3 text-right font-medium text-foreground/80 text-xs">{formatCurrency(asset.Value)}</td>
+                                                                            <td className="px-4 py-3 text-right text-xs">
+                                                                                {variation !== null ? (
+                                                                                    <span className={`font-medium ${variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                        {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="px-4 py-3 text-right text-xs">
+                                                                                {variationPct !== null ? (
+                                                                                    <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                                                        {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{weightInTotal.toFixed(1)}%</td>
+                                                                        </tr>
+                                                                    );
+                                                                })}
+                                                            </React.Fragment>
                                                         );
                                                     })}
                                                 </React.Fragment>
@@ -858,6 +1068,17 @@ export default function Portfolio() {
                                     <option value="">{t("portfolio.allInstitutions")}</option>
                                     {institutionsList.map((i) => (
                                         <option key={i} value={i}>{i}</option>
+                                    ))}
+                                </select>
+                                <span className="text-slate-400 text-sm">/</span>
+                                <select
+                                    value={filterProductType}
+                                    onChange={(e) => setProductTypeFilter(e.target.value)}
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                >
+                                    <option value="">{t("portfolio.allProductTypes")}</option>
+                                    {productTypesList.map((p) => (
+                                        <option key={p} value={p}>{p}</option>
                                     ))}
                                 </select>
                                 <span className="text-slate-400 text-sm">/</span>
