@@ -3,6 +3,7 @@ const STORAGE_KEY = "dash-fin-entry-memory";
 export type EntryMemory = {
   classification?: string;
   institution?: string;
+  productType?: string;
   asset?: string;
   categoryExpense?: string;
   categoryIncome?: string;

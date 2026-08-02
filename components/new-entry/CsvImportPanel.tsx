@@ -75,7 +75,7 @@ export default function CsvImportPanel(props: Props) {
         </p>
         <p className="text-xs text-slate-500 mt-1">
           {props.kind === "portfolio"
-            ? "Colunas: Date, Classification, Institution, Asset, Value"
+            ? "Colunas: Date, Classification, Institution, ProductType, Asset, Value"
             : "Colunas: Date, Description, Category, Type, Value"}
         </p>
         {fileName && (

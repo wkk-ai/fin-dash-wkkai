@@ -30,11 +30,12 @@ import {
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 
-type TagKind = "classification" | "institution" | "asset" | "income" | "expense";
+type TagKind = "classification" | "institution" | "product" | "asset" | "income" | "expense";
 
 const SETTINGS_KEY: Record<TagKind, keyof Settings> = {
     classification: "classifications",
     institution: "institutions",
+    product: "productTypes",
     asset: "assets",
     income: "incomeCategories",
     expense: "expenseCategories",
@@ -43,14 +44,16 @@ const SETTINGS_KEY: Record<TagKind, keyof Settings> = {
 const TAG_SAVE_TYPE: Record<TagKind, string> = {
     classification: "classification",
     institution: "institution",
+    product: "product_type",
     asset: "asset",
     income: "income_category",
     expense: "expense_category",
 };
 
-const DATA_FIELD: Record<"classification" | "institution" | "asset", keyof AssetEntry> = {
+const DATA_FIELD: Record<"classification" | "institution" | "product" | "asset", keyof AssetEntry> = {
     classification: "Classification",
     institution: "Institution",
+    product: "ProductType",
     asset: "Asset",
 };
 
@@ -64,11 +67,11 @@ function sortData(rows: AssetEntry[]): AssetEntry[] {
 }
 
 function rowSignature(row: AssetEntry): string {
-    return `${row.Date}|${row.Classification}|${row.Institution}|${row.Asset}|${row.Value}`;
+    return `${row.Date}|${row.Classification}|${row.Institution}|${row.ProductType || row.Asset}|${row.Asset}|${row.Value}`;
 }
 
 function rowIdentity(row: AssetEntry): string {
-    return `${row.Date}|${row.Classification}|${row.Institution}|${row.Asset}`;
+    return `${row.Date}|${row.Classification}|${row.Institution}|${row.ProductType || row.Asset}|${row.Asset}`;
 }
 
 function computePreviewStats(original: AssetEntry[], current: AssetEntry[]) {
@@ -92,6 +95,7 @@ export default function SettingsPage() {
     const [settings, setSettings] = useState<Settings>({
         classifications: [],
         institutions: [],
+        productTypes: [],
         assets: [],
         incomeCategories: [],
         expenseCategories: [],
@@ -104,11 +108,13 @@ export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState<SettingsTab>("tags");
     const [newClassification, setNewClassification] = useState("");
     const [newInstitution, setNewInstitution] = useState("");
+    const [newProductType, setNewProductType] = useState("");
     const [newAsset, setNewAsset] = useState("");
     const [newIncomeCategory, setNewIncomeCategory] = useState("");
     const [newExpenseCategory, setNewExpenseCategory] = useState("");
     const [searchClassification, setSearchClassification] = useState("");
     const [searchInstitution, setSearchInstitution] = useState("");
+    const [searchProduct, setSearchProduct] = useState("");
     const [searchAsset, setSearchAsset] = useState("");
     const [searchIncome, setSearchIncome] = useState("");
     const [searchExpense, setSearchExpense] = useState("");
@@ -127,6 +133,7 @@ export default function SettingsPage() {
     });
     const [selectedClassifications, setSelectedClassifications] = useState<string[]>([]);
     const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
+    const [selectedProductTypes, setSelectedProductTypes] = useState<string[]>([]);
     const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
 
     const [modalConfig, setModalConfig] = useState<{
@@ -152,6 +159,7 @@ export default function SettingsPage() {
 
     const [dbClassifications, setDbClassifications] = useState<string[]>([]);
     const [dbInstitutions, setDbInstitutions] = useState<string[]>([]);
+    const [dbProductTypes, setDbProductTypes] = useState<string[]>([]);
     const [dbAssets, setDbAssets] = useState<string[]>([]);
     const [dbIncomeCategories, setDbIncomeCategories] = useState<string[]>([]);
     const [dbExpenseCategories, setDbExpenseCategories] = useState<string[]>([]);
@@ -205,6 +213,9 @@ export default function SettingsPage() {
         if (data.length > 0) {
             setDbClassifications(Array.from(new Set(data.map((r) => r.Classification))).filter(Boolean));
             setDbInstitutions(Array.from(new Set(data.map((r) => r.Institution))).filter(Boolean));
+            setDbProductTypes(
+                Array.from(new Set(data.map((r) => r.ProductType || r.Asset))).filter(Boolean)
+            );
             setDbAssets(Array.from(new Set(data.map((r) => r.Asset))).filter(Boolean));
         }
     }, [data]);
@@ -218,6 +229,9 @@ export default function SettingsPage() {
             setData(sorted);
             setDbClassifications(Array.from(new Set(pending.map((r) => r.Classification))).filter(Boolean) as string[]);
             setDbInstitutions(Array.from(new Set(pending.map((r) => r.Institution))).filter(Boolean) as string[]);
+            setDbProductTypes(
+                Array.from(new Set(pending.map((r) => r.ProductType || r.Asset))).filter(Boolean) as string[]
+            );
             setDbAssets(Array.from(new Set(pending.map((r) => r.Asset))).filter(Boolean) as string[]);
             fetchSettingsData().then(setSettings).catch(console.error);
             setLoading(false);
@@ -234,6 +248,11 @@ export default function SettingsPage() {
                 setData((prev) => sortData([newRow, ...prev]));
                 if (newRow.Classification) setDbClassifications((prev) => Array.from(new Set([...prev, newRow.Classification])));
                 if (newRow.Institution) setDbInstitutions((prev) => Array.from(new Set([...prev, newRow.Institution])));
+                if (newRow.ProductType || newRow.Asset) {
+                    setDbProductTypes((prev) =>
+                        Array.from(new Set([...prev, newRow.ProductType || newRow.Asset]))
+                    );
+                }
                 if (newRow.Asset) setDbAssets((prev) => Array.from(new Set([...prev, newRow.Asset])));
             } else {
                 clearPendingData();
@@ -260,6 +279,9 @@ export default function SettingsPage() {
         if (selectedInstitutions.length > 0) {
             result = result.filter(({ row }) => selectedInstitutions.includes(row.Institution));
         }
+        if (selectedProductTypes.length > 0) {
+            result = result.filter(({ row }) => selectedProductTypes.includes(row.ProductType || row.Asset));
+        }
         if (selectedAssets.length > 0) {
             result = result.filter(({ row }) => selectedAssets.includes(row.Asset));
         }
@@ -281,7 +303,7 @@ export default function SettingsPage() {
         }
 
         return result;
-    }, [data, selectedClassifications, selectedInstitutions, selectedAssets, sortConfig]);
+    }, [data, selectedClassifications, selectedInstitutions, selectedProductTypes, selectedAssets, sortConfig]);
 
     const handleSort = (key: keyof AssetEntry) => {
         setSortConfig((prev) => {
@@ -300,11 +322,13 @@ export default function SettingsPage() {
                 ? dbClassifications
                 : type === "institution"
                   ? dbInstitutions
-                  : type === "asset"
-                    ? dbAssets
-                    : type === "income"
-                      ? dbIncomeCategories
-                      : dbExpenseCategories;
+                  : type === "product"
+                    ? dbProductTypes
+                    : type === "asset"
+                      ? dbAssets
+                      : type === "income"
+                        ? dbIncomeCategories
+                        : dbExpenseCategories;
 
         const missing = dbList.filter((item) => !currentList.includes(item));
         if (missing.length > 0) {
@@ -329,6 +353,7 @@ export default function SettingsPage() {
             await Promise.all([
                 saveCustomTags("classification", settings.classifications),
                 saveCustomTags("institution", settings.institutions),
+                saveCustomTags("product_type", settings.productTypes),
                 saveCustomTags("asset", settings.assets),
                 saveCustomTags("income_category", settings.incomeCategories),
                 saveCustomTags("expense_category", settings.expenseCategories),
@@ -337,13 +362,15 @@ export default function SettingsPage() {
             const msgKey =
                 type === "institution"
                     ? "settings.institutionsSaved"
-                    : type === "asset"
-                      ? "settings.assetsSaved"
-                      : type === "income"
-                        ? "settings.incomeSaved"
-                        : type === "expense"
-                          ? "settings.expensesSaved"
-                          : "settings.classificationsSaved";
+                    : type === "product"
+                      ? "settings.productTypesSaved"
+                      : type === "asset"
+                        ? "settings.assetsSaved"
+                        : type === "income"
+                          ? "settings.incomeSaved"
+                          : type === "expense"
+                            ? "settings.expensesSaved"
+                            : "settings.classificationsSaved";
             toast(t(msgKey));
         } catch (e) {
             console.error(e);
@@ -371,7 +398,7 @@ export default function SettingsPage() {
         setSettings((prev) => ({ ...prev, [key]: newList }));
 
         try {
-            if (kind === "classification" || kind === "institution" || kind === "asset") {
+            if (kind === "classification" || kind === "institution" || kind === "product" || kind === "asset") {
                 const field = DATA_FIELD[kind];
                 const updated = data.map((row) => (row[field] === oldName ? { ...row, [field]: trimmed } : row));
                 await replaceNetWorth(updated);
@@ -383,6 +410,8 @@ export default function SettingsPage() {
                     setDbClassifications((prev) => prev.map((x) => (x === oldName ? trimmed : x)));
                 } else if (kind === "institution") {
                     setDbInstitutions((prev) => prev.map((x) => (x === oldName ? trimmed : x)));
+                } else if (kind === "product") {
+                    setDbProductTypes((prev) => prev.map((x) => (x === oldName ? trimmed : x)));
                 } else {
                     setDbAssets((prev) => prev.map((x) => (x === oldName ? trimmed : x)));
                 }
@@ -423,7 +452,7 @@ export default function SettingsPage() {
         setSettings((prev) => ({ ...prev, [key]: uniqueList }));
 
         try {
-            if (kind === "classification" || kind === "institution" || kind === "asset") {
+            if (kind === "classification" || kind === "institution" || kind === "product" || kind === "asset") {
                 const field = DATA_FIELD[kind];
                 const updated = data.map((row) => (row[field] === from ? { ...row, [field]: into } : row));
                 await replaceNetWorth(updated);
@@ -435,6 +464,8 @@ export default function SettingsPage() {
                     setDbClassifications((prev) => prev.filter((x) => x !== from));
                 } else if (kind === "institution") {
                     setDbInstitutions((prev) => prev.filter((x) => x !== from));
+                } else if (kind === "product") {
+                    setDbProductTypes((prev) => prev.filter((x) => x !== from));
                 } else {
                     setDbAssets((prev) => prev.filter((x) => x !== from));
                 }
@@ -635,7 +666,11 @@ export default function SettingsPage() {
             const text = await file.text();
             const parsed = JSON.parse(text) as { netWorth?: AssetEntry[] };
             if (parsed.netWorth && Array.isArray(parsed.netWorth)) {
-                return parsed.netWorth;
+                return parsed.netWorth.map((r) => ({
+                    ...r,
+                    ProductType: r.ProductType || r.Asset || "",
+                    Institution: r.Institution || "",
+                }));
             }
             const result = parsePortfolioCsv(text);
             if (!result.ok) throw new Error(result.error);
@@ -673,6 +708,8 @@ export default function SettingsPage() {
                     Description: "",
                     Category: "",
                     Classification: r.Classification,
+                    Institution: r.Institution,
+                    ProductType: r.ProductType || r.Asset,
                     Asset: r.Asset,
                     Value: r.Value,
                 }))
@@ -696,13 +733,19 @@ export default function SettingsPage() {
     const handleConfirmImport = async (processedRows: ProcessedRow[], mode: "append" | "overwrite") => {
         setImporting(true);
         try {
-            const entries: AssetEntry[] = processedRows.map((r) => ({
-                Date: r.Date,
-                Classification: r.Classification || "",
-                Institution: (r as ProcessedRow & { Institution?: string }).Institution || "",
-                Asset: r.Asset || "",
-                Value: r.Value,
-            }));
+            const entries: AssetEntry[] = processedRows.map((r) => {
+                const asset = r.Asset || "";
+                const productType =
+                    (r as ProcessedRow & { ProductType?: string }).ProductType || asset;
+                return {
+                    Date: r.Date,
+                    Classification: r.Classification || "",
+                    Institution: (r as ProcessedRow & { Institution?: string }).Institution || "",
+                    ProductType: productType,
+                    Asset: asset,
+                    Value: r.Value,
+                };
+            });
             const next = mode === "append" ? sortData([...data, ...entries]) : sortData(entries);
             await replaceNetWorth(next);
             setData(next);
@@ -760,6 +803,7 @@ export default function SettingsPage() {
             Date: row.Date,
             Classification: row.Classification,
             Institution: row.Institution,
+            ProductType: row.ProductType,
             Asset: row.Asset,
             Value: row.Value,
         }));
@@ -952,6 +996,23 @@ export default function SettingsPage() {
                         emptyHint={t("settings.institutionPlaceholder")}
                     />
                     <TagListEditor
+                        title={t("settings.productTypes")}
+                        icon="layers"
+                        items={settings.productTypes}
+                        usedItems={dbProductTypes}
+                        search={searchProduct}
+                        onSearchChange={setSearchProduct}
+                        newValue={newProductType}
+                        onNewValueChange={setNewProductType}
+                        onAdd={() => addTag("product", newProductType, () => setNewProductType(""))}
+                        onRemove={(name) => removeTag("product", name, dbProductTypes.includes(name), "settings.productInUse")}
+                        onRename={(oldName, newName) => void renameTag("product", oldName, newName)}
+                        onMerge={(from, into) => mergeTag("product", from, into)}
+                        saving={savingSettings.type === "product"}
+                        onSave={() => void saveSettingsSection("product")}
+                        emptyHint={t("settings.productPlaceholder")}
+                    />
+                    <TagListEditor
                         title={t("settings.assetNameLabel")}
                         icon="savings"
                         items={settings.assets}
@@ -1022,6 +1083,7 @@ export default function SettingsPage() {
                     rows={dataRows}
                     classifications={settings.classifications}
                     institutions={settings.institutions}
+                    productTypes={settings.productTypes}
                     assets={settings.assets}
                     editingRowIndex={editingRowIndex}
                     onEditingRowIndexChange={setEditingRowIndex}
@@ -1030,6 +1092,7 @@ export default function SettingsPage() {
                     onSort={handleSort}
                     selectedClassifications={selectedClassifications}
                     selectedInstitutions={selectedInstitutions}
+                    selectedProductTypes={selectedProductTypes}
                     selectedAssets={selectedAssets}
                     onToggleClassificationFilter={(v) =>
                         setSelectedClassifications((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
@@ -1037,11 +1100,15 @@ export default function SettingsPage() {
                     onToggleInstitutionFilter={(v) =>
                         setSelectedInstitutions((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
                     }
+                    onToggleProductTypeFilter={(v) =>
+                        setSelectedProductTypes((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
+                    }
                     onToggleAssetFilter={(v) =>
                         setSelectedAssets((prev) => (prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]))
                     }
                     onClearClassificationFilters={() => setSelectedClassifications([])}
                     onClearInstitutionFilters={() => setSelectedInstitutions([])}
+                    onClearProductTypeFilters={() => setSelectedProductTypes([])}
                     onClearAssetFilters={() => setSelectedAssets([])}
                     onDeleteRow={deleteRow}
                     onPreview={showPreview}

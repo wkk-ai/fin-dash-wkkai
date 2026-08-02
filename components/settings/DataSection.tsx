@@ -20,6 +20,7 @@ export interface DataSectionProps {
     rows: DataSectionRow[];
     classifications: string[];
     institutions: string[];
+    productTypes: string[];
     assets: string[];
     editingRowIndex: number | null;
     onEditingRowIndexChange: (index: number | null) => void;
@@ -28,19 +29,22 @@ export interface DataSectionProps {
     onSort: (key: keyof AssetEntry) => void;
     selectedClassifications: string[];
     selectedInstitutions: string[];
+    selectedProductTypes: string[];
     selectedAssets: string[];
     onToggleClassificationFilter: (value: string) => void;
     onToggleInstitutionFilter: (value: string) => void;
+    onToggleProductTypeFilter: (value: string) => void;
     onToggleAssetFilter: (value: string) => void;
     onClearClassificationFilters: () => void;
     onClearInstitutionFilters: () => void;
+    onClearProductTypeFilters: () => void;
     onClearAssetFilters: () => void;
     onDeleteRow: (originalIndex: number) => void;
     onPreview: () => void;
     previewLabel?: string;
 }
 
-type FilterKey = "classification" | "institution" | "asset";
+type FilterKey = "classification" | "institution" | "product" | "asset";
 
 const selectClass =
     "bg-transparent border-b border-border/40 focus:border-primary focus:outline-none py-1 w-full text-xs font-bold transition-colors appearance-none";
@@ -174,6 +178,7 @@ export function DataSection({
     rows,
     classifications,
     institutions,
+    productTypes,
     assets,
     editingRowIndex,
     onEditingRowIndexChange,
@@ -182,12 +187,15 @@ export function DataSection({
     onSort,
     selectedClassifications,
     selectedInstitutions,
+    selectedProductTypes,
     selectedAssets,
     onToggleClassificationFilter,
     onToggleInstitutionFilter,
+    onToggleProductTypeFilter,
     onToggleAssetFilter,
     onClearClassificationFilters,
     onClearInstitutionFilters,
+    onClearProductTypeFilters,
     onClearAssetFilters,
     onDeleteRow,
     onPreview,
@@ -342,6 +350,21 @@ export function DataSection({
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <FilterDropdown
+                        label={t("settings.productTypes")}
+                        options={productTypes}
+                        selected={selectedProductTypes}
+                        onToggle={onToggleProductTypeFilter}
+                        onClear={onClearProductTypeFilters}
+                        open={openFilter === "product"}
+                        onOpenChange={(open) => setOpenFilter(open ? "product" : null)}
+                    />
+                    <span className="text-xs font-bold text-slate-500 self-center">{t("settings.productType")}</span>
+                    {selectedProductTypes.length > 0 && (
+                        <span className="text-[10px] font-bold text-primary">{selectedProductTypes.length}</span>
+                    )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <FilterDropdown
                         label={t("settings.assets")}
                         options={assets}
                         selected={selectedAssets}
@@ -414,6 +437,26 @@ export function DataSection({
                                 <div className="flex items-center justify-between gap-2">
                                     <div
                                         className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary"
+                                        onClick={() => onSort("ProductType")}
+                                    >
+                                        {t("settings.productType")}
+                                        {renderSortIcon("ProductType")}
+                                    </div>
+                                    <FilterDropdown
+                                        label={t("settings.productTypes")}
+                                        options={productTypes}
+                                        selected={selectedProductTypes}
+                                        onToggle={onToggleProductTypeFilter}
+                                        onClear={onClearProductTypeFilters}
+                                        open={openFilter === "product"}
+                                        onOpenChange={(open) => setOpenFilter(open ? "product" : null)}
+                                    />
+                                </div>
+                            </th>
+                            <th className="px-6 py-3 border-b border-border/40 bg-transparent group relative">
+                                <div className="flex items-center justify-between gap-2">
+                                    <div
+                                        className="flex items-center gap-2 cursor-pointer select-none grow transition-colors hover:text-primary"
                                         onClick={() => onSort("Asset")}
                                     >
                                         {t("settings.asset")}
@@ -479,6 +522,17 @@ export function DataSection({
                                             />
                                         ) : (
                                             row.Institution
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
+                                        {editing ? (
+                                            <FieldSelect
+                                                value={row.ProductType || row.Asset}
+                                                options={productTypes}
+                                                onChange={(v) => onDataChange(originalIndex, "ProductType", v)}
+                                            />
+                                        ) : (
+                                            row.ProductType || row.Asset
                                         )}
                                     </td>
                                     <td className="px-6 py-1.5 text-sm font-medium text-foreground tracking-tight">
@@ -558,6 +612,20 @@ export function DataSection({
                                             />
                                         ) : (
                                             <p className="text-sm font-medium text-foreground">{row.Institution}</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+                                            {t("settings.productType")}
+                                        </p>
+                                        {editing ? (
+                                            <FieldSelect
+                                                value={row.ProductType || row.Asset}
+                                                options={productTypes}
+                                                onChange={(v) => onDataChange(originalIndex, "ProductType", v)}
+                                            />
+                                        ) : (
+                                            <p className="text-sm font-medium text-foreground">{row.ProductType || row.Asset}</p>
                                         )}
                                     </div>
                                     <div>
