@@ -1,11 +1,13 @@
 export type Classification = string;
 export type Institution = string;
+export type ProductType = string;
 export type Asset = string;
 
 export interface AssetEntry {
   Date: string;
   Classification: string;
   Institution: string;
+  ProductType: string;
   Asset: string;
   Value: number;
 }
@@ -26,6 +28,7 @@ export interface BudgetEntry {
 export interface Settings {
   classifications: string[];
   institutions: string[];
+  productTypes: string[];
   assets: string[];
   incomeCategories: string[];
   expenseCategories: string[];

@@ -50,6 +50,11 @@ const ASSET_HEADER_MAP: Record<string, keyof AssetEntry> = {
   institution: "Institution",
   instituicao: "Institution",
   instituição: "Institution",
+  producttype: "ProductType",
+  product_type: "ProductType",
+  tipo: "ProductType",
+  tipodeativo: "ProductType",
+  tipo_de_ativo: "ProductType",
   asset: "Asset",
   ativo: "Asset",
   value: "Value",
@@ -104,11 +109,14 @@ function mapAssetRow(row: Record<string, unknown>): AssetEntry | null {
 
   date = normalizeDbDateToMonthStart(date);
 
+  const asset = mapped.Asset || mapped.Institution || "";
+
   return {
     Date: date,
     Classification: mapped.Classification || "",
-    Institution: mapped.Institution || mapped.Asset || "",
-    Asset: mapped.Asset || mapped.Institution || "",
+    Institution: mapped.Institution || asset,
+    ProductType: mapped.ProductType || asset,
+    Asset: asset,
     Value: value,
   };
 }
@@ -229,21 +237,32 @@ export function buildAssetRelations(data: AssetEntry[]) {
   const institutionsByAsset: Record<string, Set<string>> = {};
   const assetsByClass: Record<string, Set<string>> = {};
   const institutionsByClass: Record<string, Set<string>> = {};
+  const productTypesByInstitution: Record<string, Set<string>> = {};
+  const assetsByProductType: Record<string, Set<string>> = {};
+  const productTypesByClass: Record<string, Set<string>> = {};
   const classByAssetInst: Record<string, string> = {};
 
   data.forEach((row) => {
     const inst = row.Institution || row.Asset;
     const asset = row.Asset;
+    const product = row.ProductType || row.Asset;
     const cls = row.Classification;
     if (!assetsByInstitution[inst]) assetsByInstitution[inst] = new Set();
     assetsByInstitution[inst].add(asset);
     if (!institutionsByAsset[asset]) institutionsByAsset[asset] = new Set();
     institutionsByAsset[asset].add(inst);
+    if (!productTypesByInstitution[inst]) productTypesByInstitution[inst] = new Set();
+    productTypesByInstitution[inst].add(product);
+    if (!assetsByProductType[product]) assetsByProductType[product] = new Set();
+    assetsByProductType[product].add(asset);
     if (cls) {
       if (!assetsByClass[cls]) assetsByClass[cls] = new Set();
       assetsByClass[cls].add(asset);
       if (!institutionsByClass[cls]) institutionsByClass[cls] = new Set();
       institutionsByClass[cls].add(inst);
+      if (!productTypesByClass[cls]) productTypesByClass[cls] = new Set();
+      productTypesByClass[cls].add(product);
+      classByAssetInst[`${inst}::${product}::${asset}`] = cls;
       classByAssetInst[`${inst}::${asset}`] = cls;
     }
   });
@@ -253,6 +272,9 @@ export function buildAssetRelations(data: AssetEntry[]) {
     institutionsByAsset,
     assetsByClass,
     institutionsByClass,
+    productTypesByInstitution,
+    assetsByProductType,
+    productTypesByClass,
     classByAssetInst,
   };
 }
