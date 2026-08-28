@@ -14,15 +14,24 @@ jobs:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
-          set -euo pipefail
+          set -u
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
             echo "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY secrets"
             exit 1
           fi
-          curl -sf \
+          echo "Pinging host from SUPABASE_URL (secret present)"
+          # Prefer net_worth; fall back to auth health (no RLS)
+          if ! curl -sfS --connect-timeout 20 --max-time 40 \
             "${SUPABASE_URL}/rest/v1/net_worth?select=date&limit=1" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -H "Accept: application/json"
+            -H "Accept: application/json"; then
+            echo
+            echo "net_worth ping failed; trying auth/v1/health"
+            curl -sfS --connect-timeout 20 --max-time 40 \
+              "${SUPABASE_URL}/auth/v1/health" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              || { echo "curl exit $? — check project still exists (DNS/NXDOMAIN if deleted)"; exit 1; }
+          fi
           echo
           echo "Keep-alive OK"
