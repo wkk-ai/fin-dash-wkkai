@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FinTrack — patrimônio</title>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<title>Minha Carteira</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Material+Symbols+Outlined" rel="stylesheet" />
 <style>
   :root {
-    --background: #111418;
+    --bg: #111418;
     --surface: #1c2229;
     --border: #283039;
-    --foreground: #f1f5f9;
+    --fg: #f1f5f9;
     --muted: #94a3b8;
     --faint: #64748b;
     --primary: #137fec;
@@ -18,120 +18,190 @@
     --down: #f87171;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--background); color: var(--foreground); font-family: Manrope, sans-serif; }
-  header { display: flex; align-items: center; gap: 28px; padding: 18px 32px; border-bottom: 1px solid var(--border); }
-  .logo { font-weight: 800; }
-  .logo i { color: var(--primary); font-style: normal; }
-  nav button { background: none; border: 0; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; padding: 8px 0; }
-  nav button.on { color: var(--foreground); box-shadow: inset 0 -2px 0 var(--primary); }
-  main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 72px; }
-  .view { display: none; }
-  .view.on { display: block; }
-  h1 { font-size: 28px; margin: 0 0 8px; }
-  .lead { color: var(--muted); font-size: 14px; line-height: 1.5; }
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .card h2 { margin: 0 0 8px; font-size: 15px; }
-  .card li { color: var(--muted); margin: 8px 0; }
-  .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 18px; }
-  .top strong { display: block; font-size: 34px; letter-spacing: -0.03em; white-space: nowrap; }
-  .pill { font-weight: 700; white-space: nowrap; }
-  .tools { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
-  .search { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--foreground); font: inherit; padding: 12px 14px; }
-  .toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
-  .toggle button { border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
-  .toggle button.on { background: var(--primary); color: white; }
-  .cols {
-    display: grid;
-    grid-template-columns: 18px minmax(180px, 1fr) 156px 156px 78px;
-    column-gap: 18px;
-    align-items: center;
+  body {
+    margin: 0;
+    background: #0b0d10;
+    color: var(--fg);
+    font-family: Manrope, sans-serif;
   }
-  .labels { color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 8px 18px 10px; }
-  .labels span:nth-child(n+3) { text-align: right; }
-  .block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
-  .line { padding: 13px 18px; cursor: pointer; }
-  .line:hover { background: rgba(19,127,236,.07); }
-  .line span { white-space: nowrap; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-  .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
-  .sub .name { font-weight: 600; padding-left: 8px; }
-  .asset .name { font-weight: 500; color: #e2e8f0; padding-left: 22px; }
-  .w { text-align: right; color: var(--faint); font-size: 13px; font-weight: 600; }
-  .up { color: var(--up); }
-  .down { color: var(--down); }
-  .muted { color: var(--faint); }
-  .chev { color: var(--faint); display: inline-block; transition: transform .12s; }
-  .open > .line .chev { transform: rotate(90deg); }
-  .nest, .papers { display: none; }
-  .open > .nest, .sub.open > .papers { display: block; }
-  .sub { border-top: 1px solid var(--border); }
-  .asset { border-top: 1px solid rgba(40,48,57,.7); background: #161b21; cursor: default; }
-  .asset:hover { background: #161b21; }
-  @media (max-width: 860px) {
-    .cards, .tools, .top { display: block; }
-    .toggle { margin-top: 10px; }
-    .cols { grid-template-columns: 16px 1fr; row-gap: 4px; }
-    .num, .w { text-align: left; }
+  .phone {
+    width: min(100%, 390px);
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--bg);
+    position: relative;
+    padding-bottom: 96px;
   }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: rgba(28,34,41,.85); position: sticky; top: 0; z-index: 5;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; }
+  .brand .sq {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(19,127,236,.2); color: var(--primary);
+    display: grid; place-items: center;
+  }
+  .tools { display: flex; align-items: center; gap: 8px; }
+  .spark {
+    height: 36px; padding: 0 10px; border-radius: 8px;
+    border: 1px solid rgba(19,127,236,.5); background: rgba(19,127,236,.1);
+    color: var(--primary); display: grid; place-items: center;
+  }
+  .round {
+    width: 36px; height: 36px; border-radius: 999px;
+    background: var(--border); color: var(--fg); display: grid; place-items: center;
+  }
+  .avatar { width: 36px; height: 36px; border-radius: 999px; border: 2px solid var(--border); background: #334155; }
+  .page { padding: 20px 16px 0; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.03em; }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; font-weight: 600; }
+  .tools-row { display: flex; flex-direction: column; gap: 10px; }
+  .date, .total {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    height: 54px; padding: 0 14px;
+  }
+  .date { justify-content: space-between; font-weight: 700; font-size: 14px; }
+  .date span, .total .ic { color: var(--muted); }
+  .total .ic {
+    width: 36px; height: 36px; border-radius: 8px; background: rgba(19,127,236,.1);
+    color: var(--primary); display: grid; place-items: center;
+  }
+  .total small { display: block; color: var(--muted); font-size: 11px; font-weight: 600; }
+  .total b { font-size: 16px; }
+  .switch {
+    display: flex; padding: 3px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .switch button {
+    flex: 1; border: 0; background: transparent; color: var(--muted);
+    font: inherit; font-weight: 700; font-size: 13px; padding: 9px 8px; border-radius: 9px; cursor: pointer;
+  }
+  .switch button.on { background: var(--primary); color: white; }
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .sec-head { padding: 14px 14px 12px; border-bottom: 1px solid var(--border); background: rgba(17,20,24,.5); }
+  .sec-title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; }
+  .sec-title .material-symbols-outlined { color: var(--primary); font-size: 20px; }
+  .sec-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 8px; font-size: 12.5px; }
+  .money { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .sec-meta b { font-size: 14px; }
+  .pipe { color: #475569; }
+  .up { color: var(--up); font-weight: 700; }
+  .down { color: var(--down); font-weight: 700; }
+  .vs { color: #cbd5e1; font-size: 12px; font-weight: 600; }
+  .pill { padding: 2px 8px; border-radius: 999px; background: var(--border); color: #cbd5e1; font-size: 11px; font-weight: 700; }
+  .trend { display: inline-flex; align-items: center; gap: 2px; }
+  .trend .material-symbols-outlined { font-size: 16px; }
+  .body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    border: 1px solid var(--border);
+    background: rgba(15,23,42,.4);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .chev { color: #94a3b8; font-size: 16px; }
+  .letter {
+    width: 32px; height: 32px; border-radius: 999px; flex: none;
+    background: rgba(19,127,236,.2); color: var(--primary);
+    border: 1px solid rgba(19,127,236,.3);
+    display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  }
+  .who { min-width: 0; }
+  .who b { display: block; font-size: 14px; font-weight: 700; }
+  .who span { color: var(--faint); font-size: 12px; font-weight: 500; }
+  .big { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .stats p { margin: 0; }
+  .k { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+  .v { font-size: 14px; font-weight: 700; margin-top: 4px; }
+  .muted { color: #cbd5e1; }
+  .papers { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .paper { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0 7px 18px; }
+  .paper b { font-size: 12px; font-weight: 600; }
+  .paper .right { text-align: right; }
+  .paper .right b { display: block; }
+  .paper small { font-size: 10px; font-weight: 700; }
+  .tabbar {
+    position: sticky; bottom: 0; margin-top: 16px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 8px 8px 12px;
+  }
+  .tab { flex: 1; min-width: 0; text-align: center; color: #94a3b8; font-size: 8px; font-weight: 500; background: none; border: 0; font-family: inherit; padding: 6px 0; line-height: 1; }
+  .tab b { display: block; font-weight: 500; margin-top: 4px; white-space: nowrap; }
+  .tab.on { color: var(--primary); }
+  .tab .material-symbols-outlined { display: block; font-size: 22px; margin-bottom: 4px; }
+  .gap { width: 56px; }
+  .fab {
+    position: absolute; left: 50%; top: -18px; transform: translateX(-50%);
+    width: 56px; height: 56px; border-radius: 999px; border: 4px solid var(--surface);
+    background: var(--primary); color: white;
+    box-shadow: 0 4px 14px rgba(59,130,246,.5);
+    display: grid; place-items: center;
+  }
+  .material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24; }
 </style>
 </head>
 <body>
-<header>
-  <div class="logo">Fin<i>Track</i></div>
-  <nav>
-    <button data-view="ideas">Ideias do início</button>
-    <button class="on" data-view="worth">Patrimônio</button>
-  </nav>
-</header>
-<main>
-  <section id="ideas" class="view">
-    <h1>O início fica como está</h1>
-    <p class="lead">Mesmas cores, mesmos cards, mesmo gráfico.</p>
-    <div class="cards">
-      <article class="card">
-        <h2>O que dá para somar</h2>
-        <ol>
-          <li>Três linhas do que mais mexeu, com reais e porcentagem.</li>
-          <li>Aviso do que sumiu no mês.</li>
-          <li>Separar dinheiro novo de oscilação de mercado.</li>
-        </ol>
-      </article>
-      <article class="card">
-        <h2>O que não mexer</h2>
-        <p class="lead">Total, variação, projeção, gráfico e pizza.</p>
-      </article>
-    </div>
-  </section>
-  <section id="worth" class="view on">
-    <div class="top">
-      <div>
-        <p class="lead" style="margin:0 0 4px">Setembro 2026</p>
-        <strong>R$ 1.367.428,44</strong>
-      </div>
-      <div class="pill up">+ R$ 62.693,28 &nbsp;&nbsp; +4,8%</div>
-    </div>
+<div class="phone">
+  <div class="topbar">
+    <div class="brand"><span class="sq"><span class="material-symbols-outlined" style="font-size:18px">grid_view</span></span> FinTrack</div>
     <div class="tools">
-      <input class="search" id="q" placeholder="Buscar banco, tipo ou papel" />
-      <div class="toggle">
-        <button id="byInst" class="on" type="button">Por instituição</button>
-        <button id="byType" type="button">Por tipo de ativo</button>
+      <span class="spark"><span class="material-symbols-outlined" style="font-size:18px">auto_awesome</span></span>
+      <span class="round"><span class="material-symbols-outlined" style="font-size:18px">dark_mode</span></span>
+      <span class="round"><span class="material-symbols-outlined" style="font-size:18px">flag</span></span>
+      <span class="avatar"></span>
+    </div>
+  </div>
+  <div class="page">
+    <div>
+      <h1>Minha Carteira</h1>
+      <p class="sub">Visualização detalhada dos seus ativos em 01/Sep/26</p>
+    </div>
+    <div class="tools-row">
+      <div class="date">01/Sep/26 <span class="material-symbols-outlined">calendar_month</span></div>
+      <div class="total">
+        <span class="ic"><span class="material-symbols-outlined">account_balance_wallet</span></span>
+        <div><small>Total Atual</small><b id="grand"></b></div>
       </div>
     </div>
-    <div class="cols labels"><span></span><span>Nome</span><span>Valor</span><span>Variação</span><span>% mês</span></div>
-    <div id="list"></div>
-    <p class="lead">Primeiro clique abre o tipo (renda fixa, variável, título, previdência). Segundo clique abre cada papel. A outra visão inverte: o tipo vem primeiro.</p>
-  </section>
-</main>
+    <div class="switch">
+      <button id="byType" class="on" type="button">Por tipo</button>
+      <button id="byInst" type="button">Por instituição</button>
+    </div>
+    <div id="list" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+  <nav class="tabbar">
+    <button class="tab" type="button"><span class="material-symbols-outlined">home</span><b>Dashboard</b></button>
+    <button class="tab on" type="button"><span class="material-symbols-outlined">account_balance_wallet</span><b>Carteira</b></button>
+    <span class="gap"></span>
+    <button class="tab" type="button"><span class="material-symbols-outlined">swap_horiz</span><b>Movimentações</b></button>
+    <button class="tab" type="button"><span class="material-symbols-outlined">settings</span><b>Configurações</b></button>
+    <span class="fab"><span class="material-symbols-outlined">add</span></span>
+  </nav>
+</div>
 <script>
-const brl = (n) => Math.abs(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const money = (n) => (n >= 0 ? "+ " : "− ") + brl(n);
+const brl = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const k = (n) => {
+  const abs = Math.abs(n);
+  const body = abs >= 1000 ? (n / 1000).toFixed(1).replace(".", ",") + "k" : n.toFixed(1).replace(".", ",");
+  return (n >= 0 ? "+" : "") + body;
+};
 const pct = (now, prev) => {
   if (!prev) return now ? "novo" : "—";
   const p = ((now - prev) / prev) * 100;
-  return (p >= 0 ? "+" : "−") + Math.abs(p).toFixed(1).replace(".", ",") + "%";
+  return (p >= 0 ? "+" : "") + p.toFixed(1) + "%";
 };
-const tone = (now, prev) => (now - prev >= 0 ? "up" : "down");
+const tone = (n) => (n < 0 ? "down" : "up");
 const ROWS = [
 ["Brasilprev","Previdência","PGBL Empresarial",12840.43,12667.5],
 ["Caixa","Renda Fixa","FGTS",85286.18,82362.76],
@@ -195,94 +265,99 @@ const ROWS = [
 ["XP","Título Público","Tesouro IPCA+ 2045",514.05,478.35]
 ];
 const items = ROWS.map(([inst, cls, asset, now, prev]) => ({ inst, cls, asset, now, prev }));
-let mode = "inst";
-function add(map, key, row) {
-  if (!map[key]) map[key] = [];
-  map[key].push(row);
-}
-function totals(list) {
-  return list.reduce((a, r) => ({ now: a.now + r.now, prev: a.prev + r.prev }), { now: 0, prev: 0 });
-}
-function tree() {
-  const outerKey = mode === "inst" ? "inst" : "cls";
-  const innerKey = mode === "inst" ? "cls" : "inst";
-  const outer = {};
-  items.forEach((r) => add(outer, r[outerKey], r));
-  return Object.entries(outer).map(([name, rows]) => {
+let mode = "type";
+const open = new Set();
+function sum(list) { return list.reduce((a, r) => ({ now: a.now + r.now, prev: a.prev + r.prev }), { now: 0, prev: 0 }); }
+function groups() {
+  const ok = mode === "type" ? "cls" : "inst";
+  const ik = mode === "type" ? "inst" : "cls";
+  const map = {};
+  items.forEach((r) => { (map[r[ok]] ||= []).push(r); });
+  return Object.entries(map).map(([name, rows]) => {
     const inner = {};
-    rows.forEach((r) => add(inner, r[innerKey], r));
+    rows.forEach((r) => { (inner[r[ik]] ||= []).push(r); });
     const children = Object.entries(inner).map(([child, assets]) => ({
-      name: child,
-      ...totals(assets),
-      assets: assets.slice().sort((a, b) => b.now - a.now)
+      name: child, ...sum(assets), assets: assets.slice().sort((a, b) => b.now - a.now)
     })).sort((a, b) => b.now - a.now);
-    return { name, ...totals(rows), children };
+    return { name, ...sum(rows), children };
   }).sort((a, b) => b.now - a.now);
 }
-function cells(name, now, prev, cls) {
-  const gone = now === 0;
-  return `<span class="chev">›</span>
-    <span class="name ${gone ? "muted" : ""}">${name}${gone ? " · saiu" : ""}</span>
-    <span class="num">${gone ? "—" : brl(now)}</span>
-    <span class="num ${tone(now, prev)}">${money(now - prev)}</span>
-    <span class="num ${tone(now, prev)}">${pct(now, prev)}</span>`;
+function card(child, parentName, parentNow) {
+  const id = parentName + "|" + child.name;
+  const d = child.now - child.prev;
+  const live = child.assets.filter((a) => a.now > 0);
+  const subtitle = live.length === 1 ? live[0].asset : live.length + " ativos";
+  const peso = parentNow ? (child.now / parentNow) * 100 : 0;
+  const pesoTotal = grand ? (child.now / grand) * 100 : 0;
+  const el = document.createElement("article");
+  el.className = "card";
+  el.innerHTML = `
+    <div class="card-top">
+      <div class="left">
+        <span class="material-symbols-outlined chev">chevron_right</span>
+        <div class="letter">${child.name.charAt(0)}</div>
+        <div class="who"><b>${child.name}</b><span>${subtitle}</span></div>
+      </div>
+      <div class="big">${brl(child.now)}</div>
+    </div>
+    <div class="stats">
+      <div><p class="k">Var. Abs</p><p class="v ${tone(d)}">${k(d)}</p></div>
+      <div><p class="k">Var. Mês</p><p class="v ${tone(d)}">${pct(child.now, child.prev)}</p></div>
+      <div><p class="k">Peso Categ.</p><p class="v muted">${peso.toFixed(1)}%</p></div>
+      <div><p class="k">Peso Total</p><p class="v muted">${pesoTotal.toFixed(1)}%</p></div>
+    </div>`;
+  const papers = document.createElement("div");
+  papers.className = "papers";
+  papers.hidden = !open.has(id);
+  child.assets.forEach((a) => {
+    const dd = a.now - a.prev;
+    const row = document.createElement("div");
+    row.className = "paper";
+    row.innerHTML = `<b>${a.now ? a.asset : a.asset + " · saiu"}</b><div class="right"><b>${a.now ? brl(a.now) : "—"}</b><small class="${tone(dd)}">${k(dd)} · ${pct(a.now, a.prev)}</small></div>`;
+    papers.appendChild(row);
+  });
+  el.appendChild(papers);
+  el.querySelector(".chev").style.transform = open.has(id) ? "rotate(90deg)" : "";
+  el.addEventListener("click", () => {
+    if (open.has(id)) open.delete(id); else open.add(id);
+    render();
+  });
+  return el;
 }
-const list = document.getElementById("list");
-function render(q) {
-  const query = (q || "").trim().toLowerCase();
+const grand = items.reduce((s, r) => s + r.now, 0);
+document.getElementById("grand").textContent = brl(grand);
+function render() {
+  const list = document.getElementById("list");
   list.innerHTML = "";
-  tree().forEach((group) => {
-    const kids = group.children.map((child) => {
-      const assets = child.assets.filter((a) => {
-        if (!query) return true;
-        return [group.name, child.name, a.asset, a.inst, a.cls].join(" ").toLowerCase().includes(query);
-      });
-      return { ...child, assets };
-    }).filter((c) => !query || c.name.toLowerCase().includes(query) || c.assets.length);
-    if (query && !group.name.toLowerCase().includes(query) && !kids.length) return;
-    const el = document.createElement("article");
-    el.className = "block" + (query ? " open" : "");
-    const head = document.createElement("div");
-    head.className = "line cols";
-    head.innerHTML = cells(group.name, group.now, group.prev);
-    head.addEventListener("click", () => el.classList.toggle("open"));
-    const nest = document.createElement("div");
-    nest.className = "nest";
-    kids.forEach((child) => {
-      const sub = document.createElement("div");
-      sub.className = "sub" + (query ? " open" : "");
-      const sh = document.createElement("div");
-      sh.className = "line cols";
-      sh.innerHTML = cells(child.name, child.now, child.prev);
-      sh.addEventListener("click", (e) => { e.stopPropagation(); sub.classList.toggle("open"); });
-      const papers = document.createElement("div");
-      papers.className = "papers";
-      child.assets.forEach((a) => {
-        const row = document.createElement("div");
-        row.className = "line cols asset";
-        const label = mode === "inst" ? a.asset : a.asset;
-        row.innerHTML = cells(label, a.now, a.prev).replace('class="chev">›', 'class="chev" style="visibility:hidden">›');
-        papers.appendChild(row);
-      });
-      sub.append(sh, papers);
-      nest.appendChild(sub);
-    });
-    el.append(head, nest);
-    list.appendChild(el);
+  groups().forEach((g) => {
+    const d = g.now - g.prev;
+    const icon = d >= 0 ? "trending_up" : "trending_down";
+    const share = grand ? (g.now / grand) * 100 : 0;
+    const sec = document.createElement("section");
+    sec.className = "section";
+    sec.innerHTML = `
+      <div class="sec-head">
+        <div class="sec-title"><span class="material-symbols-outlined">category</span>${g.name}</div>
+        <div class="sec-meta">
+          <span class="money">
+            <b>${brl(g.now)}</b><span class="pipe">|</span>
+            <span class="${tone(d)}">${k(d)}</span><span class="pipe">|</span>
+            <span class="trend ${tone(d)}"><span class="material-symbols-outlined">${icon}</span>${pct(g.now, g.prev)}</span>
+            <span class="vs">vs. último mês</span>
+          </span>
+          <span class="pill">${share.toFixed(1)}% da carteira</span>
+        </div>
+      </div>`;
+    const body = document.createElement("div");
+    body.className = "body";
+    g.children.filter((c) => c.now > 0).forEach((c) => body.appendChild(card(c, g.name, g.now)));
+    sec.appendChild(body);
+    list.appendChild(sec);
   });
 }
-render("");
-document.getElementById("q").addEventListener("input", (e) => render(e.target.value));
-document.getElementById("byInst").onclick = () => { mode = "inst"; document.getElementById("byInst").classList.add("on"); document.getElementById("byType").classList.remove("on"); render(document.getElementById("q").value); };
-document.getElementById("byType").onclick = () => { mode = "type"; document.getElementById("byType").classList.add("on"); document.getElementById("byInst").classList.remove("on"); render(document.getElementById("q").value); };
-document.querySelectorAll("header nav button").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll("header nav button").forEach((b) => b.classList.remove("on"));
-    document.querySelectorAll(".view").forEach((v) => v.classList.remove("on"));
-    btn.classList.add("on");
-    document.getElementById(btn.dataset.view).classList.add("on");
-  });
-});
+render();
+document.getElementById("byType").onclick = () => { mode = "type"; open.clear(); document.getElementById("byType").classList.add("on"); document.getElementById("byInst").classList.remove("on"); render(); };
+document.getElementById("byInst").onclick = () => { mode = "inst"; open.clear(); document.getElementById("byInst").classList.add("on"); document.getElementById("byType").classList.remove("on"); render(); };
 </script>
 </body>
 </html>
