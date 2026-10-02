@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
-import { parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
+import { formatMonthYear, parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
@@ -105,7 +105,7 @@ export default function Portfolio() {
             });
             const value = filtered.reduce((sum, d) => sum + d.Value, 0);
             return {
-                name: dateObjects[dateStr]?.toLocaleString("default", { month: "short", year: "2-digit" }) ?? dateStr,
+                name: dateObjects[dateStr] ? formatMonthYear(dateObjects[dateStr]) : dateStr,
                 value,
             };
         });

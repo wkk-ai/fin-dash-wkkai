@@ -15,7 +15,7 @@ export function parseCustomDate(dateStr: string): Date {
     const ymdMatch = cleanStr.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
     if (ymdMatch) {
         const [, y, m, d] = ymdMatch;
-        return new Date(Date.UTC(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10)));
+        return new Date(Date.UTC(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10), 12, 0, 0));
     }
 
     // Try format: DD/MM/YYYY or MM/DD/YYYY or DD/MM/YY or MM/DD/YY
@@ -31,15 +31,15 @@ export function parseCustomDate(dateStr: string): Date {
         // If second > 12, it must be day (MM/DD)
         if (day > 12) {
             // Must be DD/MM
-            return new Date(Date.UTC(year, month - 1, day));
+            return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
         } else if (month > 12) {
             // Must be MM/DD
-            return new Date(Date.UTC(year, day - 1, month));
+            return new Date(Date.UTC(year, day - 1, month, 12, 0, 0));
         }
 
         // Default to DD/MM if ambiguous (or user preference)
         // Brazilian users (kazuo) typically use DD/MM
-        return new Date(Date.UTC(year, month - 1, day));
+        return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
     }
 
     // Try format: "01/jan/22" or "01/Feb/23" or "01/março/2025"
@@ -68,9 +68,8 @@ export function parseCustomDate(dateStr: string): Date {
         const cleanMonth = monthStr.toLowerCase().replace(".", "");
         const month = months[cleanMonth.slice(0, 4)] ?? months[cleanMonth.slice(0, 3)] ?? 0;
 
-        // Use Date.UTC to avoid timezone issues and let it handle day overflow (e.g. Feb 29 -> Mar 01)
-        const timestamp = Date.UTC(year, month, day);
-        return new Date(timestamp);
+        // Noon UTC so Brazil (UTC-3) still shows the same calendar month.
+        return new Date(Date.UTC(year, month, day, 12, 0, 0));
     }
 
     const fallback = new Date(dateStr);
@@ -83,6 +82,12 @@ export function formatCustomDate(date: Date): string {
     const month = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
     const year = String(date.getUTCFullYear()).slice(-2);
     return `${day}/${month}/${year}`;
+}
+
+/** Chart / tooltip label from a DB snapshot date. Always UTC so day-1 is not the previous month in Brazil. */
+export function formatMonthYear(date: Date, locale: string = "en-US"): string {
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleString(locale, { month: "short", year: "2-digit", timeZone: "UTC" });
 }
 
 /** Calendar month key YYYY-MM (UTC). */
