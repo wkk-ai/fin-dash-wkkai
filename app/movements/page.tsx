@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { MovementEntry, BudgetEntry } from "@/types/database";
-import { parseCustomDate } from "@/lib/utils";
+import { formatMonthYear, parseCustomDate } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
 import MovementsTable from "@/components/MovementsTable";
 import { fetchMovements as fetchMovementsData, fetchSettings as fetchSettingsData } from "@/lib/supabase-data";
@@ -63,12 +63,12 @@ export default function MovementsPage() {
     };
 
     const latestDate = getLatestDate();
-    const currentMonth = latestDate.toLocaleString('en-US', { month: 'short' });
-    const currentYear = String(latestDate.getFullYear()).slice(-2);
+    const currentMonth = latestDate.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    const currentYear = String(latestDate.getUTCFullYear()).slice(-2);
 
-    const prevMonthDate = new Date(latestDate.getFullYear(), latestDate.getMonth() - 1, 1);
-    const prevMonth = prevMonthDate.toLocaleString('en-US', { month: 'short' });
-    const prevYear = String(prevMonthDate.getFullYear()).slice(-2);
+    const prevMonthDate = new Date(Date.UTC(latestDate.getUTCFullYear(), latestDate.getUTCMonth() - 1, 1, 12, 0, 0));
+    const prevMonth = prevMonthDate.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+    const prevYear = String(prevMonthDate.getUTCFullYear()).slice(-2);
 
     const matchMonth = (dateStr: string, m: string, y: string) => {
         const parts = dateStr.split('/'); // DD/MMM/YY
@@ -195,8 +195,8 @@ export default function MovementsPage() {
     const monthlyNetAgg: Record<string, { monthKey: string, date: string, income: number, expense: number }> = {};
     filteredMovements.forEach(m => {
         const dateObj = parseCustomDate(m.Date);
-        const monthKey = `${dateObj.getFullYear()}-${(dateObj.getMonth() + 1).toString().padStart(2, '0')}`;
-        const displayDate = dateObj.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }).replace('.', '');
+        const monthKey = `${dateObj.getUTCFullYear()}-${(dateObj.getUTCMonth() + 1).toString().padStart(2, "0")}`;
+        const displayDate = formatMonthYear(dateObj, "pt-BR").replace(".", "");
 
         if (!monthlyNetAgg[monthKey]) {
             monthlyNetAgg[monthKey] = { monthKey, date: displayDate, income: 0, expense: 0 };
@@ -228,7 +228,7 @@ export default function MovementsPage() {
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t("movements.description")}</p>
                         <span className="size-1 rounded-full bg-slate-400" />
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                            {latestDate.toLocaleDateString(t("nav.selectLanguage") === "English" ? 'en-US' : 'pt-BR', { month: 'long', year: 'numeric' })}
+                            {latestDate.toLocaleDateString(t("nav.selectLanguage") === "English" ? "en-US" : "pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })}
                         </span>
                     </div>
                 </div>
@@ -269,7 +269,7 @@ export default function MovementsPage() {
                     <h3 className="text-2xl font-bold text-foreground">{formatCurrency(Math.max(0, curr.net))}</h3>
                     <div className="mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold text-slate-500">
                         <span className="material-symbols-outlined text-sm">event</span>
-                        <span>{currentMonth} {latestDate.getFullYear()}</span>
+                        <span>{currentMonth} {latestDate.getUTCFullYear()}</span>
                     </div>
                 </div>
             </div>

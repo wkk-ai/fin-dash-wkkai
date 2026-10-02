@@ -7,6 +7,7 @@ import { AssetEntry } from "@/types/database";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
 import { fetchMarketData } from "@/lib/supabase-data";
+import { formatMonthYear } from "@/lib/utils";
 
 interface DashboardSectionProps {
     data: AssetEntry[];
@@ -36,7 +37,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
 
     // Wealth Evolution history for chart
     const wealthHistory = uniqueDates.map(dateStr => ({
-        name: dateObjects[dateStr].toLocaleString('default', { month: 'short', year: '2-digit' }),
+        name: formatMonthYear(dateObjects[dateStr]),
         value: dateValues[dateStr]
     }));
 
