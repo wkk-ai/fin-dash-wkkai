@@ -195,17 +195,52 @@ export default function Portfolio() {
     const currentAssets = data.filter(d => d.Date === currentDateStr);
     const previousAssets = prevDateStr ? data.filter(d => d.Date === prevDateStr) : [];
 
+    const assetMatchKey = (asset: AssetEntry) =>
+        [asset.Institution, asset.Classification, asset.Asset, resolveProductType(asset)].join("\u0000");
+
+    const prevValueByAsset = new Map<AssetEntry, number | null>();
+    if (prevDateStr) {
+        const prevByKey = new Map<string, AssetEntry[]>();
+        previousAssets.forEach((asset) => {
+            const key = assetMatchKey(asset);
+            const list = prevByKey.get(key);
+            if (list) list.push(asset);
+            else prevByKey.set(key, [asset]);
+        });
+        const currentByKey = new Map<string, AssetEntry[]>();
+        currentAssets.forEach((asset) => {
+            const key = assetMatchKey(asset);
+            const list = currentByKey.get(key);
+            if (list) list.push(asset);
+            else currentByKey.set(key, [asset]);
+        });
+        currentByKey.forEach((assets, key) => {
+            const previous = [...(prevByKey.get(key) ?? [])];
+            const used = new Set<number>();
+            [...assets].sort((a, b) => a.Value - b.Value).forEach((asset) => {
+                let bestIndex = -1;
+                let bestDistance = Infinity;
+                previous.forEach((candidate, index) => {
+                    if (used.has(index)) return;
+                    const distance = Math.abs(asset.Value - candidate.Value);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestIndex = index;
+                    }
+                });
+                if (bestIndex >= 0) {
+                    used.add(bestIndex);
+                    prevValueByAsset.set(asset, previous[bestIndex].Value);
+                } else {
+                    prevValueByAsset.set(asset, null);
+                }
+            });
+        });
+    }
+
     const getPrevValue = (asset: AssetEntry) => {
         if (!prevDateStr) return null;
-        const productType = resolveProductType(asset);
-        const prev = data.find(
-            d => d.Date === prevDateStr
-                && d.Institution === asset.Institution
-                && d.Asset === asset.Asset
-                && d.Classification === asset.Classification
-                && resolveProductType(d) === productType
-        );
-        return prev ? prev.Value : null;
+        return prevValueByAsset.get(asset) ?? null;
     };
 
     const calcGroupVariation = (groupAssets: AssetEntry[]) => {
