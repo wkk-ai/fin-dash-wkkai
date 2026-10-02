@@ -1,219 +1,285 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FinTrack — proposta</title>
+<title>FinTrack — patrimônio mais simples</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,520;9..144,640&family=Outfit:wght@380;500;620&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --ink: #14120e;
-    --ink-2: #1c1914;
-    --line: #2c2822;
-    --paper: #f4efe6;
-    --muted: #a39888;
-    --faint: #6f675c;
-    --up: #d6f25c;
-    --down: #e07a5f;
-    --bar: #e7d7b8;
+    --background: #111418;
+    --surface: #1c2229;
+    --border: #283039;
+    --foreground: #f1f5f9;
+    --muted: #94a3b8;
+    --faint: #64748b;
+    --primary: #137fec;
+    --up: #4ade80;
+    --down: #f87171;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--ink); color: var(--paper); }
   body {
-    font-family: Outfit, sans-serif;
-    font-weight: 380;
-    min-height: 100vh;
-    background-image:
-      radial-gradient(900px 420px at 90% -10%, rgba(214,242,92,.08), transparent 60%),
-      linear-gradient(180deg, #18160f 0%, #14120e 40%);
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Manrope, sans-serif;
   }
-  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
-  nav {
-    border-right: 1px solid var(--line);
-    padding: 28px 18px;
+  header {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    gap: 28px;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
   }
-  .mark { font-family: Fraunces, serif; font-size: 22px; letter-spacing: -0.03em; margin: 0 8px 22px; }
-  .mark span { color: var(--up); }
-  button.nav {
-    text-align: left;
+  .logo { font-weight: 800; letter-spacing: -0.03em; }
+  .logo i { color: var(--primary); font-style: normal; }
+  nav button {
     background: transparent;
-    color: var(--muted);
     border: 0;
-    border-radius: 10px;
-    padding: 10px 12px;
+    color: var(--muted);
     font: inherit;
+    font-weight: 600;
     cursor: pointer;
+    padding: 8px 2px;
   }
-  button.nav.on { background: var(--ink-2); color: var(--paper); }
-  main { padding: 36px 48px 64px; max-width: 980px; }
-  .kicker { color: var(--faint); letter-spacing: .14em; text-transform: uppercase; font-size: 11px; margin: 0 0 8px; }
-  h1 { font-family: Fraunces, serif; font-weight: 520; font-size: 64px; letter-spacing: -0.04em; margin: 0; line-height: .95; }
-  .delta { margin-top: 10px; font-size: 16px; color: var(--up); }
-  .delta.down { color: var(--down); }
-  .sub { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+  nav button.on { color: var(--foreground); box-shadow: inset 0 -2px 0 var(--primary); }
+  main { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
   .view { display: none; }
   .view.on { display: block; }
-  .chart {
-    margin: 36px 0 8px;
-    height: 180px;
-    border-bottom: 1px solid var(--line);
+  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.03em; }
+  .lead { color: var(--muted); margin: 0 0 22px; font-size: 14px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
   }
-  .chart svg { width: 100%; height: 100%; display: block; }
-  .axis { display: flex; justify-content: space-between; color: var(--faint); font-size: 12px; margin-top: 8px; }
-  .split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 36px; margin-top: 36px; }
-  h2 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); font-weight: 500; margin: 0 0 14px; }
-  .row { display: grid; grid-template-columns: 140px 1fr 88px; gap: 12px; align-items: center; margin: 10px 0; font-size: 14px; }
-  .track { height: 6px; background: #2a261f; border-radius: 99px; overflow: hidden; }
-  .fill { height: 100%; background: var(--bar); border-radius: 99px; }
-  .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .movers { display: flex; flex-direction: column; gap: 14px; }
-  .mover { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-  .mover b { font-weight: 500; }
-  .mover small { display: block; color: var(--faint); margin-top: 2px; }
+  .card h2 { margin: 0 0 10px; font-size: 15px; }
+  .card p, .card li { color: var(--muted); font-size: 14px; line-height: 1.45; }
+  .card ol { margin: 0; padding-left: 18px; }
+  .card li { margin: 8px 0; }
+  .total {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .total strong { display: block; font-size: 32px; letter-spacing: -0.03em; }
+  .pill { font-size: 14px; font-weight: 700; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
   .search {
     width: 100%;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    color: var(--paper);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--foreground);
     font: inherit;
-    font-size: 16px;
-    padding: 10px 0 12px;
-    margin: 28px 0 8px;
-    outline: none;
+    padding: 12px 14px;
+    margin-bottom: 14px;
   }
-  .search::placeholder { color: var(--faint); }
   .bank {
-    border-top: 1px solid var(--line);
-    padding: 16px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .bank-row, .asset-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 150px 170px 64px;
+    gap: 8px;
+    align-items: center;
+    padding: 14px 16px;
     cursor: pointer;
   }
-  .bank-top { display: grid; grid-template-columns: 28px 1fr 150px 120px; gap: 12px; align-items: center; }
+  .bank-row:hover { background: rgba(19,127,236,.06); }
+  .name { font-weight: 700; }
+  .money, .chg, .w { text-align: right; font-variant-numeric: tabular-nums; }
+  .w { color: var(--faint); font-size: 13px; }
   .chev { color: var(--faint); transition: transform .15s; }
-  .bank.open .chev { transform: rotate(90deg); }
-  .bank-name { font-size: 18px; }
-  .share { height: 4px; background: #2a261f; border-radius: 99px; margin-top: 8px; }
-  .share i { display: block; height: 100%; background: var(--up); border-radius: 99px; opacity: .85; }
-  .money { text-align: right; font-variant-numeric: tabular-nums; font-size: 18px; }
-  .chg { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--up); }
-  .chg.down { color: var(--down); }
-  .holdings { display: none; padding: 8px 0 4px 40px; }
-  .bank.open .holdings { display: block; }
-  .hold { display: flex; justify-content: space-between; color: var(--muted); font-size: 14px; padding: 6px 0; }
-  .note { margin-top: 28px; color: var(--muted); font-size: 13px; max-width: 62ch; line-height: 1.5; }
+  .bank.open > .bank-row .chev { transform: rotate(90deg); }
+  .assets { display: none; border-top: 1px solid var(--border); }
+  .bank.open > .assets { display: block; }
+  .asset-row {
+    grid-template-columns: 22px 1fr 150px 170px 64px;
+    padding: 10px 16px 10px 36px;
+    cursor: default;
+    font-size: 13px;
+  }
+  .asset-row .name { font-weight: 500; color: #e2e8f0; }
+  .gone { color: var(--faint); }
   @media (max-width: 800px) {
-    .shell { grid-template-columns: 1fr; }
-    nav { flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; align-items: center; }
-    .mark { margin: 0 12px 0 0; }
-    main { padding: 24px 18px 48px; }
-    h1 { font-size: 44px; }
-    .split { grid-template-columns: 1fr; }
-    .bank-top { grid-template-columns: 20px 1fr; }
-    .money, .chg { grid-column: 2; text-align: left; }
+    .cards { grid-template-columns: 1fr; }
+    .bank-row, .asset-row { grid-template-columns: 18px 1fr; }
+    .money, .chg, .w { grid-column: 2; text-align: left; }
   }
 </style>
 </head>
 <body>
-<div class="shell">
+<header>
+  <div class="logo">Fin<i>Track</i></div>
   <nav>
-    <p class="mark">Fin<span>Track</span></p>
-    <button class="nav on" data-view="home">Início</button>
+    <button class="nav on" data-view="ideas">Ideias do início</button>
     <button class="nav" data-view="worth">Patrimônio</button>
   </nav>
-  <main>
-    <section id="home" class="view on">
-      <p class="kicker">Setembro 2026</p>
-      <h1>R$ 1.367.428</h1>
-      <p class="delta">+ R$ 62.693 · +4,8% vs agosto</p>
-      <p class="sub">Uma pergunta por tela. O resto fica no patrimônio.</p>
-      <div class="chart">
-        <svg viewBox="0 0 800 180" preserveAspectRatio="none" aria-label="Patrimônio de 2022 a setembro 2026">
-          <path d="M0 150 C 80 146, 140 130, 200 118 S 320 100, 400 92 S 520 70, 600 48 S 720 22, 800 8" fill="none" stroke="#d6f25c" stroke-width="2.5"/>
-          <circle cx="800" cy="8" r="4" fill="#d6f25c"/>
-        </svg>
-      </div>
-      <div class="axis"><span>2022</span><span>2024</span><span>2026</span><span>Set 26</span></div>
-      <div class="split">
-        <div>
-          <h2>Onde está</h2>
-          <div class="row"><span>Renda fixa</span><div class="track"><div class="fill" style="width:50.8%"></div></div><span class="num">51%</span></div>
-          <div class="row"><span>Título público</span><div class="track"><div class="fill" style="width:33.4%"></div></div><span class="num">33%</span></div>
-          <div class="row"><span>Renda variável</span><div class="track"><div class="fill" style="width:11.5%"></div></div><span class="num">12%</span></div>
-          <div class="row"><span>Previdência</span><div class="track"><div class="fill" style="width:4.3%"></div></div><span class="num">4%</span></div>
-        </div>
-        <div>
-          <h2>O que mexeu</h2>
-          <div class="movers">
-            <div class="mover"><div><b>Nubank</b><small>Caixinhas subiram</small></div><span class="delta">+ R$ 55.297</span></div>
-            <div class="mover"><div><b>Onze</b><small>Previdência</small></div><span class="delta">+ R$ 3.527</span></div>
-            <div class="mover"><div><b>Clear</b><small>Só ações. Caixa não entrou</small></div><span class="delta down">− R$ 3.503</span></div>
-          </div>
-        </div>
-      </div>
-    </section>
+</header>
+<main>
+  <section id="ideas" class="view on">
+    <h1>O início fica como está</h1>
+    <p class="lead">Mesmas cores, mesmos cards, mesmo gráfico. Só ideias do que acrescentar, sem trocar a cara.</p>
+    <div class="cards">
+      <article class="card">
+        <h2>Embaixo dos cards de hoje</h2>
+        <ol>
+          <li>Três linhas do que mais mexeu no mês, com reais e porcentagem. Nubank +R$ 55.297 (+7,0%).</li>
+          <li>Um aviso do que sumiu. Em setembro saíram PETR4, USIM5, VALE3 e VILG11.</li>
+          <li>Separar dinheiro que você colocou de oscilação do mercado. Hoje os dois estão juntos no “vs mês passado”.</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h2>O que não mexer</h2>
+        <p>Total, variação do mês, projeção, gráfico azul e pizza de classes. Isso já responde a pergunta da primeira tela.</p>
+      </article>
+    </div>
+  </section>
 
-    <section id="worth" class="view">
-      <p class="kicker">Setembro 2026 · 8 bancos</p>
-      <h1>R$ 1.367.428</h1>
-      <p class="delta">+ R$ 62.693 no mês</p>
-      <input class="search" id="q" placeholder="Buscar banco ou papel" />
-      <div id="banks"></div>
-      <p class="note">Um nível só: o banco. Abre e vê os papéis. Sem classe, tipo de produto e ativo empilhados. Sem segunda tabela repetindo o mesmo dinheiro. Sem quatro filtros.</p>
-    </section>
-  </main>
-</div>
+  <section id="worth" class="view">
+    <div class="total">
+      <div>
+        <p class="lead" style="margin-bottom:4px">Setembro 2026</p>
+        <strong>R$ 1.367.428,44</strong>
+      </div>
+      <div class="pill up">+ R$ 62.693,28 · +4,8%</div>
+    </div>
+    <input class="search" id="q" placeholder="Buscar banco ou papel" />
+    <div id="list"></div>
+    <p class="lead">Clique no banco para abrir cada papel. A variação é contra agosto, em reais e em porcentagem.</p>
+  </section>
+</main>
 <script>
+const brl = (n) => Math.abs(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const signed = (n) => (n >= 0 ? "+ " : "− ") + brl(n);
+const pct = (now, prev) => {
+  if (!prev) return now ? "novo" : "—";
+  const p = ((now - prev) / prev) * 100;
+  return (p >= 0 ? "+" : "") + p.toFixed(1).replace(".", ",") + "%";
+};
 const banks = [
-  { name: "Nubank", value: 844962.60, prev: 789665.76, share: 61.8, items: [
-    ["Caixinhas", 280045.79], ["Sara", 81400], ["Livre", 5222.10],
-    ["Tesouro", 380409.83], ["Ações e FIIs", 97884.88]
+  { name: "Nubank", now: 844962.60, prev: 789665.76, weight: 61.8, assets: [
+    ["Caixinhas", 280045.79, 246894.34],
+    ["Tesouro IPCA+ juros 2045", 159589.11, 154218.35],
+    ["Sara", 81400, 80551],
+    ["Tesouro IPCA+ juros 2060", 81021.25, 77999.46],
+    ["Tesouro Renda+ 2065", 56107.27, 50818.85],
+    ["Tesouro IPCA+ 2040", 48481.95, 46804.28],
+    ["Tesouro IPCA+ 2045", 26823.82, 25406.90],
+    ["CPTS11", 26495.56, 26038.74],
+    ["TAEE4", 23290.77, 22084.08],
+    ["HGCR11", 13926.78, 13984.11],
+    ["SNCI11", 9499.62, 9244.26],
+    ["Tesouro Prefixado 2035", 8386.43, 8191.30],
+    ["HGRU11", 6431.60, 6475.84],
+    ["Livre", 5222.10, 554.28],
+    ["SNFF11", 5124.96, 5148.72],
+    ["BBAS3", 3517.28, 3206.46],
+    ["BOVA11", 3322.26, 3186.00],
+    ["B3SA3", 2597.00, 2325.40],
+    ["LVBI11", 2319.60, 2350.80],
+    ["WEGE3", 1359.45, 1341.90],
+    ["VILG11", 0, 1119.24],
+    ["USIM5", 0, 612.00],
+    ["PETR4", 0, 561.84],
+    ["VALE3", 0, 547.61]
   ]},
-  { name: "XP", value: 223408.05, prev: 220632.36, share: 16.3, items: [
-    ["Renda fixa", 92309.50], ["Fundos", 55367.65], ["Tesouro", 75730.90]
+  { name: "XP", now: 223408.05, prev: 220632.36, weight: 16.3, assets: [
+    ["CDB BMG dez/2027 (3)", 42333.88, 42135.26],
+    ["NTN-B1", 30308.21, 29595.24],
+    ["Opportunity Market", 17698.80, 17515.57],
+    ["NTN-B ago/2060", 16533.36, 15823.76],
+    ["Tesouro IPCA+ 2035", 11717.07, 11289.64],
+    ["XP Alocação Moderada", 11085.75, 10916.41],
+    ["Tesouro IPCA+ 2029", 9198.75, 8999.97],
+    ["LCI Bari", 9018.01, 8991.35],
+    ["BTG Tesouro IPCA", 8544.23, 8380.80],
+    ["Equitas Selection", 8251.75, 7596.74],
+    ["LCA BTG abr", 8239.00, 8176.30],
+    ["ACE Capital", 6447.31, 6344.50],
+    ["Trend S&P 500", 5975.99, 6017.75],
+    ["CDB Pine mar/2027", 5828.96, 5774.17],
+    ["Tesouro IPCA+ juros 2040", 5233.89, 5054.79],
+    ["CDB Pine fev/2028", 5197.85, 5194.22],
+    ["LCA BTG jun", 4793.54, 4758.04],
+    ["Deb Rota das Bandeiras", 4338.06, 4292.50],
+    ["CDB Banco Pan", 3412.88, 3387.42],
+    ["Hashdex Nasdaq", 2459.36, 2398.02],
+    ["Tesouro IPCA+ juros 2050", 2225.57, 0],
+    ["ARX Macro", 2187.08, 2133.01],
+    ["XP Alocação Sofisticada", 1261.61, 1238.91],
+    ["Trend Investback", 603.09, 596.63],
+    ["Tesouro IPCA+ 2045", 514.05, 478.35],
+    ["CDB Agibank set/2026", 0, 3543.01]
   ]},
-  { name: "Itaú", value: 112438.94, prev: 111414.73, share: 8.2, items: [["Cofrinhos", 112438.94]] },
-  { name: "Caixa", value: 85286.18, prev: 82362.76, share: 6.2, items: [["FGTS", 85286.18]] },
-  { name: "Onze", value: 45816.65, prev: 42289.24, share: 3.4, items: [["Previdência Icatu", 45816.65]] },
-  { name: "Mercado Pago", value: 38455.55, prev: 37980, share: 2.8, items: [["Cofrinhos", 38455.55]] },
-  { name: "Brasilprev", value: 12840.43, prev: 12667.50, share: 0.9, items: [["PGBL Empresarial", 12840.43]] },
-  { name: "Clear", value: 4220.04, prev: 7722.81, share: 0.3, items: [["Swing Trade", 4220.04]] },
+  { name: "Itaú", now: 112438.94, prev: 111414.73, weight: 8.2, assets: [["Cofrinhos", 112438.94, 111414.73]] },
+  { name: "Caixa", now: 85286.18, prev: 82362.76, weight: 6.2, assets: [["FGTS", 85286.18, 82362.76]] },
+  { name: "Onze", now: 45816.65, prev: 42289.24, weight: 3.4, assets: [["Previdência Icatu", 45816.65, 42289.24]] },
+  { name: "Mercado Pago", now: 38455.55, prev: 37980, weight: 2.8, assets: [["Cofrinhos", 38455.55, 37980]] },
+  { name: "Brasilprev", now: 12840.43, prev: 12667.50, weight: 0.9, assets: [["PGBL Empresarial", 12840.43, 12667.50]] },
+  { name: "Clear", now: 4220.04, prev: 7722.81, weight: 0.3, assets: [
+    ["Swing Trade", 4220.04, 0],
+    ["ABEV3", 0, 3281.35],
+    ["Livre", 0, 3536.71],
+    ["MBRF3", 0, 552.58],
+    ["CBAV3", 0, 352.17]
+  ]}
 ];
-const brl = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const box = document.getElementById("banks");
+
+function chgClass(now, prev) { return now - prev >= 0 ? "up" : "down"; }
+function rowHtml(name, now, prev, weight, chev) {
+  const d = now - prev;
+  const gone = now === 0;
+  return `
+    ${chev ? `<span class="chev">›</span>` : `<span></span>`}
+    <span class="name ${gone ? "gone" : ""}">${name}${gone ? " · saiu" : ""}</span>
+    <span class="money">${gone ? "—" : brl(now)}</span>
+    <span class="chg ${chgClass(now, prev)}">${signed(d)} · ${pct(now, prev)}</span>
+    <span class="w">${weight == null ? "" : weight.toFixed(1).replace(".", ",") + "%"}</span>`;
+}
+const list = document.getElementById("list");
 function render(q) {
   const query = (q || "").trim().toLowerCase();
-  box.innerHTML = "";
-  banks.filter(b => !query || b.name.toLowerCase().includes(query) || b.items.some(i => i[0].toLowerCase().includes(query)))
-    .forEach(b => {
-      const d = b.value - b.prev;
-      const el = document.createElement("article");
-      el.className = "bank";
-      el.innerHTML = `
-        <div class="bank-top">
-          <span class="chev">›</span>
-          <div>
-            <div class="bank-name">${b.name}</div>
-            <div class="share"><i style="width:${b.share}%"></i></div>
-          </div>
-          <div class="money">${brl(b.value)}</div>
-          <div class="chg ${d < 0 ? "down" : ""}">${d >= 0 ? "+" : "−"} ${brl(Math.abs(d))}</div>
-        </div>
-        <div class="holdings">${b.items.map(([n,v]) => `<div class="hold"><span>${n}</span><span>${brl(v)}</span></div>`).join("")}</div>`;
-      el.addEventListener("click", () => el.classList.toggle("open"));
-      box.appendChild(el);
+  list.innerHTML = "";
+  banks.forEach((b) => {
+    const hitBank = b.name.toLowerCase().includes(query);
+    const assets = b.assets.filter((a) => !query || hitBank || a[0].toLowerCase().includes(query));
+    if (query && !hitBank && !assets.length) return;
+    const el = document.createElement("article");
+    el.className = "bank" + (query && !hitBank ? " open" : "");
+    const head = document.createElement("div");
+    head.className = "bank-row";
+    head.innerHTML = rowHtml(b.name, b.now, b.prev, b.weight, true);
+    head.addEventListener("click", () => el.classList.toggle("open"));
+    const body = document.createElement("div");
+    body.className = "assets";
+    (query && !hitBank ? assets : b.assets).forEach((a) => {
+      const line = document.createElement("div");
+      line.className = "asset-row";
+      line.innerHTML = rowHtml(a[0], a[1], a[2], null, false);
+      body.appendChild(line);
     });
+    el.append(head, body);
+    list.appendChild(el);
+  });
 }
 render("");
 document.getElementById("q").addEventListener("input", (e) => render(e.target.value));
-document.querySelectorAll("button.nav").forEach(btn => {
+document.querySelectorAll("nav button").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll("button.nav").forEach(b => b.classList.remove("on"));
-    document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+    document.querySelectorAll("nav button").forEach((b) => b.classList.remove("on"));
+    document.querySelectorAll(".view").forEach((v) => v.classList.remove("on"));
     btn.classList.add("on");
     document.getElementById(btn.dataset.view).classList.add("on");
   });
