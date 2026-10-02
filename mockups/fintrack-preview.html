@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FinTrack — patrimônio mais simples</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<title>FinTrack — patrimônio</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
 <style>
   :root {
     --background: #111418;
@@ -19,103 +18,61 @@
     --down: #f87171;
   }
   * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--background);
-    color: var(--foreground);
-    font-family: Manrope, sans-serif;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    padding: 18px 32px;
-    border-bottom: 1px solid var(--border);
-  }
-  .logo { font-weight: 800; letter-spacing: -0.03em; }
+  body { margin: 0; background: var(--background); color: var(--foreground); font-family: Manrope, sans-serif; }
+  header { display: flex; align-items: center; gap: 28px; padding: 18px 32px; border-bottom: 1px solid var(--border); }
+  .logo { font-weight: 800; }
   .logo i { color: var(--primary); font-style: normal; }
-  nav button {
-    background: transparent;
-    border: 0;
-    color: var(--muted);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 8px 2px;
-  }
+  nav button { background: none; border: 0; color: var(--muted); font: inherit; font-weight: 700; cursor: pointer; padding: 8px 0; }
   nav button.on { color: var(--foreground); box-shadow: inset 0 -2px 0 var(--primary); }
-  main { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
+  main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 72px; }
   .view { display: none; }
   .view.on { display: block; }
-  h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.03em; }
-  .lead { color: var(--muted); margin: 0 0 22px; font-size: 14px; }
+  h1 { font-size: 28px; margin: 0 0 8px; }
+  .lead { color: var(--muted); font-size: 14px; line-height: 1.5; }
   .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 22px;
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card h2 { margin: 0 0 8px; font-size: 15px; }
+  .card li { color: var(--muted); margin: 8px 0; }
+  .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 18px; }
+  .top strong { display: block; font-size: 34px; letter-spacing: -0.03em; white-space: nowrap; }
+  .pill { font-weight: 700; white-space: nowrap; }
+  .tools { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .search { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--foreground); font: inherit; padding: 12px 14px; }
+  .toggle { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+  .toggle button { border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .toggle button.on { background: var(--primary); color: white; }
+  .cols {
+    display: grid;
+    grid-template-columns: 18px minmax(180px, 1fr) 156px 156px 78px;
+    column-gap: 18px;
+    align-items: center;
   }
-  .card h2 { margin: 0 0 10px; font-size: 15px; }
-  .card p, .card li { color: var(--muted); font-size: 14px; line-height: 1.45; }
-  .card ol { margin: 0; padding-left: 18px; }
-  .card li { margin: 8px 0; }
-  .total {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 16px;
-    margin-bottom: 18px;
-  }
-  .total strong { display: block; font-size: 32px; letter-spacing: -0.03em; }
-  .pill { font-size: 14px; font-weight: 700; }
+  .labels { color: var(--faint); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 8px 18px 10px; }
+  .labels span:nth-child(n+3) { text-align: right; }
+  .block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  .line { padding: 13px 18px; cursor: pointer; }
+  .line:hover { background: rgba(19,127,236,.07); }
+  .line span { white-space: nowrap; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+  .sub .name { font-weight: 600; padding-left: 8px; }
+  .asset .name { font-weight: 500; color: #e2e8f0; padding-left: 22px; }
+  .w { text-align: right; color: var(--faint); font-size: 13px; font-weight: 600; }
   .up { color: var(--up); }
   .down { color: var(--down); }
-  .search {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--foreground);
-    font: inherit;
-    padding: 12px 14px;
-    margin-bottom: 14px;
-  }
-  .bank {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    margin-bottom: 10px;
-    overflow: hidden;
-  }
-  .bank-row, .asset-row {
-    display: grid;
-    grid-template-columns: 22px 1fr 150px 170px 64px;
-    gap: 8px;
-    align-items: center;
-    padding: 14px 16px;
-    cursor: pointer;
-  }
-  .bank-row:hover { background: rgba(19,127,236,.06); }
-  .name { font-weight: 700; }
-  .money, .chg, .w { text-align: right; font-variant-numeric: tabular-nums; }
-  .w { color: var(--faint); font-size: 13px; }
-  .chev { color: var(--faint); transition: transform .15s; }
-  .bank.open > .bank-row .chev { transform: rotate(90deg); }
-  .assets { display: none; border-top: 1px solid var(--border); }
-  .bank.open > .assets { display: block; }
-  .asset-row {
-    grid-template-columns: 22px 1fr 150px 170px 64px;
-    padding: 10px 16px 10px 36px;
-    cursor: default;
-    font-size: 13px;
-  }
-  .asset-row .name { font-weight: 500; color: #e2e8f0; }
-  .gone { color: var(--faint); }
-  @media (max-width: 800px) {
-    .cards { grid-template-columns: 1fr; }
-    .bank-row, .asset-row { grid-template-columns: 18px 1fr; }
-    .money, .chg, .w { grid-column: 2; text-align: left; }
+  .muted { color: var(--faint); }
+  .chev { color: var(--faint); display: inline-block; transition: transform .12s; }
+  .open > .line .chev { transform: rotate(90deg); }
+  .nest, .papers { display: none; }
+  .open > .nest, .sub.open > .papers { display: block; }
+  .sub { border-top: 1px solid var(--border); }
+  .asset { border-top: 1px solid rgba(40,48,57,.7); background: #161b21; cursor: default; }
+  .asset:hover { background: #161b21; }
+  @media (max-width: 860px) {
+    .cards, .tools, .top { display: block; }
+    .toggle { margin-top: 10px; }
+    .cols { grid-template-columns: 16px 1fr; row-gap: 4px; }
+    .num, .w { text-align: left; }
   }
 </style>
 </head>
@@ -123,162 +80,204 @@
 <header>
   <div class="logo">Fin<i>Track</i></div>
   <nav>
-    <button class="nav on" data-view="ideas">Ideias do início</button>
-    <button class="nav" data-view="worth">Patrimônio</button>
+    <button data-view="ideas">Ideias do início</button>
+    <button class="on" data-view="worth">Patrimônio</button>
   </nav>
 </header>
 <main>
-  <section id="ideas" class="view on">
+  <section id="ideas" class="view">
     <h1>O início fica como está</h1>
-    <p class="lead">Mesmas cores, mesmos cards, mesmo gráfico. Só ideias do que acrescentar, sem trocar a cara.</p>
+    <p class="lead">Mesmas cores, mesmos cards, mesmo gráfico.</p>
     <div class="cards">
       <article class="card">
-        <h2>Embaixo dos cards de hoje</h2>
+        <h2>O que dá para somar</h2>
         <ol>
-          <li>Três linhas do que mais mexeu no mês, com reais e porcentagem. Nubank +R$ 55.297 (+7,0%).</li>
-          <li>Um aviso do que sumiu. Em setembro saíram PETR4, USIM5, VALE3 e VILG11.</li>
-          <li>Separar dinheiro que você colocou de oscilação do mercado. Hoje os dois estão juntos no “vs mês passado”.</li>
+          <li>Três linhas do que mais mexeu, com reais e porcentagem.</li>
+          <li>Aviso do que sumiu no mês.</li>
+          <li>Separar dinheiro novo de oscilação de mercado.</li>
         </ol>
       </article>
       <article class="card">
         <h2>O que não mexer</h2>
-        <p>Total, variação do mês, projeção, gráfico azul e pizza de classes. Isso já responde a pergunta da primeira tela.</p>
+        <p class="lead">Total, variação, projeção, gráfico e pizza.</p>
       </article>
     </div>
   </section>
-
-  <section id="worth" class="view">
-    <div class="total">
+  <section id="worth" class="view on">
+    <div class="top">
       <div>
-        <p class="lead" style="margin-bottom:4px">Setembro 2026</p>
+        <p class="lead" style="margin:0 0 4px">Setembro 2026</p>
         <strong>R$ 1.367.428,44</strong>
       </div>
-      <div class="pill up">+ R$ 62.693,28 · +4,8%</div>
+      <div class="pill up">+ R$ 62.693,28 &nbsp;&nbsp; +4,8%</div>
     </div>
-    <input class="search" id="q" placeholder="Buscar banco ou papel" />
+    <div class="tools">
+      <input class="search" id="q" placeholder="Buscar banco, tipo ou papel" />
+      <div class="toggle">
+        <button id="byInst" class="on" type="button">Por instituição</button>
+        <button id="byType" type="button">Por tipo de ativo</button>
+      </div>
+    </div>
+    <div class="cols labels"><span></span><span>Nome</span><span>Valor</span><span>Variação</span><span>% mês</span></div>
     <div id="list"></div>
-    <p class="lead">Clique no banco para abrir cada papel. A variação é contra agosto, em reais e em porcentagem.</p>
+    <p class="lead">Primeiro clique abre o tipo (renda fixa, variável, título, previdência). Segundo clique abre cada papel. A outra visão inverte: o tipo vem primeiro.</p>
   </section>
 </main>
 <script>
 const brl = (n) => Math.abs(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const signed = (n) => (n >= 0 ? "+ " : "− ") + brl(n);
+const money = (n) => (n >= 0 ? "+ " : "− ") + brl(n);
 const pct = (now, prev) => {
   if (!prev) return now ? "novo" : "—";
   const p = ((now - prev) / prev) * 100;
-  return (p >= 0 ? "+" : "") + p.toFixed(1).replace(".", ",") + "%";
+  return (p >= 0 ? "+" : "−") + Math.abs(p).toFixed(1).replace(".", ",") + "%";
 };
-const banks = [
-  { name: "Nubank", now: 844962.60, prev: 789665.76, weight: 61.8, assets: [
-    ["Caixinhas", 280045.79, 246894.34],
-    ["Tesouro IPCA+ juros 2045", 159589.11, 154218.35],
-    ["Sara", 81400, 80551],
-    ["Tesouro IPCA+ juros 2060", 81021.25, 77999.46],
-    ["Tesouro Renda+ 2065", 56107.27, 50818.85],
-    ["Tesouro IPCA+ 2040", 48481.95, 46804.28],
-    ["Tesouro IPCA+ 2045", 26823.82, 25406.90],
-    ["CPTS11", 26495.56, 26038.74],
-    ["TAEE4", 23290.77, 22084.08],
-    ["HGCR11", 13926.78, 13984.11],
-    ["SNCI11", 9499.62, 9244.26],
-    ["Tesouro Prefixado 2035", 8386.43, 8191.30],
-    ["HGRU11", 6431.60, 6475.84],
-    ["Livre", 5222.10, 554.28],
-    ["SNFF11", 5124.96, 5148.72],
-    ["BBAS3", 3517.28, 3206.46],
-    ["BOVA11", 3322.26, 3186.00],
-    ["B3SA3", 2597.00, 2325.40],
-    ["LVBI11", 2319.60, 2350.80],
-    ["WEGE3", 1359.45, 1341.90],
-    ["VILG11", 0, 1119.24],
-    ["USIM5", 0, 612.00],
-    ["PETR4", 0, 561.84],
-    ["VALE3", 0, 547.61]
-  ]},
-  { name: "XP", now: 223408.05, prev: 220632.36, weight: 16.3, assets: [
-    ["CDB BMG dez/2027 (3)", 42333.88, 42135.26],
-    ["NTN-B1", 30308.21, 29595.24],
-    ["Opportunity Market", 17698.80, 17515.57],
-    ["NTN-B ago/2060", 16533.36, 15823.76],
-    ["Tesouro IPCA+ 2035", 11717.07, 11289.64],
-    ["XP Alocação Moderada", 11085.75, 10916.41],
-    ["Tesouro IPCA+ 2029", 9198.75, 8999.97],
-    ["LCI Bari", 9018.01, 8991.35],
-    ["BTG Tesouro IPCA", 8544.23, 8380.80],
-    ["Equitas Selection", 8251.75, 7596.74],
-    ["LCA BTG abr", 8239.00, 8176.30],
-    ["ACE Capital", 6447.31, 6344.50],
-    ["Trend S&P 500", 5975.99, 6017.75],
-    ["CDB Pine mar/2027", 5828.96, 5774.17],
-    ["Tesouro IPCA+ juros 2040", 5233.89, 5054.79],
-    ["CDB Pine fev/2028", 5197.85, 5194.22],
-    ["LCA BTG jun", 4793.54, 4758.04],
-    ["Deb Rota das Bandeiras", 4338.06, 4292.50],
-    ["CDB Banco Pan", 3412.88, 3387.42],
-    ["Hashdex Nasdaq", 2459.36, 2398.02],
-    ["Tesouro IPCA+ juros 2050", 2225.57, 0],
-    ["ARX Macro", 2187.08, 2133.01],
-    ["XP Alocação Sofisticada", 1261.61, 1238.91],
-    ["Trend Investback", 603.09, 596.63],
-    ["Tesouro IPCA+ 2045", 514.05, 478.35],
-    ["CDB Agibank set/2026", 0, 3543.01]
-  ]},
-  { name: "Itaú", now: 112438.94, prev: 111414.73, weight: 8.2, assets: [["Cofrinhos", 112438.94, 111414.73]] },
-  { name: "Caixa", now: 85286.18, prev: 82362.76, weight: 6.2, assets: [["FGTS", 85286.18, 82362.76]] },
-  { name: "Onze", now: 45816.65, prev: 42289.24, weight: 3.4, assets: [["Previdência Icatu", 45816.65, 42289.24]] },
-  { name: "Mercado Pago", now: 38455.55, prev: 37980, weight: 2.8, assets: [["Cofrinhos", 38455.55, 37980]] },
-  { name: "Brasilprev", now: 12840.43, prev: 12667.50, weight: 0.9, assets: [["PGBL Empresarial", 12840.43, 12667.50]] },
-  { name: "Clear", now: 4220.04, prev: 7722.81, weight: 0.3, assets: [
-    ["Swing Trade", 4220.04, 0],
-    ["ABEV3", 0, 3281.35],
-    ["Livre", 0, 3536.71],
-    ["MBRF3", 0, 552.58],
-    ["CBAV3", 0, 352.17]
-  ]}
+const tone = (now, prev) => (now - prev >= 0 ? "up" : "down");
+const ROWS = [
+["Brasilprev","Previdência","PGBL Empresarial",12840.43,12667.5],
+["Caixa","Renda Fixa","FGTS",85286.18,82362.76],
+["Clear","Renda Fixa","Livre",0,3536.71],
+["Clear","Renda Variável","Swing Trade",4220.04,0],
+["Clear","Renda Variável","ABEV3",0,3281.35],
+["Clear","Renda Variável","MBRF3",0,552.58],
+["Clear","Renda Variável","CBAV3",0,352.17],
+["Itaú","Renda Fixa","Cofrinhos",112438.94,111414.73],
+["Mercado Pago","Renda Fixa","Cofrinhos",38455.55,37980],
+["Nubank","Renda Fixa","Caixinhas",280045.79,246894.34],
+["Nubank","Renda Fixa","Sara",81400,80551],
+["Nubank","Renda Fixa","Livre",5222.1,554.28],
+["Nubank","Renda Variável","CPTS11",26495.56,26038.74],
+["Nubank","Renda Variável","TAEE4",23290.77,22084.08],
+["Nubank","Renda Variável","HGCR11",13926.78,13984.11],
+["Nubank","Renda Variável","SNCI11",9499.62,9244.26],
+["Nubank","Renda Variável","HGRU11",6431.6,6475.84],
+["Nubank","Renda Variável","SNFF11",5124.96,5148.72],
+["Nubank","Renda Variável","BBAS3",3517.28,3206.46],
+["Nubank","Renda Variável","BOVA11",3322.26,3186],
+["Nubank","Renda Variável","B3SA3",2597,2325.4],
+["Nubank","Renda Variável","LVBI11",2319.6,2350.8],
+["Nubank","Renda Variável","WEGE3",1359.45,1341.9],
+["Nubank","Renda Variável","VILG11",0,1119.24],
+["Nubank","Renda Variável","USIM5",0,612],
+["Nubank","Renda Variável","PETR4",0,561.84],
+["Nubank","Renda Variável","VALE3",0,547.61],
+["Nubank","Título Público","Tesouro IPCA+ com Juros Semestrais 2045",159589.11,154218.35],
+["Nubank","Título Público","Tesouro IPCA+ com Juros Semestrais 2060",81021.25,77999.46],
+["Nubank","Título Público","Tesouro Renda+ 2065",56107.27,50818.85],
+["Nubank","Título Público","Tesouro IPCA+ 2040",48481.95,46804.28],
+["Nubank","Título Público","Tesouro IPCA+ 2045",26823.82,25406.9],
+["Nubank","Título Público","Tesouro Prefixado com Juros Semestrais 2035",8386.43,8191.3],
+["Onze","Previdência","Previdência Icatu",45816.65,42289.24],
+["XP","Renda Fixa","CDB BMG - DEZ/2027",42333.88,42135.26],
+["XP","Renda Fixa","LCI Bari",9018.01,8991.35],
+["XP","Renda Fixa","BTG Pactual Tesouro IPCA",8544.23,8380.8],
+["XP","Renda Fixa","LCA BTG abr/2028",8239,8176.3],
+["XP","Renda Fixa","CDB Pine mar/2027",5828.96,5774.17],
+["XP","Renda Fixa","CDB Pine fev/2028",5197.85,5194.22],
+["XP","Renda Fixa","LCA BTG jun/2028",4793.54,4758.04],
+["XP","Renda Fixa","Deb Rota das Bandeiras",4338.06,4292.5],
+["XP","Renda Fixa","CDB Banco Pan",3412.88,3387.42],
+["XP","Renda Fixa","Trend Investback",603.09,596.63],
+["XP","Renda Fixa","CDB Agibank set/2026",0,3543.01],
+["XP","Renda Variável","Opportunity Market",17698.8,17515.57],
+["XP","Renda Variável","XP Alocação Moderada",11085.75,10916.41],
+["XP","Renda Variável","Equitas Selection",8251.75,7596.74],
+["XP","Renda Variável","ACE Capital",6447.31,6344.5],
+["XP","Renda Variável","Trend S&P 500",5975.99,6017.75],
+["XP","Renda Variável","Hashdex Nasdaq",2459.36,2398.02],
+["XP","Renda Variável","ARX Macro",2187.08,2133.01],
+["XP","Renda Variável","XP Alocação Sofisticada",1261.61,1238.91],
+["XP","Título Público","NTN-B1",30308.21,29595.24],
+["XP","Título Público","NTN-B ago/2060",16533.36,15823.76],
+["XP","Título Público","Tesouro IPCA+ 2035",11717.07,11289.64],
+["XP","Título Público","Tesouro IPCA+ 2029",9198.75,8999.97],
+["XP","Título Público","Tesouro IPCA+ juros 2040",5233.89,5054.79],
+["XP","Título Público","Tesouro IPCA+ juros 2050",2225.57,0],
+["XP","Título Público","Tesouro IPCA+ 2045",514.05,478.35]
 ];
-
-function chgClass(now, prev) { return now - prev >= 0 ? "up" : "down"; }
-function rowHtml(name, now, prev, weight, chev) {
-  const d = now - prev;
+const items = ROWS.map(([inst, cls, asset, now, prev]) => ({ inst, cls, asset, now, prev }));
+let mode = "inst";
+function add(map, key, row) {
+  if (!map[key]) map[key] = [];
+  map[key].push(row);
+}
+function totals(list) {
+  return list.reduce((a, r) => ({ now: a.now + r.now, prev: a.prev + r.prev }), { now: 0, prev: 0 });
+}
+function tree() {
+  const outerKey = mode === "inst" ? "inst" : "cls";
+  const innerKey = mode === "inst" ? "cls" : "inst";
+  const outer = {};
+  items.forEach((r) => add(outer, r[outerKey], r));
+  return Object.entries(outer).map(([name, rows]) => {
+    const inner = {};
+    rows.forEach((r) => add(inner, r[innerKey], r));
+    const children = Object.entries(inner).map(([child, assets]) => ({
+      name: child,
+      ...totals(assets),
+      assets: assets.slice().sort((a, b) => b.now - a.now)
+    })).sort((a, b) => b.now - a.now);
+    return { name, ...totals(rows), children };
+  }).sort((a, b) => b.now - a.now);
+}
+function cells(name, now, prev, cls) {
   const gone = now === 0;
-  return `
-    ${chev ? `<span class="chev">›</span>` : `<span></span>`}
-    <span class="name ${gone ? "gone" : ""}">${name}${gone ? " · saiu" : ""}</span>
-    <span class="money">${gone ? "—" : brl(now)}</span>
-    <span class="chg ${chgClass(now, prev)}">${signed(d)} · ${pct(now, prev)}</span>
-    <span class="w">${weight == null ? "" : weight.toFixed(1).replace(".", ",") + "%"}</span>`;
+  return `<span class="chev">›</span>
+    <span class="name ${gone ? "muted" : ""}">${name}${gone ? " · saiu" : ""}</span>
+    <span class="num">${gone ? "—" : brl(now)}</span>
+    <span class="num ${tone(now, prev)}">${money(now - prev)}</span>
+    <span class="num ${tone(now, prev)}">${pct(now, prev)}</span>`;
 }
 const list = document.getElementById("list");
 function render(q) {
   const query = (q || "").trim().toLowerCase();
   list.innerHTML = "";
-  banks.forEach((b) => {
-    const hitBank = b.name.toLowerCase().includes(query);
-    const assets = b.assets.filter((a) => !query || hitBank || a[0].toLowerCase().includes(query));
-    if (query && !hitBank && !assets.length) return;
+  tree().forEach((group) => {
+    const kids = group.children.map((child) => {
+      const assets = child.assets.filter((a) => {
+        if (!query) return true;
+        return [group.name, child.name, a.asset, a.inst, a.cls].join(" ").toLowerCase().includes(query);
+      });
+      return { ...child, assets };
+    }).filter((c) => !query || c.name.toLowerCase().includes(query) || c.assets.length);
+    if (query && !group.name.toLowerCase().includes(query) && !kids.length) return;
     const el = document.createElement("article");
-    el.className = "bank" + (query && !hitBank ? " open" : "");
+    el.className = "block" + (query ? " open" : "");
     const head = document.createElement("div");
-    head.className = "bank-row";
-    head.innerHTML = rowHtml(b.name, b.now, b.prev, b.weight, true);
+    head.className = "line cols";
+    head.innerHTML = cells(group.name, group.now, group.prev);
     head.addEventListener("click", () => el.classList.toggle("open"));
-    const body = document.createElement("div");
-    body.className = "assets";
-    (query && !hitBank ? assets : b.assets).forEach((a) => {
-      const line = document.createElement("div");
-      line.className = "asset-row";
-      line.innerHTML = rowHtml(a[0], a[1], a[2], null, false);
-      body.appendChild(line);
+    const nest = document.createElement("div");
+    nest.className = "nest";
+    kids.forEach((child) => {
+      const sub = document.createElement("div");
+      sub.className = "sub" + (query ? " open" : "");
+      const sh = document.createElement("div");
+      sh.className = "line cols";
+      sh.innerHTML = cells(child.name, child.now, child.prev);
+      sh.addEventListener("click", (e) => { e.stopPropagation(); sub.classList.toggle("open"); });
+      const papers = document.createElement("div");
+      papers.className = "papers";
+      child.assets.forEach((a) => {
+        const row = document.createElement("div");
+        row.className = "line cols asset";
+        const label = mode === "inst" ? a.asset : a.asset;
+        row.innerHTML = cells(label, a.now, a.prev).replace('class="chev">›', 'class="chev" style="visibility:hidden">›');
+        papers.appendChild(row);
+      });
+      sub.append(sh, papers);
+      nest.appendChild(sub);
     });
-    el.append(head, body);
+    el.append(head, nest);
     list.appendChild(el);
   });
 }
 render("");
 document.getElementById("q").addEventListener("input", (e) => render(e.target.value));
-document.querySelectorAll("nav button").forEach((btn) => {
+document.getElementById("byInst").onclick = () => { mode = "inst"; document.getElementById("byInst").classList.add("on"); document.getElementById("byType").classList.remove("on"); render(document.getElementById("q").value); };
+document.getElementById("byType").onclick = () => { mode = "type"; document.getElementById("byType").classList.add("on"); document.getElementById("byInst").classList.remove("on"); render(document.getElementById("q").value); };
+document.querySelectorAll("header nav button").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll("nav button").forEach((b) => b.classList.remove("on"));
+    document.querySelectorAll("header nav button").forEach((b) => b.classList.remove("on"));
     document.querySelectorAll(".view").forEach((v) => v.classList.remove("on"));
     btn.classList.add("on");
     document.getElementById(btn.dataset.view).classList.add("on");
