@@ -257,7 +257,7 @@ export function DataReviewModal({ type, initialData, onClose, onImport, isImport
                                                 <td className="px-4 py-2">
                                                     <button
                                                         onClick={() => handleDeleteRow(row.id)}
-                                                        className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer p-1"
+                                                        className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 pointer-coarse:opacity-100 transition-all cursor-pointer p-1"
                                                         title="Excluir"
                                                     >
                                                         <span className="material-symbols-outlined text-[18px] block">delete</span>

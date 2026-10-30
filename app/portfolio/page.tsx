@@ -316,18 +316,18 @@ export default function Portfolio() {
     const sortedInstGrouped = buildInstitutionHierarchy(currentAssets);
 
     return (
-        <div className="mx-auto max-w-7xl flex flex-col gap-8">
+        <div className="mx-auto w-full min-w-0 max-w-7xl flex flex-col gap-6 md:gap-8">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 animate-in slide-in-from-bottom-2 fade-in duration-500">
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground">{t("portfolio.title")}</h1>
+                <div className="min-w-0">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("portfolio.title")}</h1>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
                         {t("portfolio.subtitle", { date: currentDateStr })}
                     </p>
                 </div>
-                <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="flex flex-row items-stretch gap-3 w-full md:w-auto md:items-center md:gap-4">
                     {allDates.length > 0 && (
-                        <div className="relative flex items-center">
+                        <div className="relative flex items-center shrink-0">
                             <select
                                 value={currentDateStr}
                                 onChange={(e) => setSelectedDateStr(e.target.value)}
@@ -342,13 +342,13 @@ export default function Portfolio() {
                             </span>
                         </div>
                     )}
-                    <div className="flex bg-surface border border-border px-4 py-2 rounded-xl shadow-sm items-center gap-3">
+                    <div className="flex flex-1 min-w-0 md:flex-none bg-surface border border-border px-3 md:px-4 py-2 rounded-xl shadow-sm items-center gap-3">
                         <div className="flex items-center justify-center p-2 bg-primary/10 rounded-lg text-primary size-10">
                             <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
                         </div>
                         <div>
                             <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.totalCurrent")}</p>
-                            <p className="text-lg font-bold text-foreground leading-none">
+                            <p className="text-base md:text-lg font-bold text-foreground leading-none tabular-nums truncate">
                                 {formatCurrency(totalWealth)}
                             </p>
                         </div>
@@ -356,7 +356,7 @@ export default function Portfolio() {
                 </div>
             </div>
 
-            <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
+            <div className="flex flex-col gap-4 md:gap-6 min-w-0 animate-in slide-in-from-bottom-4 fade-in duration-700">
                 {Object.keys(grouped).length === 0 ? (
                     <div className="text-center py-20 text-slate-500 border border-dashed border-border-light dark:border-border-dark rounded-xl">
                         {t("portfolio.noAssets")}
@@ -381,21 +381,21 @@ export default function Portfolio() {
                         };
 
                         return (
-                            <div key={classification} className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
-                                <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
+                            <div key={classification} className="min-w-0 rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
+                                <div className="px-4 sm:px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
                                     <div className="flex items-center gap-2">
                                         <span className="material-symbols-outlined text-primary text-[20px]">category</span>
                                         <h3 className="text-lg font-bold text-foreground">{classification}</h3>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm">
-                                        <span className="font-bold text-foreground">{formatCurrency(classTotal)}</span>
-                                        <span className="text-slate-400 dark:text-slate-500">|</span>
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:gap-4 text-sm">
+                                        <span className="w-full sm:w-auto text-lg sm:text-sm font-bold text-foreground tabular-nums">{formatCurrency(classTotal)}</span>
+                                        <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
                                         {classVariationAbs !== null && (
                                             <>
                                                 <span className={`font-semibold ${classVariationAbs >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                                                     {classVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(classVariationAbs)}
                                                 </span>
-                                                <span className="text-slate-400 dark:text-slate-500">|</span>
+                                                <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
                                             </>
                                         )}
                                         {classVariationPct === null ? (
@@ -411,13 +411,13 @@ export default function Portfolio() {
                                                 <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">{t("dashboard.vsLastMonth")}</span>
                                             </span>
                                         )}
-                                        <span className="text-slate-400 dark:text-slate-500">|</span>
+                                        <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
                                         <span className="px-2 py-0.5 rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 text-xs font-semibold">
                                             {t("portfolio.ofPortfolio", { pct: classPercentage.toFixed(1) })}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="sm:hidden p-4 space-y-3">
+                                <div className="sm:hidden p-3 space-y-3">
                                     {sortedInstitutions.map(({ institution, products, assets: instAssets, total: instTotal }) => {
                                         const instKey = `${classification}-${institution}`;
                                         const isInstExpanded = expandedInstitutions.has(instKey);
@@ -455,7 +455,7 @@ export default function Portfolio() {
                                                             ) : null}
                                                         </div>
                                                     </div>
-                                                    <p className="text-lg font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
+                                                    <p className="text-base font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
@@ -510,13 +510,13 @@ export default function Portfolio() {
                                                                                     chevron_right
                                                                                 </span>
                                                                             )}
-                                                                            <span className="text-xs font-semibold text-foreground/90 truncate">{product}</span>
-                                                                            {!prodExpandable && (
-                                                                                <span className="text-[10px] text-slate-400 truncate">{prodAssets[0]?.Asset}</span>
+                                                                            <span className="text-sm font-semibold text-foreground/90 truncate">{product}</span>
+                                                                            {!prodExpandable && prodAssets[0]?.Asset && prodAssets[0].Asset !== product && (
+                                                                                <span className="text-[11px] text-slate-400 truncate">{prodAssets[0].Asset}</span>
                                                                             )}
                                                                         </div>
                                                                         <div className="text-right shrink-0">
-                                                                            <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(prodTotal)}</p>
+                                                                            <p className="text-sm font-semibold text-foreground tabular-nums">{formatCurrency(prodTotal)}</p>
                                                                             {prodVariation !== null && (
                                                                                 <p className={`text-[10px] tabular-nums ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                                                                                     {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
@@ -740,28 +740,28 @@ export default function Portfolio() {
 
                 {/* Evolução por Instituição Section */}
                 {sortedInstGrouped.length > 0 && (
-                    <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-5 fade-in duration-700 mt-4">
+                    <div className="flex flex-col gap-4 md:gap-6 min-w-0 animate-in slide-in-from-bottom-5 fade-in duration-700 mt-4">
                         <div className="flex items-center gap-4">
                             <div className="h-px bg-border flex-1"></div>
-                            <h2 className="text-xl font-bold text-foreground">{t("portfolio.evolutionByInstitution")}</h2>
+                            <h2 className="text-lg md:text-xl font-bold text-foreground text-center">{t("portfolio.evolutionByInstitution")}</h2>
                             <div className="h-px bg-border flex-1"></div>
                         </div>
 
-                        <div className="rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
-                            <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
+                        <div className="min-w-0 rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
+                            <div className="px-4 sm:px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
                                 <div className="flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary text-[20px]">account_balance</span>
                                     <h3 className="text-lg font-bold text-foreground">{t("portfolio.institutionsSummary")}</h3>
                                 </div>
-                                <div className="flex items-center gap-4 text-sm">
-                                    <span className="font-bold text-foreground">{formatCurrency(totalWealth)}</span>
-                                    <span className="text-slate-400 dark:text-slate-500">|</span>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:gap-4 text-sm">
+                                    <span className="w-full sm:w-auto text-lg sm:text-sm font-bold text-foreground tabular-nums">{formatCurrency(totalWealth)}</span>
+                                    <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
                                     {wealthVariationAbs !== null && (
                                         <>
                                             <span className={`font-semibold ${wealthVariationAbs >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                                                 {wealthVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(wealthVariationAbs)}
                                             </span>
-                                            <span className="text-slate-400 dark:text-slate-500">|</span>
+                                            <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
                                         </>
                                     )}
                                     {wealthVariationPct === null ? (
@@ -779,7 +779,7 @@ export default function Portfolio() {
                                     )}
                                 </div>
                             </div>
-                            <div className="sm:hidden p-4 space-y-3">
+                            <div className="sm:hidden p-3 space-y-3">
                                 {sortedInstGrouped.map(({ institution, products, assets: instAssets, total: instTotal }) => {
                                     const globalInstKey = `global-inst-${institution}`;
                                     const isInstExpanded = expandedInstitutions.has(globalInstKey);
@@ -815,7 +815,7 @@ export default function Portfolio() {
                                                         )}
                                                     </div>
                                                 </div>
-                                                <p className="text-lg font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
+                                                <p className="text-base font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
@@ -866,10 +866,10 @@ export default function Portfolio() {
                                                                                 chevron_right
                                                                             </span>
                                                                         )}
-                                                                        <span className="text-xs font-semibold text-foreground/90 truncate">{product}</span>
+                                                                        <span className="text-sm font-semibold text-foreground/90 truncate">{product}</span>
                                                                     </div>
                                                                     <div className="text-right shrink-0">
-                                                                        <p className="text-xs font-semibold text-foreground tabular-nums">{formatCurrency(prodTotal)}</p>
+                                                                        <p className="text-sm font-semibold text-foreground tabular-nums">{formatCurrency(prodTotal)}</p>
                                                                         {prodVariation !== null && (
                                                                             <p className={`text-[10px] tabular-nums ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                                                                                 {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
@@ -1080,14 +1080,14 @@ export default function Portfolio() {
 
                 {/* Evolution Chart with Filters */}
                 {uniqueDates.length > 0 && (
-                    <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
+                    <div className="min-w-0 rounded-xl bg-surface border border-border shadow-sm p-4 md:p-6 flex flex-col animate-in slide-in-from-bottom-6 fade-in duration-700">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                             <h3 className="text-lg font-bold text-foreground">{t("portfolio.evolutionChart")}</h3>
-                            <div className="flex items-center gap-2">
+                            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                                 <select
                                     value={filterClassification}
                                     onChange={(e) => setClassification(e.target.value)}
-                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none w-full min-w-0 sm:w-auto sm:min-w-[140px]"
                                 >
                                     <option value="">{t("portfolio.allClassifications")}</option>
                                     {classifications.map((c) => (
@@ -1098,7 +1098,7 @@ export default function Portfolio() {
                                 <select
                                     value={filterInstitution}
                                     onChange={(e) => setInstitution(e.target.value)}
-                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none w-full min-w-0 sm:w-auto sm:min-w-[140px]"
                                 >
                                     <option value="">{t("portfolio.allInstitutions")}</option>
                                     {institutionsList.map((i) => (
@@ -1109,7 +1109,7 @@ export default function Portfolio() {
                                 <select
                                     value={filterProductType}
                                     onChange={(e) => setProductTypeFilter(e.target.value)}
-                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[140px]"
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none w-full min-w-0 sm:w-auto sm:min-w-[140px]"
                                 >
                                     <option value="">{t("portfolio.allProductTypes")}</option>
                                     {productTypesList.map((p) => (
@@ -1120,7 +1120,7 @@ export default function Portfolio() {
                                 <select
                                     value={filterAsset}
                                     onChange={(e) => setFilterAsset(e.target.value)}
-                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none min-w-[120px]"
+                                    className="rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none w-full min-w-0 sm:w-auto sm:min-w-[120px]"
                                 >
                                     <option value="">{t("portfolio.allAssets")}</option>
                                     {assetsList.map((a) => (

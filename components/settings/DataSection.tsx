@@ -248,7 +248,7 @@ export function DataSection({
             <div
                 className={cn(
                     "flex gap-2",
-                    compact ? "justify-end" : "justify-center opacity-0 group-hover/row:opacity-100 transition-all"
+                    compact ? "justify-end" : "justify-center opacity-0 group-hover/row:opacity-100 pointer-coarse:opacity-100 transition-all"
                 )}
             >
                 <button
