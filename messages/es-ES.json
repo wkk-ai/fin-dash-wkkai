@@ -9,7 +9,8 @@
     "understood": "Entendido",
     "close": "Cerrar",
     "actions": "Acciones",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "edit": "Editar"
   },
   "nav": {
     "dashboard": "Panel",
@@ -274,7 +275,8 @@
     "netBalance": "Saldo Final",
     "others": "Otros",
     "daysWithData": "Días con Datos",
-    "transactions": "Transacciones"
+    "transactions": "Transacciones",
+    "all": "Todas"
   },
   "entry": {
     "title": "Nueva entrada",

@@ -62,17 +62,17 @@ export default function Header() {
 
     return (
         <>
-            <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-border bg-surface/80 backdrop-blur-md px-6 py-3 lg:px-10 w-full">
-                <div className="flex items-center gap-4">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
+            <header className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between border-b border-border bg-surface/80 backdrop-blur-md px-4 sm:px-6 py-3 lg:px-10 w-full">
+                <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/20 text-primary">
                         <span className="material-symbols-outlined text-2xl">grid_view</span>
                     </div>
-                    <h2 className="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-tight">
+                    <h2 className="text-slate-900 dark:text-white text-lg sm:text-xl font-bold leading-tight tracking-tight truncate">
                         {t("app.name")}
                     </h2>
                 </div>
 
-                <div className="flex flex-1 justify-end items-center gap-6">
+                <div className="flex flex-1 justify-end items-center gap-2 sm:gap-6">
                     <nav className="hidden md:flex gap-1 text-sm font-medium">
                         {navLinks.map((link) => {
                             const isActive = pathname === link.href;
@@ -112,7 +112,7 @@ export default function Header() {
 
                     <div className="h-6 w-px bg-border-light dark:bg-border-dark mx-2 hidden md:block"></div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <button
                             onClick={() => openEntry("ai")}
                             className="flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-2.5 sm:px-4 py-2 text-sm font-bold text-primary shadow-lg shadow-primary/10 hover:bg-primary/20 transition-all cursor-pointer"
@@ -132,7 +132,8 @@ export default function Header() {
 
                         <button
                             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                            className="flex size-10 items-center justify-center rounded-full bg-border text-foreground hover:text-primary transition-colors cursor-pointer"
+                            className="flex size-10 shrink-0 items-center justify-center rounded-full bg-border text-foreground hover:text-primary transition-colors cursor-pointer"
+                            aria-label="Theme"
                         >
                             {mounted && theme === "dark" ? (
                                 <span className="material-symbols-outlined">light_mode</span>
@@ -144,7 +145,7 @@ export default function Header() {
                         <LanguageSelector />
 
                         <div
-                            className="h-10 w-10 overflow-hidden rounded-full border-2 border-border bg-cover bg-center cursor-pointer"
+                            className="hidden sm:block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-border bg-cover bg-center cursor-pointer"
                             style={{
                                 backgroundImage:
                                     "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-rJfng0KyhGkJiCWmIJvB9HlLPnESXefXH1bippWZMNaRWP2jFbFMqd3MJTkf9RLxXVok646U5mpE-c5D1KENWG6wDrKTYBa15Y3ULhjGyGdjM1KAdj3WZpXpxr3UNB29dVuWOzupTt0ufvc8PlK7TxnUqKQZQaZ2gmMUxrA-r1u8WzuFk5pDJPViiKH7hVRnVrct7Y4oVJrjdzS4ydHnNcPXVRTbc4cpNR49DSJ4GOpk9QiZoOy0sc1lUvB9pszM3wPzB4fWXCGp')",

@@ -130,10 +130,10 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("dashboard.welcome")}</p>
-                    <h1 className="text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
                 </div>
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="whitespace-nowrap text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
                         <span className="material-symbols-outlined text-[14px]">trending_up</span> {t("dashboard.marketOpen")}
                     </span>
 
@@ -153,7 +153,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                         </>
                     )}
 
-                    <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 min-w-[120px]">
+                    <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 whitespace-nowrap">
                         {t("dashboard.lastUpdate", { date: latestDateStr })}
                     </span>
                 </div>

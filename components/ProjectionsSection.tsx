@@ -89,9 +89,9 @@ export default function ProjectionsSection({ currentWealth, params, setParams, s
                     <div>
                         <div className="flex items-center gap-1.5 mb-1">
                             <label className="text-sm font-medium text-foreground">{t("projections.monthlyAddition")}</label>
-                            <div className="group relative pt-0.5">
+                            <div className="group relative pt-0.5" tabIndex={0}>
                                 <span className="material-symbols-outlined text-slate-400 cursor-help" style={{ fontSize: 16 }}>info</span>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-slate-900 dark:bg-slate-800 text-[11px] text-white dark:text-slate-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] w-[220px] leading-relaxed border border-white/10 backdrop-blur-sm">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-slate-900 dark:bg-slate-800 text-[11px] text-white dark:text-slate-200 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus:opacity-100 group-focus:visible transition-all duration-200 z-[100] w-[220px] leading-relaxed border border-white/10 backdrop-blur-sm">
                                     {t("projections.monthlyAdditionTooltip")}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
                                 </div>

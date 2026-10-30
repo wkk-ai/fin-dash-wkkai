@@ -219,12 +219,12 @@ export default function MovementsPage() {
     );
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6 md:gap-8 min-w-0">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">{t("movements.title")}</h1>
-                    <div className="flex items-center gap-2 mt-1">
+                    <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("movements.title")}</h1>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t("movements.description")}</p>
                         <span className="size-1 rounded-full bg-slate-400" />
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
@@ -235,39 +235,39 @@ export default function MovementsPage() {
             </div>
 
             {/* KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                 {/* Total Income */}
-                <div className="group rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-green-500/50 transition-all text-center md:text-left">
+                <div className="group rounded-xl bg-surface p-4 md:p-6 shadow-sm border border-border hover:border-green-500/50 transition-all text-center md:text-left">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("movements.totalIncome")}</p>
-                    <h3 className="text-2xl font-bold text-foreground">{formatCurrency(curr.income)}</h3>
-                    <div className={`mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold ${incomeVar >= 0 ? "text-green-500" : "text-red-500"}`}>
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">{formatCurrency(curr.income)}</h3>
+                    <div className={`mt-2 flex items-start md:items-center justify-center md:justify-start gap-1 text-[11px] md:text-xs font-bold leading-tight ${incomeVar >= 0 ? "text-green-500" : "text-red-500"}`}>
                         <span className="material-symbols-outlined text-sm">{incomeVar >= 0 ? "trending_up" : "trending_down"}</span>
                         <span>{incomeVar >= 0 ? "+" : ""}{incomeVar.toFixed(1)}% {t("movements.vsLastMonth")}</span>
                     </div>
                 </div>
                 {/* Total Expenses */}
-                <div className="group rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-red-500/50 transition-all text-center md:text-left">
+                <div className="group rounded-xl bg-surface p-4 md:p-6 shadow-sm border border-border hover:border-red-500/50 transition-all text-center md:text-left">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("movements.totalExpenses")}</p>
-                    <h3 className="text-2xl font-bold text-foreground">{formatCurrency(curr.expenses)}</h3>
-                    <div className={`mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold ${expenseVar <= 0 ? "text-green-500" : "text-red-500"}`}>
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">{formatCurrency(curr.expenses)}</h3>
+                    <div className={`mt-2 flex items-start md:items-center justify-center md:justify-start gap-1 text-[11px] md:text-xs font-bold leading-tight ${expenseVar <= 0 ? "text-green-500" : "text-red-500"}`}>
                         <span className="material-symbols-outlined text-sm">{expenseVar <= 0 ? "trending_down" : "trending_up"}</span>
                         <span>{expenseVar >= 0 ? "+" : ""}{expenseVar.toFixed(1)}% {t("movements.vsLastMonth")}</span>
                     </div>
                 </div>
                 {/* Savings Rate */}
-                <div className="group rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all text-center md:text-left">
+                <div className="group rounded-xl bg-surface p-4 md:p-6 shadow-sm border border-border hover:border-primary/50 transition-all text-center md:text-left">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("movements.savingsRate")}</p>
-                    <h3 className="text-2xl font-bold text-foreground">{savingsRate.toFixed(1)}%</h3>
-                    <div className={`mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold ${savingsVar >= 0 ? "text-green-500" : "text-red-500"}`}>
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">{savingsRate.toFixed(1)}%</h3>
+                    <div className={`mt-2 flex items-start md:items-center justify-center md:justify-start gap-1 text-[11px] md:text-xs font-bold leading-tight ${savingsVar >= 0 ? "text-green-500" : "text-red-500"}`}>
                         <span className="material-symbols-outlined text-sm">{savingsVar >= 0 ? "ads_click" : "trending_down"}</span>
                         <span>{savingsVar >= 0 ? "+" : ""}{savingsVar.toFixed(1)}% {t("movements.fromLastMonth")}</span>
                     </div>
                 </div>
                 {/* Remaining Budget */}
-                <div className="group rounded-xl bg-surface p-6 shadow-sm border border-border hover:border-primary/50 transition-all text-center md:text-left">
+                <div className="group rounded-xl bg-surface p-4 md:p-6 shadow-sm border border-border hover:border-primary/50 transition-all text-center md:text-left">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("movements.remainingBudget")}</p>
-                    <h3 className="text-2xl font-bold text-foreground">{formatCurrency(Math.max(0, curr.net))}</h3>
-                    <div className="mt-2 flex items-center justify-center md:justify-start gap-1 text-xs font-bold text-slate-500">
+                    <h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">{formatCurrency(Math.max(0, curr.net))}</h3>
+                    <div className="mt-2 flex items-center justify-center md:justify-start gap-1 text-[11px] md:text-xs font-bold text-slate-500">
                         <span className="material-symbols-outlined text-sm">event</span>
                         <span>{currentMonth} {latestDate.getUTCFullYear()}</span>
                     </div>
@@ -448,7 +448,7 @@ export default function MovementsPage() {
                                 <span className="text-sm font-bold text-red-500">-{formatCurrency(vendor.value)}</span>
 
                                 {/* Custom Fast Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-events-none z-50 whitespace-normal min-w-[200px] max-w-[300px]">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-900 text-white text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-75 pointer-coarse:hidden pointer-events-none z-50 whitespace-normal min-w-[200px] max-w-[300px]">
                                     {vendor.name}
                                     <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-900" />
                                 </div>
