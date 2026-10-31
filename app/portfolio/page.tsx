@@ -475,14 +475,11 @@ export default function Portfolio() {
                                             >
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="flex items-center gap-2 min-w-0">
-                                                        {instExpandable && (
-                                                            <span
-                                                                className="material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0"
+                                                        <span
+                                                                aria-hidden="true"
+                                                                className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0 ${instExpandable ? "" : "invisible"}`}
                                                                 style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                                                            >
-                                                                chevron_right
-                                                            </span>
-                                                        )}
+                                                            >chevron_right</span>
                                                         <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-sm">
                                                             {institution.charAt(0).toUpperCase()}
                                                         </div>
@@ -523,14 +520,11 @@ export default function Portfolio() {
                                                                         onClick={() => prodExpandable && toggleProduct(productKey)}
                                                                     >
                                                                         <div className="flex items-center gap-2 min-w-0">
-                                                                            {prodExpandable && (
-                                                                                <span
-                                                                                    className="material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0"
+                                                                            <span
+                                                                                    aria-hidden="true"
+                                                                                    className={`material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0 ${prodExpandable ? "" : "invisible"}`}
                                                                                     style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                                                                                >
-                                                                                    chevron_right
-                                                                                </span>
-                                                                            )}
+                                                                                >chevron_right</span>
                                                                             <span className="text-sm font-semibold text-foreground/90 truncate">{product}</span>
                                                                             {!prodExpandable && prodAssets[0]?.Asset && prodAssets[0].Asset !== product && (
                                                                                 <span className="text-[11px] text-slate-400 truncate">{prodAssets[0].Asset}</span>
@@ -612,11 +606,7 @@ export default function Portfolio() {
                                                         >
                                                             <td className="px-4 py-4 font-medium text-foreground">
                                                                 <div className="flex items-center gap-2 sm:gap-3">
-                                                                    {instExpandable && (
-                                                                        <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
-                                                                            chevron_right
-                                                                        </span>
-                                                                    )}
+                                                                    <span aria-hidden="true" className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0 ${instExpandable ? "" : "invisible"}`} style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>chevron_right</span>
                                                                     <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-[10px] sm:text-sm">
                                                                         {institution.charAt(0).toUpperCase()}
                                                                     </div>
@@ -672,11 +662,7 @@ export default function Portfolio() {
                                                                         <td className="px-4 py-3 pl-12"></td>
                                                                         <td className="px-4 py-3 font-medium text-foreground/90 text-xs">
                                                                             <div className="flex items-center gap-2">
-                                                                                {prodExpandable && (
-                                                                                    <span className="material-symbols-outlined text-[14px] text-slate-400 transition-transform" style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
-                                                                                        chevron_right
-                                                                                    </span>
-                                                                                )}
+                                                                                <span aria-hidden="true" className={`material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0 ${prodExpandable ? "" : "invisible"}`} style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>chevron_right</span>
                                                                                 <span className="truncate">{product}</span>
                                                                                 {prodExpandable && (
                                                                                     <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full font-bold">{prodAssets.length}</span>
@@ -818,14 +804,11 @@ export default function Portfolio() {
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    {instExpandable && (
-                                                        <span
-                                                            className="material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0"
+                                                    <span
+                                                            aria-hidden="true"
+                                                            className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0 ${instExpandable ? "" : "invisible"}`}
                                                             style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                                                        >
-                                                            chevron_right
-                                                        </span>
-                                                    )}
+                                                        >chevron_right</span>
                                                     <div className="size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-sm">
                                                         {institution.charAt(0).toUpperCase()}
                                                     </div>
@@ -864,14 +847,11 @@ export default function Portfolio() {
                                                                     onClick={() => prodExpandable && toggleProduct(productKey)}
                                                                 >
                                                                     <div className="flex items-center gap-2 min-w-0">
-                                                                        {prodExpandable && (
-                                                                            <span
-                                                                                className="material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0"
+                                                                        <span
+                                                                                aria-hidden="true"
+                                                                                className={`material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0 ${prodExpandable ? "" : "invisible"}`}
                                                                                 style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                                                                            >
-                                                                                chevron_right
-                                                                            </span>
-                                                                        )}
+                                                                            >chevron_right</span>
                                                                         <span className="text-sm font-semibold text-foreground/90 truncate">{product}</span>
                                                                     </div>
                                                                     <div className="text-right shrink-0">
@@ -951,13 +931,7 @@ export default function Portfolio() {
                                                     >
                                                         <td className="px-4 py-4 font-medium text-foreground">
                                                             <div className="flex items-center gap-2 sm:gap-3">
-                                                                {instExpandable ? (
-                                                                    <span className="material-symbols-outlined text-[16px] text-slate-400 transition-transform" style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
-                                                                        chevron_right
-                                                                    </span>
-                                                                ) : (
-                                                                    <div className="size-6 sm:size-8 rounded-full bg-transparent flex items-center justify-center border-transparent shrink-0 text-[10px] sm:text-sm w-[16px] opacity-0 pointer-events-none"></div>
-                                                                )}
+                                                                <span aria-hidden="true" className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform shrink-0 ${instExpandable ? "" : "invisible"}`} style={{ transform: isInstExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>chevron_right</span>
                                                                 <div className="size-6 sm:size-8 rounded-full bg-primary/15 dark:bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30 shadow-sm shrink-0 text-[10px] sm:text-sm">
                                                                     {institution.charAt(0).toUpperCase()}
                                                                 </div>
@@ -1003,11 +977,7 @@ export default function Portfolio() {
                                                                 >
                                                                     <td className="px-4 py-3 pl-12 font-medium text-foreground/90 text-xs">
                                                                         <div className="flex items-center gap-2">
-                                                                            {prodExpandable && (
-                                                                                <span className="material-symbols-outlined text-[14px] text-slate-400 transition-transform" style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>
-                                                                                    chevron_right
-                                                                                </span>
-                                                                            )}
+                                                                            <span aria-hidden="true" className={`material-symbols-outlined text-[14px] text-slate-400 transition-transform shrink-0 ${prodExpandable ? "" : "invisible"}`} style={{ transform: isProdExpanded ? "rotate(90deg)" : "rotate(0deg)" }}>chevron_right</span>
                                                                             <span className="truncate">{product}</span>
                                                                         </div>
                                                                     </td>
