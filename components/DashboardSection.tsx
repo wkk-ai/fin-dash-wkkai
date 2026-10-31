@@ -8,6 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCo
 import { useChartBrush } from "@/lib/useChartBrush";
 import { fetchMarketData } from "@/lib/supabase-data";
 import { formatMonthYear, formatSnapshotDate, isB3Open } from "@/lib/utils";
+import { getAssetClassStyle, byAssetClassOrder } from "@/lib/asset-classes";
 
 interface DashboardSectionProps {
     data: AssetEntry[];
@@ -61,8 +62,11 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
         allocationMap[a.Classification] = (allocationMap[a.Classification] || 0) + a.Value;
     });
 
-    const allocationChartData = Object.entries(allocationMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-    const COLORS = ['#137fec', '#a855f7', '#34d399', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+    // Donut segments in fixed palette order (tested neighbour colours); legend by size.
+    const allocationChartData = Object.entries(allocationMap)
+        .map(([name, value]) => ({ name, value, ...getAssetClassStyle(name, isDark) }))
+        .sort((a, b) => byAssetClassOrder(a.name, b.name));
+    const allocationLegend = [...allocationChartData].sort((a, b) => b.value - a.value);
 
     const topAsset = [...currentAssets].sort((a, b) => b.Value - a.Value)[0];
     const topAssetPct = currentWealth > 0 && topAsset ? (topAsset.Value / currentWealth) * 100 : 0;
@@ -365,15 +369,14 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     stroke="none"
                                 >
                                     {allocationChartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${entry.name}`} fill={entry.color} />
                                     ))}
                                 </Pie>
                                 <RechartsTooltip
                                     content={({ active, payload }) => {
                                         if (!active || !payload?.length) return null;
-                                        const { name, value } = payload[0].payload;
-                                        const idx = allocationChartData.findIndex((d) => d.name === name);
-                                        const segmentColor = idx >= 0 ? COLORS[idx % COLORS.length] : tooltipTextColor;
+                                        const { name, value, color } = payload[0].payload;
+                                        const segmentColor = color ?? tooltipTextColor;
                                         return (
                                             <div
                                                 className="rounded-lg px-3 py-2 shadow-lg border"
@@ -402,13 +405,15 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                     </div>
 
                     <div className="mt-4 space-y-3">
-                        {allocationChartData.map((entry, index) => {
+                        {allocationLegend.map((entry) => {
                             const percentage = ((entry.value / currentWealth) * 100).toFixed(1);
                             return (
                                 <div key={entry.name} className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="size-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{entry.name}</span>
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className="flex size-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${entry.color}22`, color: entry.color }}>
+                                            <span className="material-symbols-outlined text-[16px]">{entry.icon}</span>
+                                        </span>
+                                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300 truncate">{entry.name}</span>
                                     </div>
                                     <span className="text-sm font-bold text-foreground">{percentage}%</span>
                                 </div>

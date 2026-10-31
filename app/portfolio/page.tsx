@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
 import { fetchNetWorth } from "@/lib/supabase-data";
+import { getAssetClassStyle, byAssetClassOrder } from "@/lib/asset-classes";
 
 type ProductGroup = { product: string; assets: AssetEntry[]; total: number };
 type InstitutionHierarchy = { institution: string; products: ProductGroup[]; assets: AssetEntry[]; total: number };
@@ -257,16 +258,11 @@ export default function Portfolio() {
         };
     };
 
-    const formatAbbreviated = (num: number) => {
-        const absNum = Math.abs(num);
-        if (absNum >= 1_000_000) {
-            return (num / 1_000_000).toFixed(1).replace(".", ",") + "m";
-        }
-        if (absNum >= 1_000) {
-            return (num / 1_000).toFixed(1).replace(".", ",") + "k";
-        }
-        return num.toFixed(1).replace(".", ",");
-    };
+    // Short numbers in the reader's language: "36,6 mil" (pt), "36.6K" (en).
+    const formatAbbreviated = (num: number) =>
+        new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(num);
+    const formatPct = (num: number) =>
+        num.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
     const totalWealth = currentAssets.reduce((sum, item) => sum + item.Value, 0);
 
@@ -356,6 +352,46 @@ export default function Portfolio() {
                 </div>
             </div>
 
+            {sortedGrouped.length > 0 && totalWealth > 0 && (() => {
+                const composition = sortedGrouped.map(({ classification, classTotal }) => ({
+                    classification,
+                    pct: (classTotal / totalWealth) * 100,
+                    ...getAssetClassStyle(classification, isDark),
+                }));
+                const barOrder = [...composition].sort((a, b) => byAssetClassOrder(a.classification, b.classification));
+                return (
+                    <div className="min-w-0 rounded-xl bg-surface border border-border shadow-sm p-4 md:p-5 animate-in slide-in-from-bottom-3 fade-in duration-500">
+                        <div className="flex items-baseline justify-between gap-3 mb-3">
+                            <p className="text-sm font-bold text-foreground">{t("portfolio.composition")}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.nTypes", { count: composition.length })}</p>
+                        </div>
+                        <div className="flex h-3 w-full gap-[2px] overflow-hidden rounded-full" role="img" aria-label={t("portfolio.composition")}>
+                            {barOrder.map((c) => (
+                                <div
+                                    key={c.classification}
+                                    title={`${c.classification}: ${formatPct(c.pct)}%`}
+                                    className="h-full first:rounded-l-full last:rounded-r-full"
+                                    style={{ width: `${c.pct}%`, minWidth: 3, backgroundColor: c.color }}
+                                />
+                            ))}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+                            {composition.map((c) => (
+                                <a
+                                    key={c.classification}
+                                    href={`#class-${encodeURIComponent(c.classification)}`}
+                                    className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-foreground transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[16px]" style={{ color: c.color }}>{c.icon}</span>
+                                    <span className="font-medium">{c.classification}</span>
+                                    <span className="font-bold text-foreground tabular-nums">{formatPct(c.pct)}%</span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })()}
+
             <div className="flex flex-col gap-4 md:gap-6 min-w-0 animate-in slide-in-from-bottom-4 fade-in duration-700">
                 {Object.keys(grouped).length === 0 ? (
                     <div className="text-center py-20 text-slate-500 border border-dashed border-border-light dark:border-border-dark rounded-xl">
@@ -372,6 +408,7 @@ export default function Portfolio() {
                         }, 0) : null);
 
                         const sortedInstitutions = buildInstitutionHierarchy(assets);
+                        const classStyle = getAssetClassStyle(classification, isDark);
 
                         const renderAssetVariation = (asset: AssetEntry) => {
                             const prevValue = getPrevValue(asset);
@@ -381,40 +418,43 @@ export default function Portfolio() {
                         };
 
                         return (
-                            <div key={classification} className="min-w-0 rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
-                                <div className="px-4 sm:px-6 py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-background/50">
-                                    <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-primary text-[20px]">category</span>
-                                        <h3 className="text-lg font-bold text-foreground">{classification}</h3>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 sm:gap-4 text-sm">
-                                        <span className="w-full sm:w-auto text-lg sm:text-sm font-bold text-foreground tabular-nums">{formatCurrency(classTotal)}</span>
-                                        <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
-                                        {classVariationAbs !== null && (
-                                            <>
-                                                <span className={`font-semibold ${classVariationAbs >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                    {classVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(classVariationAbs)}
-                                                </span>
-                                                <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
-                                            </>
-                                        )}
-                                        {classVariationPct === null ? (
-                                            <span className="font-semibold text-slate-400 dark:text-slate-500">—</span>
-                                        ) : (
-                                            <span className="font-semibold flex items-center gap-1">
-                                                <span className={`material-symbols-outlined text-[16px] ${classVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                    {classVariationPct >= 0 ? "trending_up" : "trending_down"}
-                                                </span>
-                                                <span className={classVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
-                                                    {classVariationPct >= 0 ? "+" : ""}{classVariationPct.toFixed(1)}%
-                                                </span>
-                                                <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">{t("dashboard.vsLastMonth")}</span>
+                            <div key={classification} id={`class-${encodeURIComponent(classification)}`} className="scroll-mt-24 min-w-0 rounded-xl bg-surface border border-border shadow-sm overflow-hidden">
+                                <div className="px-4 sm:px-6 pt-4 pb-3.5 border-b border-border bg-background/50">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <span
+                                                className="flex size-10 shrink-0 items-center justify-center rounded-xl"
+                                                style={{ backgroundColor: `${classStyle.color}1f`, color: classStyle.color }}
+                                            >
+                                                <span className="material-symbols-outlined text-[22px]">{classStyle.icon}</span>
                                             </span>
-                                        )}
-                                        <span className="hidden sm:inline text-slate-400 dark:text-slate-500">|</span>
-                                        <span className="px-2 py-0.5 rounded-full bg-border-light dark:bg-border-dark text-slate-600 dark:text-slate-300 text-xs font-semibold">
-                                            {t("portfolio.ofPortfolio", { pct: classPercentage.toFixed(1) })}
-                                        </span>
+                                            <div className="min-w-0">
+                                                <h3 className="text-base sm:text-lg font-bold text-foreground leading-tight">{classification}</h3>
+                                                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                                                    {t(sortedInstitutions.length === 1 ? "portfolio.oneInstitution" : "portfolio.nInstitutions", { count: sortedInstitutions.length })} · {t("portfolio.ofPortfolio", { pct: formatPct(classPercentage) })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end sm:gap-1">
+                                            <p className="text-lg sm:text-xl font-bold text-foreground tabular-nums leading-tight">{formatCurrency(classTotal)}</p>
+                                            {classVariationAbs !== null || classVariationPct !== null ? (
+                                                <span
+                                                    title={t("dashboard.vsLastMonth")}
+                                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${(classVariationAbs ?? classVariationPct ?? 0) >= 0 ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}`}
+                                                >
+                                                    <span className="material-symbols-outlined text-[14px]">{(classVariationAbs ?? classVariationPct ?? 0) >= 0 ? "arrow_upward" : "arrow_downward"}</span>
+                                                    {classVariationAbs !== null && <span>{classVariationAbs >= 0 ? "+" : ""}{formatAbbreviated(classVariationAbs)}</span>}
+                                                    {classVariationAbs !== null && classVariationPct !== null && <span className="opacity-50">·</span>}
+                                                    {classVariationPct !== null && <span>{classVariationPct >= 0 ? "+" : ""}{formatPct(classVariationPct)}%</span>}
+                                                    <span className="hidden sm:inline font-medium opacity-70">{t("dashboard.vsLastMonth")}</span>
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-slate-400">—</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-border">
+                                        <div className="h-full rounded-full" style={{ width: `${Math.min(100, classPercentage)}%`, backgroundColor: classStyle.color }} />
                                     </div>
                                 </div>
                                 <div className="sm:hidden p-3 space-y-3">
@@ -430,7 +470,7 @@ export default function Portfolio() {
                                         return (
                                             <div
                                                 key={instKey}
-                                                className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${instExpandable ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
+                                                className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-3.5 space-y-2.5 ${instExpandable ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
                                                 onClick={() => instExpandable && toggleInstitution(instKey)}
                                             >
                                                 <div className="flex items-start justify-between gap-3">
@@ -457,35 +497,16 @@ export default function Portfolio() {
                                                     </div>
                                                     <p className="text-base font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthAbsVar")}</p>
-                                                        {instVariation !== null ? (
-                                                            <p className={`text-sm font-semibold tabular-nums ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
-                                                            </p>
-                                                        ) : (
-                                                            <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthVar")}</p>
-                                                        {instVariationPct !== null ? (
-                                                            <p className={`text-sm font-semibold tabular-nums ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
-                                                            </p>
-                                                        ) : (
-                                                            <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.weightInCategory")}</p>
-                                                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInClass.toFixed(1)}%</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.weightTotal")}</p>
-                                                        <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInTotal.toFixed(1)}%</p>
-                                                    </div>
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs tabular-nums">
+                                                    {instVariation !== null ? (
+                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${instVariation >= 0 ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}`}>
+                                                            {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
+                                                            {instVariationPct !== null && ` (${instVariationPct >= 0 ? "+" : ""}${formatPct(instVariationPct)}%)`}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
+                                                    )}
+                                                    <span className="text-slate-500 dark:text-slate-400">{t("portfolio.ofCategory", { pct: formatPct(instWeightInClass) })}</span>
                                                 </div>
                                                 {isInstExpanded && instExpandable && (
                                                     <div className="pt-2 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
@@ -520,7 +541,7 @@ export default function Portfolio() {
                                                                             {prodVariation !== null && (
                                                                                 <p className={`text-[10px] tabular-nums ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                                                                                     {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
-                                                                                    {prodVariationPct !== null && ` (${prodVariationPct >= 0 ? "+" : ""}${prodVariationPct.toFixed(1)}%)`}
+                                                                                    {prodVariationPct !== null && ` (${prodVariationPct >= 0 ? "+" : ""}${formatPct(prodVariationPct)}%)`}
                                                                                 </p>
                                                                             )}
                                                                         </div>
@@ -541,7 +562,7 @@ export default function Portfolio() {
                                                                                         {variation !== null ? (
                                                                                             <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
                                                                                                 {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                                                {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                                                {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${formatPct(variationPct)}%)`}
                                                                                             </span>
                                                                                         ) : (
                                                                                             <span className="text-slate-400 dark:text-slate-500">—</span>
@@ -625,14 +646,14 @@ export default function Portfolio() {
                                                             <td className="px-4 py-4 text-right">
                                                                 {instVariationPct !== null ? (
                                                                     <span className={`font-medium ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                        {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
+                                                                        {instVariationPct >= 0 ? "+" : ""}{formatPct(instVariationPct)}%
                                                                     </span>
                                                                 ) : (
                                                                     <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{instWeightInClass.toFixed(1)}%</td>
-                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{instWeightInTotal.toFixed(1)}%</td>
+                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{formatPct(instWeightInClass)}%</td>
+                                                            <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{formatPct(instWeightInTotal)}%</td>
                                                         </tr>
                                                         {isInstExpanded && instExpandable && products.map(({ product, assets: prodAssets, total: prodTotal }) => {
                                                             const productKey = `${instKey}-${product}`;
@@ -675,14 +696,14 @@ export default function Portfolio() {
                                                                         <td className="px-4 py-3 text-right text-xs">
                                                                             {prodVariationPct !== null ? (
                                                                                 <span className={`font-medium ${prodVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                                    {prodVariationPct >= 0 ? "+" : ""}{prodVariationPct.toFixed(1)}%
+                                                                                    {prodVariationPct >= 0 ? "+" : ""}{formatPct(prodVariationPct)}%
                                                                                 </span>
                                                                             ) : (
                                                                                 <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                             )}
                                                                         </td>
-                                                                        <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{prodWeightInClass.toFixed(1)}%</td>
-                                                                        <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{prodWeightInTotal.toFixed(1)}%</td>
+                                                                        <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{formatPct(prodWeightInClass)}%</td>
+                                                                        <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{formatPct(prodWeightInTotal)}%</td>
                                                                     </tr>
                                                                     {isProdExpanded && prodExpandable && prodAssets.map((asset, idx) => {
                                                                         const weightInClass = classTotal > 0 ? (asset.Value / classTotal) * 100 : 0;
@@ -713,14 +734,14 @@ export default function Portfolio() {
                                                                                 <td className="px-4 py-3 text-right text-xs">
                                                                                     {variationPct !== null ? (
                                                                                         <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                                            {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
+                                                                                            {variationPct >= 0 ? "+" : ""}{formatPct(variationPct)}%
                                                                                         </span>
                                                                                     ) : (
                                                                                         <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                                     )}
                                                                                 </td>
-                                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{weightInClass.toFixed(1)}%</td>
-                                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{weightInTotal.toFixed(1)}%</td>
+                                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{formatPct(weightInClass)}%</td>
+                                                                                <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{formatPct(weightInTotal)}%</td>
                                                                             </tr>
                                                                         );
                                                                     })}
@@ -772,7 +793,7 @@ export default function Portfolio() {
                                                 {wealthVariationPct >= 0 ? "trending_up" : "trending_down"}
                                             </span>
                                             <span className={wealthVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
-                                                {wealthVariationPct >= 0 ? "+" : ""}{wealthVariationPct.toFixed(1)}%
+                                                {wealthVariationPct >= 0 ? "+" : ""}{formatPct(wealthVariationPct)}%
                                             </span>
                                             <span className="text-slate-600 dark:text-slate-300 text-xs font-semibold">{t("dashboard.vsLastMonth")}</span>
                                         </span>
@@ -792,7 +813,7 @@ export default function Portfolio() {
                                     return (
                                         <div
                                             key={`${globalInstKey}-mobile`}
-                                            className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-4 space-y-3 ${instExpandable ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
+                                            className={`rounded-xl border border-border bg-slate-50/80 dark:bg-slate-900/40 p-3.5 space-y-2.5 ${instExpandable ? "cursor-pointer active:bg-slate-100 dark:active:bg-slate-800/60" : ""}`}
                                             onClick={() => instExpandable && toggleInstitution(globalInstKey)}
                                         >
                                             <div className="flex items-start justify-between gap-3">
@@ -817,33 +838,18 @@ export default function Portfolio() {
                                                 </div>
                                                 <p className="text-base font-black text-foreground tabular-nums shrink-0">{formatCurrency(instTotal)}</p>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div>
-                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthAbsVar")}</p>
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs tabular-nums">
                                                     {instVariation !== null ? (
-                                                        <p className={`text-sm font-semibold tabular-nums ${instVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
+                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${instVariation >= 0 ? "bg-green-500/10 text-green-600 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}`}>
                                                             {instVariation >= 0 ? "+" : ""}{formatAbbreviated(instVariation)}
-                                                        </p>
+                                                            {instVariationPct !== null && ` (${instVariationPct >= 0 ? "+" : ""}${formatPct(instVariationPct)}%)`}
+                                                        </span>
                                                     ) : (
-                                                        <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
+                                                        <span className="text-slate-400 dark:text-slate-500">—</span>
                                                     )}
+                                                    <span className="text-slate-500 dark:text-slate-400">{t("portfolio.ofPortfolio", { pct: formatPct(instWeightInTotal) })}</span>
                                                 </div>
-                                                <div>
-                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.monthVar")}</p>
-                                                    {instVariationPct !== null ? (
-                                                        <p className={`text-sm font-semibold tabular-nums ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                            {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
-                                                        </p>
-                                                    ) : (
-                                                        <p className="text-sm text-slate-400 dark:text-slate-500">—</p>
-                                                    )}
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{t("portfolio.weightTotal")}</p>
-                                                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300 tabular-nums">{instWeightInTotal.toFixed(1)}%</p>
-                                                </div>
-                                            </div>
-                                            {isInstExpanded && instExpandable && (
+                                                {isInstExpanded && instExpandable && (
                                                 <div className="pt-2 border-t border-border/60 space-y-2" onClick={(e) => e.stopPropagation()}>
                                                     {products.map(({ product, assets: prodAssets, total: prodTotal }) => {
                                                         const productKey = `${globalInstKey}-${product}`;
@@ -873,7 +879,7 @@ export default function Portfolio() {
                                                                         {prodVariation !== null && (
                                                                             <p className={`text-[10px] tabular-nums ${prodVariation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
                                                                                 {prodVariation >= 0 ? "+" : ""}{formatAbbreviated(prodVariation)}
-                                                                                {prodVariationPct !== null && ` (${prodVariationPct >= 0 ? "+" : ""}${prodVariationPct.toFixed(1)}%)`}
+                                                                                {prodVariationPct !== null && ` (${prodVariationPct >= 0 ? "+" : ""}${formatPct(prodVariationPct)}%)`}
                                                                             </p>
                                                                         )}
                                                                     </div>
@@ -897,7 +903,7 @@ export default function Portfolio() {
                                                                                     {variation !== null ? (
                                                                                         <span className={variation >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}>
                                                                                             {variation >= 0 ? "+" : ""}{formatAbbreviated(variation)}
-                                                                                            {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${variationPct.toFixed(1)}%)`}
+                                                                                            {variationPct !== null && ` (${variationPct >= 0 ? "+" : ""}${formatPct(variationPct)}%)`}
                                                                                         </span>
                                                                                     ) : (
                                                                                         <span className="text-slate-400 dark:text-slate-500">—</span>
@@ -974,13 +980,13 @@ export default function Portfolio() {
                                                         <td className="px-4 py-4 text-right">
                                                             {instVariationPct !== null ? (
                                                                 <span className={`font-medium ${instVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                    {instVariationPct >= 0 ? "+" : ""}{instVariationPct.toFixed(1)}%
+                                                                    {instVariationPct >= 0 ? "+" : ""}{formatPct(instVariationPct)}%
                                                                 </span>
                                                             ) : (
                                                                 <span className="text-slate-400 dark:text-slate-500">—</span>
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{instWeightInTotal.toFixed(1)}%</td>
+                                                        <td className="px-4 py-4 text-right text-slate-500 dark:text-slate-400">{formatPct(instWeightInTotal)}%</td>
                                                     </tr>
                                                     {isInstExpanded && instExpandable && products.map(({ product, assets: prodAssets, total: prodTotal }) => {
                                                         const productKey = `${globalInstKey}-${product}`;
@@ -1018,13 +1024,13 @@ export default function Portfolio() {
                                                                     <td className="px-4 py-3 text-right text-xs">
                                                                         {prodVariationPct !== null ? (
                                                                             <span className={`font-medium ${prodVariationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                                {prodVariationPct >= 0 ? "+" : ""}{prodVariationPct.toFixed(1)}%
+                                                                                {prodVariationPct >= 0 ? "+" : ""}{formatPct(prodVariationPct)}%
                                                                             </span>
                                                                         ) : (
                                                                             <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                         )}
                                                                     </td>
-                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{prodWeightInTotal.toFixed(1)}%</td>
+                                                                    <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{formatPct(prodWeightInTotal)}%</td>
                                                                 </tr>
                                                                 {isProdExpanded && prodExpandable && prodAssets.map((asset, aIdx) => {
                                                                     const weightInTotal = totalWealth > 0 ? (asset.Value / totalWealth) * 100 : 0;
@@ -1055,13 +1061,13 @@ export default function Portfolio() {
                                                                             <td className="px-4 py-3 text-right text-xs">
                                                                                 {variationPct !== null ? (
                                                                                     <span className={`font-medium ${variationPct >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400"}`}>
-                                                                                        {variationPct >= 0 ? "+" : ""}{variationPct.toFixed(1)}%
+                                                                                        {variationPct >= 0 ? "+" : ""}{formatPct(variationPct)}%
                                                                                     </span>
                                                                                 ) : (
                                                                                     <span className="text-slate-400 dark:text-slate-500">—</span>
                                                                                 )}
                                                                             </td>
-                                                                            <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{weightInTotal.toFixed(1)}%</td>
+                                                                            <td className="px-4 py-3 text-right text-slate-400 dark:text-slate-500 text-xs">{formatPct(weightInTotal)}%</td>
                                                                         </tr>
                                                                     );
                                                                 })}

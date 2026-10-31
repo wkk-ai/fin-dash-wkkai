@@ -58,7 +58,12 @@
     "asset": "Ativo",
     "nAssets": "{count} ativos",
     "evolutionByInstitution": "Evolução por Instituição",
-    "institutionsSummary": "Resumo por Instituições"
+    "institutionsSummary": "Resumo por Instituições",
+    "composition": "Composição da carteira",
+    "nInstitutions": "{count} instituições",
+    "nTypes": "{count} tipos de ativo",
+    "ofCategory": "{pct}% da categoria",
+    "oneInstitution": "1 instituição"
   },
   "settings": {
     "title": "Configurações e Banco de Dados",

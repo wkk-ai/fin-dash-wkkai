@@ -58,7 +58,12 @@
     "asset": "Asset",
     "nAssets": "{count} assets",
     "evolutionByInstitution": "Evolution by Institution",
-    "institutionsSummary": "Summary by Institutions"
+    "institutionsSummary": "Summary by Institutions",
+    "composition": "Portfolio composition",
+    "nInstitutions": "{count} institutions",
+    "nTypes": "{count} asset types",
+    "ofCategory": "{pct}% of category",
+    "oneInstitution": "1 institution"
   },
   "settings": {
     "title": "Settings and Database",
