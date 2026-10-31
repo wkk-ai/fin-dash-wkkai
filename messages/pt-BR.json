@@ -218,7 +218,8 @@
     "distributionIn": "Distribuição em {date}",
     "total": "Total",
     "monthsToNextMillion": "Meses até próximo milhão",
-    "topAssetLabel": "Maior Ativo"
+    "topAssetLabel": "Maior Ativo",
+    "marketClosed": "Mercado Fechado"
   },
   "projections": {
     "title": "Projeções Financeiras",
@@ -276,7 +277,8 @@
     "others": "Outros",
     "daysWithData": "Dias com Dados",
     "transactions": "Transações",
-    "all": "Todas"
+    "all": "Todas",
+    "ofBudget": "de {amount} orçados"
   },
   "entry": {
     "title": "Nova entrada",

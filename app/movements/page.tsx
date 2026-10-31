@@ -5,12 +5,12 @@ import { useTheme } from "next-themes";
 import { useTranslation } from "@/lib/i18n";
 import { MovementEntry, BudgetEntry } from "@/types/database";
 import { formatMonthYear, parseCustomDate } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell, PieChart, Pie, ReferenceLine } from "recharts";
 import MovementsTable from "@/components/MovementsTable";
 import { fetchMovements as fetchMovementsData, fetchSettings as fetchSettingsData } from "@/lib/supabase-data";
 
 export default function MovementsPage() {
-    const { t, formatCurrency } = useTranslation();
+    const { t, formatCurrency, formatCompactCurrency } = useTranslation();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
 
@@ -88,6 +88,9 @@ export default function MovementsPage() {
     };
 
     const curr = getTotals(currentMovements);
+    // Remaining budget = what was budgeted for the month minus what was actually spent.
+    const totalBudget = budgets.reduce((acc, b) => acc + (Number(b.Budget) || 0), 0);
+    const remainingBudget = totalBudget - curr.expenses;
     const prev = getTotals(previousMovements);
 
     const calcVar = (c: number, p: number) => {
@@ -150,16 +153,11 @@ export default function MovementsPage() {
         donutData.push({ name: t("movements.others") || "Outros", value: othersValue });
     }
 
-    // Colors: Largest is dark red, others are lighter reds, "Outros" is gray
-    const DONUT_COLORS = [
-        '#991b1b', // Top 1: Dark Red
-        '#b91c1c',
-        '#dc2626',
-        '#ef4444',
-        '#f87171',
-        '#fca5a5'
-    ];
-    // If we have "Outros", it will be the last item, assign it gray
+    // Categorical palette (validated for colour-blind separation): categories are identities, not alerts,
+    // so red stays reserved for overspending. "Outros" is neutral gray.
+    const DONUT_COLORS = isDark
+        ? ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#9085e9']
+        : ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#6250d6'];
     const getDonutColor = (index: number, name: string) => {
         if (name === (t("movements.others") || "Outros")) return '#94a3b8'; // Gray
         return DONUT_COLORS[index % DONUT_COLORS.length];
@@ -266,10 +264,12 @@ export default function MovementsPage() {
                 {/* Remaining Budget */}
                 <div className="group rounded-xl bg-surface p-4 md:p-6 shadow-sm border border-border hover:border-primary/50 transition-all text-center md:text-left">
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">{t("movements.remainingBudget")}</p>
-                    <h3 className="text-lg md:text-2xl font-bold text-foreground tabular-nums truncate">{formatCurrency(Math.max(0, curr.net))}</h3>
+                    <h3 className={`text-lg md:text-2xl font-bold tabular-nums truncate ${totalBudget > 0 && remainingBudget < 0 ? "text-red-500" : "text-foreground"}`}>
+                        {totalBudget > 0 ? formatCurrency(remainingBudget) : "—"}
+                    </h3>
                     <div className="mt-2 flex items-center justify-center md:justify-start gap-1 text-[11px] md:text-xs font-bold text-slate-500">
                         <span className="material-symbols-outlined text-sm">event</span>
-                        <span>{currentMonth} {latestDate.getUTCFullYear()}</span>
+                        <span className="truncate">{totalBudget > 0 ? t("movements.ofBudget", { amount: formatCurrency(totalBudget) }) : `${currentMonth} ${latestDate.getUTCFullYear()}`}</span>
                     </div>
                 </div>
             </div>
@@ -297,7 +297,7 @@ export default function MovementsPage() {
                             <BarChart data={barChartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
                                 <XAxis dataKey="date" fontSize={11} tickLine={false} axisLine={false} tickMargin={10} />
-                                <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                                <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => formatCompactCurrency(v)} width={88} />
                                 <RechartsTooltip
                                     cursor={{ fill: 'transparent' }}
                                     content={({ active, payload }) => {
@@ -463,13 +463,8 @@ export default function MovementsPage() {
                     <p className="text-xs text-slate-500 mb-6">{t("movements.netCashFlowDesc")}</p>
                     <div className="flex-1">
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={cashFlowData}>
-                                <defs>
-                                    <linearGradient id="colorCash" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
+                            <BarChart data={cashFlowData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#283039" : "#e2e8f0"} />
                                 <XAxis
                                     dataKey="date"
                                     axisLine={false}
@@ -477,9 +472,10 @@ export default function MovementsPage() {
                                     tick={{ fontSize: 10, fill: '#64748b' }}
                                     dy={5}
                                 />
-                                <YAxis hide />
+                                <YAxis fontSize={10} tickLine={false} axisLine={false} width={64} tick={{ fill: '#64748b' }} tickFormatter={(v) => formatCompactCurrency(v)} />
+                                <ReferenceLine y={0} stroke="#64748b" strokeWidth={1} />
                                 <RechartsTooltip
-                                    cursor={false}
+                                    cursor={{ fill: isDark ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.04)" }}
                                     content={({ active, payload }) => {
                                         if (!active || !payload?.length) return null;
                                         return (
@@ -492,8 +488,12 @@ export default function MovementsPage() {
                                         );
                                     }}
                                 />
-                                <Area type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                            </AreaChart>
+                                <Bar dataKey="value" radius={[4, 4, 4, 4]} maxBarSize={32}>
+                                    {cashFlowData.map((d, i) => (
+                                        <Cell key={`cf-${i}`} fill={d.value >= 0 ? "#22c55e" : "#ef4444"} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>

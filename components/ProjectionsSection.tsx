@@ -24,7 +24,7 @@ interface ProjectionsSectionProps {
 }
 
 export default function ProjectionsSection({ currentWealth, params, setParams, suggestedAddition }: ProjectionsSectionProps) {
-    const { t, formatCurrency } = useTranslation();
+    const { t, formatCurrency, formatCompactCurrency } = useTranslation();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
 
@@ -59,7 +59,8 @@ export default function ProjectionsSection({ currentWealth, params, setParams, s
     for (let i = 1; i <= months; i++) {
         simulatedWealth = simulatedWealth * (1 + monthlyRate) + addition;
         totalInvested += addition;
-        if (i % 12 === 0 || i <= 12) {
+        // Evenly spaced points so the curve shape is honest: monthly up to 2 years, yearly beyond.
+        if (months <= 24 || i % 12 === 0) {
             const futureDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
             projectionData.push({
                 month: i,
@@ -191,7 +192,8 @@ export default function ProjectionsSection({ currentWealth, params, setParams, s
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
-                                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                                    tickFormatter={(value) => formatCompactCurrency(value)}
+                                    width={80}
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip

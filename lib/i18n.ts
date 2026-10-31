@@ -33,14 +33,23 @@ export function useTranslation() {
 
     const formatCurrency = useCallback(
         (value: number) => {
-            const [loc, curr] =
-                locale === "pt-BR" ? ["pt-BR", "BRL"] as const :
-                locale === "es-ES" ? ["es-ES", "EUR"] as const :
-                ["en-US", "USD"] as const;
-            return new Intl.NumberFormat(loc, { style: "currency", currency: curr }).format(value);
+            // All values are stored in reais: the language only changes number formatting, never the currency.
+            return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(value);
         },
         [locale]
     );
 
-    return { t, locale, formatCurrency };
+    /** Short money label for chart axes and donut centres, e.g. "R$ 750 mil", "R$ 1,2 mi". */
+    const formatCompactCurrency = useCallback(
+        (value: number) =>
+            new Intl.NumberFormat(locale, {
+                style: "currency",
+                currency: "BRL",
+                notation: "compact",
+                maximumFractionDigits: Math.abs(value) >= 1_000_000 ? 1 : 0,
+            }).format(value),
+        [locale]
+    );
+
+    return { t, locale, formatCurrency, formatCompactCurrency };
 }

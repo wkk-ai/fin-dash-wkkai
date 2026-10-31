@@ -7,7 +7,7 @@ import { AssetEntry } from "@/types/database";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
 import { fetchMarketData } from "@/lib/supabase-data";
-import { formatMonthYear } from "@/lib/utils";
+import { formatMonthYear, formatSnapshotDate, isB3Open } from "@/lib/utils";
 
 interface DashboardSectionProps {
     data: AssetEntry[];
@@ -23,7 +23,8 @@ interface DashboardSectionProps {
 }
 
 export default function DashboardSection({ data, uniqueDates, dateValues, dateObjects, projectionResult, projectionParams }: DashboardSectionProps) {
-    const { t, formatCurrency } = useTranslation();
+    const { t, formatCurrency, formatCompactCurrency, locale } = useTranslation();
+    const marketOpen = isB3Open();
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === "dark";
 
@@ -133,28 +134,29 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("dashboard.title")}</h1>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="whitespace-nowrap text-xs font-medium px-2 py-1.5 rounded bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 flex items-center gap-1 leading-none h-8">
-                        <span className="material-symbols-outlined text-[14px]">trending_up</span> {t("dashboard.marketOpen")}
+                    <span className={`whitespace-nowrap text-xs font-medium px-2 py-1.5 rounded border flex items-center gap-1.5 leading-none h-8 ${marketOpen ? "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20" : "bg-border text-slate-500 dark:text-slate-400 border-transparent"}`}>
+                        <span className={`size-1.5 rounded-full ${marketOpen ? "bg-green-500" : "bg-slate-400"}`} />
+                        {marketOpen ? t("dashboard.marketOpen") : t("dashboard.marketClosed")}
                     </span>
 
-                    {marketData && (
+                    {marketData && (marketData.selic || marketData.ipca) && (
                         <>
                             <div className="flex items-center gap-3 px-3 py-1.5 rounded bg-surface border border-border h-8">
                                 <div className="flex items-center gap-1.5 pt-[1px]">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("dashboard.selic")}</span>
-                                    <span className="text-xs font-bold text-primary">{marketData.selic}%</span>
+                                    <span className="text-xs font-bold text-primary">{marketData.selic ? `${marketData.selic}%` : "—"}</span>
                                 </div>
                                 <div className="w-[1px] h-3 bg-border" />
                                 <div className="flex items-center gap-1.5 pt-[1px]">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t("dashboard.ipca")}</span>
-                                    <span className="text-xs font-bold text-primary">{marketData.ipca}%</span>
+                                    <span className="text-xs font-bold text-primary">{marketData.ipca ? `${marketData.ipca}%` : "—"}</span>
                                 </div>
                             </div>
                         </>
                     )}
 
                     <span className="text-xs font-medium px-3 py-1.5 rounded bg-border text-slate-500 dark:text-slate-400 border border-transparent flex items-center justify-center leading-none h-8 whitespace-nowrap">
-                        {t("dashboard.lastUpdate", { date: latestDateStr })}
+                        {t("dashboard.lastUpdate", { date: formatSnapshotDate(latestDateStr, locale) })}
                     </span>
                 </div>
             </div>
@@ -309,7 +311,8 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
-                                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                                    tickFormatter={(value) => formatCompactCurrency(value)}
+                                    width={80}
                                     stroke={chartTickColor}
                                 />
                                 <RechartsTooltip
@@ -346,7 +349,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
 
                 <div className="rounded-xl bg-surface border border-border shadow-sm p-6 flex flex-col">
                     <h3 className="text-lg font-bold text-foreground mb-1">{t("dashboard.currentAllocation")}</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t("dashboard.distributionIn", { date: latestDateStr })}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t("dashboard.distributionIn", { date: formatSnapshotDate(latestDateStr, locale) })}</p>
 
                     <div className="flex-1 min-h-[200px] w-full relative -mt-4">
                         <ResponsiveContainer width="100%" height="100%">
@@ -392,7 +395,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
                             <span className="text-xl font-bold text-foreground">
-                                ${(currentWealth / 1000).toFixed(1)}k
+                                {formatCompactCurrency(currentWealth)}
                             </span>
                             <span className="text-xs text-slate-500">{t("dashboard.total")}</span>
                         </div>
