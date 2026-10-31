@@ -8,9 +8,12 @@ import NewEntryModal from "./NewEntryModal";
 import LanguageSelector from "./LanguageSelector";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
+import { useAuth } from "./AuthProvider";
 
 export default function Header() {
     const { t } = useTranslation();
+    const { user } = useAuth();
+    const initials = (user?.email ?? "?").split("@")[0].split(/[._-]+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join("") || "?";
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -144,13 +147,14 @@ export default function Header() {
 
                         <LanguageSelector />
 
-                        <div
-                            className="hidden sm:block h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-border bg-cover bg-center cursor-pointer"
-                            style={{
-                                backgroundImage:
-                                    "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-rJfng0KyhGkJiCWmIJvB9HlLPnESXefXH1bippWZMNaRWP2jFbFMqd3MJTkf9RLxXVok646U5mpE-c5D1KENWG6wDrKTYBa15Y3ULhjGyGdjM1KAdj3WZpXpxr3UNB29dVuWOzupTt0ufvc8PlK7TxnUqKQZQaZ2gmMUxrA-r1u8WzuFk5pDJPViiKH7hVRnVrct7Y4oVJrjdzS4ydHnNcPXVRTbc4cpNR49DSJ4GOpk9QiZoOy0sc1lUvB9pszM3wPzB4fWXCGp')",
-                            }}
-                        ></div>
+                        <Link
+                            href="/settings"
+                            title={user?.email ?? ""}
+                            aria-label={user?.email ?? t("nav.settings")}
+                            className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary/15 text-primary text-sm font-bold uppercase"
+                        >
+                            {initials}
+                        </Link>
                     </div>
                 </div>
             </header>

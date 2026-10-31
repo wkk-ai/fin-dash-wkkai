@@ -167,3 +167,21 @@ export function parseFormattedNumber(str: string, locale: Locale): number {
     const cleaned = s.replace(/,/g, "");
     return parseFloat(cleaned) || NaN;
 }
+
+/** Human label for a DB snapshot date ("01/Oct/26") in the reader's language, e.g. "01 out. 2026". */
+export function formatSnapshotDate(dateStr: string, locale: string = "pt-BR"): string {
+    const d = parseCustomDate(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+/** B3 regular session: weekdays 10:00–17:00 São Paulo time (holidays not counted). */
+export function isB3Open(now: Date = new Date()): boolean {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Sao_Paulo", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(now);
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    const day = get("weekday");
+    const minutes = Number(get("hour")) * 60 + Number(get("minute"));
+    return !["Sat", "Sun"].includes(day) && minutes >= 600 && minutes < 1020;
+}

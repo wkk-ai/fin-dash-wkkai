@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
-import { formatMonthYear, parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
+import { formatMonthYear, parseCustomDate, pickMonthlySnapshotDates, formatSnapshotDate } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
@@ -44,7 +44,7 @@ const isInstitutionExpandable = (products: ProductGroup[], assetCount: number) =
 const isProductExpandable = (assets: AssetEntry[]) => assets.length > 1;
 
 export default function Portfolio() {
-    const { t, formatCurrency } = useTranslation();
+    const { t, formatCurrency, formatCompactCurrency, locale } = useTranslation();
     const { resolvedTheme } = useTheme();
     const [data, setData] = useState<AssetEntry[]>([]);
     const [filterClassification, setFilterClassification] = useState<string>("");
@@ -322,7 +322,7 @@ export default function Portfolio() {
                 <div className="min-w-0">
                     <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("portfolio.title")}</h1>
                     <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
-                        {t("portfolio.subtitle", { date: currentDateStr })}
+                        {t("portfolio.subtitle", { date: formatSnapshotDate(currentDateStr, locale) })}
                     </p>
                 </div>
                 <div className="flex flex-row items-stretch gap-3 w-full md:w-auto md:items-center md:gap-4">
@@ -331,10 +331,10 @@ export default function Portfolio() {
                             <select
                                 value={currentDateStr}
                                 onChange={(e) => setSelectedDateStr(e.target.value)}
-                                className="appearance-none rounded-xl border border-border bg-surface pl-4 pr-10 py-2 text-sm font-semibold text-foreground shadow-sm focus:border-primary focus:outline-none h-[54px] cursor-pointer"
+                                className="appearance-none rounded-xl border border-border bg-surface pl-3 md:pl-4 pr-9 md:pr-10 py-2 text-sm font-semibold text-foreground shadow-sm focus:border-primary focus:outline-none h-[54px] cursor-pointer"
                             >
                                 {allDates.map((d) => (
-                                    <option key={d} value={d}>{d}</option>
+                                    <option key={d} value={d}>{formatSnapshotDate(d, locale)}</option>
                                 ))}
                             </select>
                             <span className="material-symbols-outlined absolute right-3 pointer-events-none text-slate-400 text-[20px]">
@@ -343,11 +343,11 @@ export default function Portfolio() {
                         </div>
                     )}
                     <div className="flex flex-1 min-w-0 md:flex-none bg-surface border border-border px-3 md:px-4 py-2 rounded-xl shadow-sm items-center gap-3">
-                        <div className="flex items-center justify-center p-2 bg-primary/10 rounded-lg text-primary size-10">
+                        <div className="hidden min-[400px]:flex items-center justify-center p-2 bg-primary/10 rounded-lg text-primary size-10 shrink-0">
                             <span className="material-symbols-outlined text-[20px]">account_balance_wallet</span>
                         </div>
-                        <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{t("portfolio.totalCurrent")}</p>
+                        <div className="min-w-0">
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{t("portfolio.totalCurrent")}</p>
                             <p className="text-base md:text-lg font-bold text-foreground leading-none tabular-nums truncate">
                                 {formatCurrency(totalWealth)}
                             </p>
@@ -1167,7 +1167,8 @@ export default function Portfolio() {
                                         fontSize={12}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                                        tickFormatter={(v) => formatCompactCurrency(v)}
+                                        width={80}
                                         stroke={chartTickColor}
                                     />
                                     <RechartsTooltip
