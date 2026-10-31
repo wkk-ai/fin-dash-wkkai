@@ -58,7 +58,12 @@
     "asset": "Activo",
     "nAssets": "{count} activos",
     "evolutionByInstitution": "Evolución por Institución",
-    "institutionsSummary": "Resumen por Instituciones"
+    "institutionsSummary": "Resumen por Instituciones",
+    "composition": "Composición de la cartera",
+    "nInstitutions": "{count} instituciones",
+    "nTypes": "{count} tipos de activo",
+    "ofCategory": "{pct}% de la categoría",
+    "oneInstitution": "1 institución"
   },
   "settings": {
     "title": "Configuración y Base de Datos",
