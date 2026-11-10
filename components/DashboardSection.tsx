@@ -117,7 +117,7 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
     const topGainerLabel = shouldAbbreviateAssets ? abbreviateAssetName(topGainerFullLabel) : topGainerFullLabel;
     const topLoserLabel = shouldAbbreviateAssets ? abbreviateAssetName(topLoserFullLabel) : topLoserFullLabel;
 
-    const wealthBrush = useChartBrush(wealthHistory, "value");
+    const wealthBrush = useChartBrush(wealthHistory, "value", "name");
 
     const [marketData, setMarketData] = useState<{ selic: string | null; ipca: string | null } | null>(null);
 
@@ -291,9 +291,9 @@ export default function DashboardSection({ data, uniqueDates, dateValues, dateOb
                                     backgroundColor: tooltipBg,
                                 }}
                             >
-                                <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                <span style={{ color: tooltipLabelColor }}>{wealthBrush.variation.fromLabel} → {wealthBrush.variation.toLabel}: </span>
                                 <span style={{ color: wealthBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
-                                    {formatCurrency(wealthBrush.variation.absolute)} ({wealthBrush.variation.percent >= 0 ? "+" : ""}{wealthBrush.variation.percent.toFixed(1)}%)
+                                    {wealthBrush.variation.absolute > 0 ? "+" : ""}{formatCurrency(wealthBrush.variation.absolute)} ({wealthBrush.variation.percent >= 0 ? "+" : ""}{wealthBrush.variation.percent.toFixed(1)}%)
                                 </span>
                             </div>
                         )}
