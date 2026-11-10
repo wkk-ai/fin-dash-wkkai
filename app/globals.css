@@ -119,3 +119,12 @@ body {
 .page-transition {
   animation: page-fade-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+/* Clicking a chart to drag a period should not draw a focus box around it */
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus,
+.recharts-surface:focus-visible,
+.recharts-surface g:focus,
+.recharts-surface g:focus-visible {
+  outline: none;
+}

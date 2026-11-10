@@ -2,7 +2,20 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 
-export function useChartBrush<T>(data: T[], valueKey: keyof T) {
+/** Recharts 3 reports the hovered point as a string ("12"); older versions as a number. */
+function toIndex(raw: unknown, length: number): number | null {
+    if (raw === null || raw === undefined || raw === "") return null;
+    const n = typeof raw === "number" ? raw : Number(raw);
+    return Number.isInteger(n) && n >= 0 && n < length ? n : null;
+}
+
+/**
+ * Click and drag on a chart to see the change between the point where the drag
+ * started (the reference) and the point under the mouse. Dragging left gives
+ * the change from the earlier point to the reference read backwards: the
+ * reference is always the start of the drag.
+ */
+export function useChartBrush<T>(data: T[], valueKey: keyof T, labelKey?: keyof T) {
     const [startIndex, setStartIndex] = useState<number | null>(null);
     const [endIndex, setEndIndex] = useState<number | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -30,16 +43,18 @@ export function useChartBrush<T>(data: T[], valueKey: keyof T) {
         }
     }, [activeIndex]);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onMouseMove = useCallback((state: any) => {
-        if (state && typeof state.activeTooltipIndex === "number") {
-            setActiveIndex(state.activeTooltipIndex);
+        const idx = toIndex(state?.activeTooltipIndex ?? state?.activeIndex, data.length);
+        if (idx !== null) {
+            setActiveIndex(idx);
             if (isDragging) {
-                setEndIndex(state.activeTooltipIndex);
+                setEndIndex(idx);
             }
         } else {
             setActiveIndex(null);
         }
-    }, [isDragging]);
+    }, [isDragging, data.length]);
 
     const onMouseUp = useCallback(() => {
         setIsDragging(false);
@@ -51,7 +66,7 @@ export function useChartBrush<T>(data: T[], valueKey: keyof T) {
         setActiveIndex(null);
     }, []);
 
-    let variation = null;
+    let variation: { absolute: number; percent: number; fromLabel: string; toLabel: string } | null = null;
     let selectionBounds: [number, number] | null = null;
 
     if (isDragging && startIndex !== null && endIndex !== null && startIndex !== endIndex) {
@@ -62,7 +77,8 @@ export function useChartBrush<T>(data: T[], valueKey: keyof T) {
         const absolute = currValue - refValue;
         const percent = refValue !== 0 ? (absolute / refValue) * 100 : 0;
 
-        variation = { absolute, percent };
+        const label = (i: number) => (labelKey ? String(data[i][labelKey] ?? "") : "");
+        variation = { absolute, percent, fromLabel: label(startIndex), toLabel: label(endIndex) };
     }
 
     return {

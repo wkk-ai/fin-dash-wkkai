@@ -148,7 +148,7 @@ export default function Portfolio() {
     }, [data, filterClassification, filterInstitution, filterProductType]);
 
     const isDark = resolvedTheme === "dark";
-    const portfolioBrush = useChartBrush(chartData, "value");
+    const portfolioBrush = useChartBrush(chartData, "value", "name");
     const chartGridColor = isDark ? "var(--border)" : "#e2e8f0";
     const chartTickColor = isDark ? "#64748b" : "#94a3b8";
     const tooltipBg = isDark ? "var(--surface)" : "#ffffff";
@@ -1122,9 +1122,9 @@ export default function Portfolio() {
                                         backgroundColor: tooltipBg,
                                     }}
                                 >
-                                    <span style={{ color: tooltipLabelColor }}>{t("dashboard.periodVariation")}: </span>
+                                    <span style={{ color: tooltipLabelColor }}>{portfolioBrush.variation.fromLabel} → {portfolioBrush.variation.toLabel}: </span>
                                     <span style={{ color: portfolioBrush.variation.absolute >= 0 ? "#22c55e" : "#ef4444" }}>
-                                        {formatCurrency(portfolioBrush.variation.absolute)} ({portfolioBrush.variation.percent >= 0 ? "+" : ""}{portfolioBrush.variation.percent.toFixed(1)}%)
+                                        {portfolioBrush.variation.absolute > 0 ? "+" : ""}{formatCurrency(portfolioBrush.variation.absolute)} ({portfolioBrush.variation.percent >= 0 ? "+" : ""}{portfolioBrush.variation.percent.toFixed(1)}%)
                                     </span>
                                 </div>
                             )}
