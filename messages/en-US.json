@@ -354,5 +354,14 @@
     "pendingChanges": "Pending changes were not saved to the database.",
     "assetAddedSuccess": "Asset added successfully.",
     "close": "Close"
+  },
+  "valuation": {
+    "label": "How to value Treasury bonds",
+    "market": "Market value",
+    "marketShort": "Market",
+    "marketHint": "Public bonds at today's price (mark to market)",
+    "curve": "Held to maturity",
+    "curveShort": "Curve",
+    "curveHint": "Public bonds accruing at the rate they were bought at"
   }
 }

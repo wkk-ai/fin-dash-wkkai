@@ -18,6 +18,7 @@ export interface ProcessedRow {
     Institution?: string;
     ProductType?: string;
     Asset?: string;
+    ValueCurve?: number | null;
 }
 
 type ImportType = "patrimonio" | "movimentacao";

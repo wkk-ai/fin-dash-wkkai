@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/lib/language-context";
 import DocumentTitle from "@/components/DocumentTitle";
 import AuthProvider from "@/components/AuthProvider";
+import { ValuationProvider } from "@/lib/valuation-context";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
@@ -52,9 +53,11 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <DocumentTitle />
-            <AuthProvider>
-              {children}
-            </AuthProvider>
+            <ValuationProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </ValuationProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

@@ -354,5 +354,14 @@
     "pendingChanges": "Alterações pendentes não foram salvas no banco de dados.",
     "assetAddedSuccess": "Patrimônio adicionado com sucesso.",
     "close": "Fechar"
+  },
+  "valuation": {
+    "label": "Como mostrar o Tesouro Direto",
+    "market": "A mercado",
+    "marketShort": "Mercado",
+    "marketHint": "Títulos públicos pelo preço de hoje (marcação a mercado)",
+    "curve": "Na curva",
+    "curveShort": "Curva",
+    "curveHint": "Títulos públicos rendendo a taxa da compra até o vencimento"
   }
 }

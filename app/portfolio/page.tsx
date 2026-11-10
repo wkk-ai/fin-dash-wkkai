@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid, ReferenceArea } from "recharts";
 import { useChartBrush } from "@/lib/useChartBrush";
 import { fetchNetWorth } from "@/lib/supabase-data";
+import { applyValuation, useValuation } from "@/lib/valuation-context";
 import { getAssetClassStyle, byAssetClassOrder } from "@/lib/asset-classes";
 
 type ProductGroup = { product: string; assets: AssetEntry[]; total: number };
@@ -47,7 +48,9 @@ const isProductExpandable = (assets: AssetEntry[]) => assets.length > 1;
 export default function Portfolio() {
     const { t, formatCurrency, formatCompactCurrency, locale } = useTranslation();
     const { resolvedTheme } = useTheme();
-    const [data, setData] = useState<AssetEntry[]>([]);
+    const { mode } = useValuation();
+    const [rawData, setData] = useState<AssetEntry[]>([]);
+    const data = useMemo(() => applyValuation(rawData, mode), [rawData, mode]);
     const [filterClassification, setFilterClassification] = useState<string>("");
     const [filterInstitution, setFilterInstitution] = useState<string>("");
     const [filterProductType, setFilterProductType] = useState<string>("");
