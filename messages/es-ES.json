@@ -354,5 +354,14 @@
     "pendingChanges": "Los cambios pendientes no se guardaron en la base de datos.",
     "assetAddedSuccess": "Patrimonio agregado con éxito.",
     "close": "Cerrar"
+  },
+  "valuation": {
+    "label": "Cómo valorar los títulos públicos",
+    "market": "A mercado",
+    "marketShort": "Mercado",
+    "marketHint": "Títulos públicos al precio de hoy (valor de mercado)",
+    "curve": "En la curva",
+    "curveShort": "Curva",
+    "curveHint": "Títulos públicos rindiendo la tasa de compra hasta el vencimiento"
   }
 }

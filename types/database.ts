@@ -10,6 +10,8 @@ export interface AssetEntry {
   ProductType: string;
   Asset: string;
   Value: number;
+  /** Public bonds only: value "na curva" (bought rate kept to maturity). Null = same as Value. */
+  ValueCurve?: number | null;
 }
 
 export interface MovementEntry {

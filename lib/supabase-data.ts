@@ -8,6 +8,7 @@ function mapNetWorthRow(row: {
   product_type?: string | null;
   asset: string;
   value: number | string;
+  value_curve?: number | string | null;
 }): AssetEntry {
   const asset = row.asset || '';
   const productType = (row.product_type && String(row.product_type).trim()) || asset;
@@ -18,6 +19,7 @@ function mapNetWorthRow(row: {
     ProductType: productType,
     Asset: asset,
     Value: Number(row.value),
+    ValueCurve: row.value_curve == null || row.value_curve === '' ? null : Number(row.value_curve),
   };
 }
 
@@ -31,12 +33,21 @@ function toNetWorthInsert(entry: AssetEntry) {
     product_type: productType,
     asset,
     value: entry.Value,
+    value_curve: entry.ValueCurve ?? null,
   };
 }
 
 // ─── Net Worth (replaces /api/database) ────────────────────────────
 
 export async function fetchNetWorth(): Promise<AssetEntry[]> {
+  const withCurve = await supabase
+    .from('net_worth')
+    .select('date, classification, institution, product_type, asset, value, value_curve')
+    .order('date', { ascending: true });
+  if (!withCurve.error) {
+    return (withCurve.data || []).map(mapNetWorthRow);
+  }
+
   const withProduct = await supabase
     .from('net_worth')
     .select('date, classification, institution, product_type, asset, value')

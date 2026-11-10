@@ -1,46 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AssetEntry } from "@/types/database";
 import { useTranslation } from "@/lib/i18n";
 import { parseCustomDate, pickMonthlySnapshotDates } from "@/lib/utils";
 import DashboardSection from "@/components/DashboardSection";
 import ProjectionsSection from "@/components/ProjectionsSection";
 import { fetchNetWorth } from "@/lib/supabase-data";
+import { applyValuation, useValuation } from "@/lib/valuation-context";
 
 export default function Home() {
   const { t } = useTranslation();
-  const [data, setData] = useState<AssetEntry[]>([]);
+  const { mode } = useValuation();
+  const [rawData, setRawData] = useState<AssetEntry[]>([]);
+  const data = useMemo(() => applyValuation(rawData, mode), [rawData, mode]);
   const [loading, setLoading] = useState(true);
-  const [monthlyAddition, setMonthlyAddition] = useState<string>("1000");
+  const [monthlyAdditionInput, setMonthlyAdditionInput] = useState<string | null>(null);
   const [annualRate, setAnnualRate] = useState<string>("10");
   const [yearsToProject, setYearsToProject] = useState<string>("10");
-  const [suggestedAddition, setSuggestedAddition] = useState<number>(1000);
 
   const fetchData = async () => {
     try {
       const dbData = await fetchNetWorth();
-      setData(dbData);
-
-      // Default contribution = monthly wealth variation (same as dashboard MoM)
-      const uniqueDates = pickMonthlySnapshotDates(Array.from(new Set(dbData.map((d) => d.Date))));
-      const dateValues: Record<string, number> = {};
-      dbData.forEach((d) => { dateValues[d.Date] = (dateValues[d.Date] || 0) + d.Value; });
-      const latestDateStr = uniqueDates[uniqueDates.length - 1];
-      const prevDateStr = uniqueDates.length > 1 ? uniqueDates[uniqueDates.length - 2] : null;
-      const currentWealth = dateValues[latestDateStr] || 0;
-      const prevWealth = prevDateStr ? dateValues[prevDateStr] : 0;
-      const vnw = currentWealth - prevWealth;
-      const suggestion = uniqueDates.length > 1 ? Math.round(vnw) : 1000;
-
-      setSuggestedAddition(suggestion);
-      setMonthlyAddition(String(suggestion));
+      setRawData(dbData);
       setLoading(false);
     } catch (err) {
       console.error("Failed to load data", err);
       setLoading(false);
     }
   };
+
+  // Default contribution = monthly wealth variation (same as dashboard MoM), in the chosen view
+  const suggestedAddition = useMemo(() => {
+    if (!data.length) return 1000;
+    const uniqueDates = pickMonthlySnapshotDates(Array.from(new Set(data.map((d) => d.Date))));
+    const dateValues: Record<string, number> = {};
+    data.forEach((d) => { dateValues[d.Date] = (dateValues[d.Date] || 0) + d.Value; });
+    const latestDateStr = uniqueDates[uniqueDates.length - 1];
+    const prevDateStr = uniqueDates.length > 1 ? uniqueDates[uniqueDates.length - 2] : null;
+    const currentWealth = dateValues[latestDateStr] || 0;
+    const prevWealth = prevDateStr ? dateValues[prevDateStr] : 0;
+    return uniqueDates.length > 1 ? Math.round(currentWealth - prevWealth) : 1000;
+  }, [data]);
+  // Until the user types a contribution, follow the suggestion (it changes with the view).
+  const monthlyAddition = monthlyAdditionInput ?? String(suggestedAddition);
+  const setMonthlyAddition = (v: string) => setMonthlyAdditionInput(v);
 
   useEffect(() => {
     fetchData();

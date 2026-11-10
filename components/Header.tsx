@@ -9,6 +9,7 @@ import LanguageSelector from "./LanguageSelector";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "./AuthProvider";
+import ValuationToggle from "./ValuationToggle";
 
 export default function Header() {
     const { t } = useTranslation();
@@ -55,6 +56,10 @@ export default function Header() {
         }
         return () => document.removeEventListener("click", handleClickOutside);
     }, [isNavOpen]);
+
+    // The market/curve switch only changes the dashboard and portfolio views.
+    const cleanPath = (pathname || "/").replace(/\.html$/, "").replace(/\/+$/, "") || "/";
+    const showValuation = cleanPath === "/" || cleanPath === "/index" || cleanPath === "/portfolio";
 
     const navLinks = [
         { name: t("nav.dashboard"), href: "/", icon: "home" },
@@ -116,6 +121,8 @@ export default function Header() {
                     <div className="h-6 w-px bg-border-light dark:bg-border-dark mx-2 hidden md:block"></div>
 
                     <div className="flex items-center gap-2 sm:gap-3">
+                        {showValuation && <ValuationToggle />}
+
                         <button
                             onClick={() => openEntry("ai")}
                             className="flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/10 px-2.5 sm:px-4 py-2 text-sm font-bold text-primary shadow-lg shadow-primary/10 hover:bg-primary/20 transition-all cursor-pointer"

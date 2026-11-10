@@ -59,6 +59,10 @@ const ASSET_HEADER_MAP: Record<string, keyof AssetEntry> = {
   ativo: "Asset",
   value: "Value",
   valor: "Value",
+  valuecurve: "ValueCurve",
+  value_curve: "ValueCurve",
+  valornacurva: "ValueCurve",
+  curva: "ValueCurve",
 };
 
 const MOVEMENT_HEADER_MAP: Record<string, keyof MovementEntry | "Type"> = {
@@ -86,8 +90,12 @@ function mapAssetRow(row: Record<string, unknown>): AssetEntry | null {
     if (!field) continue;
     if (field === "Value") {
       mapped.Value = parseMoneyCell(val);
+    } else if (field === "ValueCurve") {
+      const raw = String(val ?? "").trim();
+      const n = raw ? parseMoneyCell(val) : NaN;
+      mapped.ValueCurve = raw && !Number.isNaN(n) ? n : null;
     } else {
-      mapped[field] = String(val ?? "").trim();
+      (mapped as Record<string, string>)[field] = String(val ?? "").trim();
     }
   }
   if (!mapped.Asset && !mapped.Institution) return null;
@@ -118,6 +126,7 @@ function mapAssetRow(row: Record<string, unknown>): AssetEntry | null {
     ProductType: mapped.ProductType || asset,
     Asset: asset,
     Value: value,
+    ValueCurve: mapped.ValueCurve ?? null,
   };
 }
 

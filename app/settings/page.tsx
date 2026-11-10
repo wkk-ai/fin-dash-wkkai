@@ -288,8 +288,8 @@ export default function SettingsPage() {
 
         if (sortConfig) {
             result.sort((a, b) => {
-                let valA: string | number = a.row[sortConfig.key];
-                let valB: string | number = b.row[sortConfig.key];
+                let valA: string | number = a.row[sortConfig.key] ?? "";
+                let valB: string | number = b.row[sortConfig.key] ?? "";
                 if (sortConfig.key === "Date") {
                     valA = parseCustomDate(String(valA)).getTime();
                     valB = parseCustomDate(String(valB)).getTime();
@@ -712,6 +712,7 @@ export default function SettingsPage() {
                     ProductType: r.ProductType || r.Asset,
                     Asset: r.Asset,
                     Value: r.Value,
+                    ValueCurve: r.ValueCurve ?? null,
                 }))
             );
             setImportReviewOpen(true);
@@ -744,6 +745,7 @@ export default function SettingsPage() {
                     ProductType: productType,
                     Asset: asset,
                     Value: r.Value,
+                    ValueCurve: r.ValueCurve ?? null,
                 };
             });
             const next = mode === "append" ? sortData([...data, ...entries]) : sortData(entries);
@@ -806,6 +808,7 @@ export default function SettingsPage() {
             ProductType: row.ProductType,
             Asset: row.Asset,
             Value: row.Value,
+            ValueCurve: row.ValueCurve ?? "",
         }));
         const filename = `fintrack-data-${new Date().toISOString().slice(0, 10)}`;
         if (format === "csv") {
