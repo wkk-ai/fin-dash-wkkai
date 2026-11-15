@@ -22,7 +22,8 @@
     "openMenu": "Abrir menú de navegación",
     "selectLanguage": "Seleccionar idioma",
     "newEntry": "Nueva entrada",
-    "aiImport": "Importar IA"
+    "aiImport": "Importar IA",
+    "stocks": "Acciones"
   },
   "app": {
     "title": "Panel Financiero",
@@ -363,5 +364,23 @@
     "curve": "En la curva",
     "curveShort": "Curva",
     "curveHint": "Títulos públicos rindiendo la tasa de compra hasta el vencimiento"
+  },
+  "stocks": {
+    "title": "Acciones",
+    "subtitle": "Qué acciones están baratas y son buenas hoy, y por qué. Brasil y EE. UU., actualizado cada día hábil. El análisis está en portugués.",
+    "market": "Mercado",
+    "marketBR": "Brasil",
+    "marketUS": "EE. UU.",
+    "marketAll": "Todos",
+    "tabToday": "Hoy",
+    "tabMap": "Mapa",
+    "tabRankings": "Rankings",
+    "tabDividends": "Dividendos",
+    "tabSectors": "Sectores",
+    "tabExplore": "Explorar",
+    "tabCompare": "Comparar",
+    "tabList": "Mi lista",
+    "tabMethod": "Método",
+    "disclaimer": "Herramienta educativa, no es recomendación de inversión. Los datos son del cierre del día hábil anterior y pueden contener errores: revise los estados financieros antes de decidir."
   }
 }

@@ -45,3 +45,11 @@ next-env.d.ts
 *.xlsx
 /data/
 !.agent/**/*.csv
+
+# Stock screener: built bundle and daily data (published by the workflow, never committed)
+/public/stocks/app.js
+/public/stocks/data/
+__pycache__/
+*.pyc
+.venv/
+!pipeline/data/fundamentals.json

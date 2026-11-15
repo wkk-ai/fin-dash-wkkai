@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "stocks": "node scripts/build-stocks.mjs",
+    "dev": "node scripts/build-stocks.mjs && next dev",
+    "build": "node scripts/build-stocks.mjs && next build",
     "start": "next start",
     "lint": "eslint"
   },

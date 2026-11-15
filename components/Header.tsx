@@ -65,8 +65,11 @@ export default function Header() {
         { name: t("nav.dashboard"), href: "/", icon: "home" },
         { name: t("nav.portfolio"), href: "/portfolio", icon: "account_balance_wallet" },
         { name: t("nav.movements"), href: "/movements", icon: "swap_horiz" },
+        { name: t("nav.stocks"), href: "/stocks", icon: "candlestick_chart" },
         { name: t("nav.settings"), href: "/settings", icon: "settings" },
     ];
+    // Phone bar has room for four: settings stays one tap away on the avatar.
+    const mobileLinks = navLinks.filter((l) => l.href !== "/settings");
 
     return (
         <>
@@ -158,7 +161,7 @@ export default function Header() {
                             href="/settings"
                             title={user?.email ?? ""}
                             aria-label={user?.email ?? t("nav.settings")}
-                            className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary/15 text-primary text-sm font-bold uppercase"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-border bg-primary/15 text-primary text-sm font-bold uppercase"
                         >
                             {initials}
                         </Link>
@@ -171,7 +174,7 @@ export default function Header() {
                 className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between bg-surface border-t border-border px-4 pt-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]"
                 style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}
             >
-                {navLinks.slice(0, 2).map((link) => {
+                {mobileLinks.slice(0, 2).map((link) => {
                     const isActive = pathname === link.href;
                     return (
                         <Link key={link.name} href={link.href} className={cn("flex flex-col items-center p-2 min-w-[60px]", isActive ? "text-primary" : "text-slate-500 dark:text-slate-400")}>
@@ -184,7 +187,7 @@ export default function Header() {
                 {/* Spacer for FAB */}
                 <div className="w-[60px]"></div>
 
-                {navLinks.slice(2, 4).map((link) => {
+                {mobileLinks.slice(2, 4).map((link) => {
                     const isActive = pathname === link.href;
                     return (
                         <Link key={link.name} href={link.href} className={cn("flex flex-col items-center p-2 min-w-[60px]", isActive ? "text-primary" : "text-slate-500 dark:text-slate-400")}>

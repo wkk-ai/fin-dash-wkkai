@@ -22,7 +22,8 @@
     "openMenu": "Open navigation menu",
     "selectLanguage": "Select language",
     "newEntry": "New Entry",
-    "aiImport": "AI Import"
+    "aiImport": "AI Import",
+    "stocks": "Stocks"
   },
   "app": {
     "title": "Financial Dashboard",
@@ -363,5 +364,23 @@
     "curve": "Held to maturity",
     "curveShort": "Curve",
     "curveHint": "Public bonds accruing at the rate they were bought at"
+  },
+  "stocks": {
+    "title": "Stocks",
+    "subtitle": "Which stocks are cheap and good today, and why. Brazil and the US, updated every business day. The analysis text is in Portuguese.",
+    "market": "Market",
+    "marketBR": "Brazil",
+    "marketUS": "US",
+    "marketAll": "All",
+    "tabToday": "Today",
+    "tabMap": "Map",
+    "tabRankings": "Rankings",
+    "tabDividends": "Dividends",
+    "tabSectors": "Sectors",
+    "tabExplore": "Explore",
+    "tabCompare": "Compare",
+    "tabList": "My list",
+    "tabMethod": "Method",
+    "disclaimer": "Educational tool, not investment advice. Data is from the previous business day's close and may contain errors: check the company's filings before deciding."
   }
 }

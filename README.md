@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FinTrack
 
-## Getting Started
+One personal finance app, published at https://wkk-ai.github.io/fin-dash-wkkai/ (login required).
 
-First, run the development server:
+| Section | What it does | Where it lives |
+|---|---|---|
+| Dashboard, Carteira, Movimentações, Configurações | Net worth, holdings, movements, budgets, imports | `app/`, `components/`, `lib/` (Next.js, Supabase with row-level security) |
+| Ações | Which Brazilian and US stocks are cheap and good today, with the reasons | `app/stocks/` (page shell and styles), `stocks/src/` (screens and charts, plain JS), `pipeline/` (daily data, Python) |
+
+## How the stock data gets there
+
+1. `.github/workflows/deploy.yml` runs on every push and every weekday after the B3 close.
+2. On the daily run it executes `python -m pipeline.run`: Fundamentus (B3), Yahoo Finance (S&P 500, prices), Banco Central (Selic, IPCA), plus the multi-year statements in `pipeline/data/fundamentals.json` (refreshed weekly by `stocks-history.yml` from CVM and SEC).
+3. The result is written to `public/stocks/data/` (never committed), saved to the `stocks-data` branch, and published with the site. A push reuses the last snapshot, so code changes deploy in about two minutes.
+4. If the repository secret `DATABASE_URL` is set, each run also stores the daily history in Neon Postgres.
+
+Scoring rules are documented in `.claude/skills/financial-expert/SKILL.md`.
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Stock data for local work: `git fetch origin stocks-data && mkdir -p public/stocks/data && git archive FETCH_HEAD | tar -x -C public/stocks/data`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Privacy
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Personal data lives only in Supabase, behind login and row-level security. Nothing personal belongs in this repository: no exports, no screenshots, no mockups with real values (`*.csv`, `*.xlsx` and `/data/` are ignored).

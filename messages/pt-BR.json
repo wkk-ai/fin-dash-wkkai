@@ -22,7 +22,8 @@
     "openMenu": "Abrir menu de navegação",
     "selectLanguage": "Selecionar idioma",
     "newEntry": "Nova Entrada",
-    "aiImport": "Importar IA"
+    "aiImport": "Importar IA",
+    "stocks": "Ações"
   },
   "app": {
     "title": "Painel Financeiro",
@@ -363,5 +364,23 @@
     "curve": "Na curva",
     "curveShort": "Curva",
     "curveHint": "Títulos públicos rendendo a taxa da compra até o vencimento"
+  },
+  "stocks": {
+    "title": "Ações",
+    "subtitle": "Quais ações estão baratas e boas hoje, e por quê. Brasil e EUA, atualizado todo dia útil.",
+    "market": "Mercado",
+    "marketBR": "Brasil",
+    "marketUS": "EUA",
+    "marketAll": "Todos",
+    "tabToday": "Hoje",
+    "tabMap": "Mapa",
+    "tabRankings": "Rankings",
+    "tabDividends": "Dividendos",
+    "tabSectors": "Setores",
+    "tabExplore": "Explorar",
+    "tabCompare": "Comparar",
+    "tabList": "Minha lista",
+    "tabMethod": "Método",
+    "disclaimer": "Ferramenta educacional, não é recomendação de investimento. Os dados são do fechamento do dia útil anterior e podem conter erros: confira o balanço da empresa antes de decidir."
   }
 }

@@ -1,12 +1,23 @@
 name: Deploy to GitHub Pages
 
+# One site: the dashboard (Next.js) plus the daily stock data used by the Ações page.
+# - push to main: rebuild the site with the last saved stock data (fast)
+# - weekdays after the B3 close: fetch fresh stock data, then rebuild
 on:
   push:
     branches: [main]
+  schedule:
+    # 22:37 UTC = 19:37 in Sao Paulo, Mon-Fri
+    - cron: "37 22 * * 1-5"
   workflow_dispatch:
+    inputs:
+      refresh_stocks:
+        description: "Fetch fresh stock data now"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -17,8 +28,57 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - name: Decide whether to fetch fresh stock data
+        id: plan
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.refresh_stocks }}" = "true" ] \
+             || ! git ls-remote --exit-code --heads origin stocks-data >/dev/null 2>&1; then
+            echo "refresh=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "refresh=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.plan.outputs.refresh == 'true'
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Fetch and score stocks
+        id: fresh
+        if: steps.plan.outputs.refresh == 'true'
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          pip install -r pipeline/requirements.txt
+          python -m pipeline.run
+
+      - name: Save the stock data snapshot (stocks-data branch)
+        if: steps.fresh.outcome == 'success'
+        continue-on-error: true
+        run: |
+          tmp="$RUNNER_TEMP/snap"; mkdir -p "$tmp"; cp -r public/stocks/data/. "$tmp/"
+          cd "$tmp"; git init -q -b stocks-data
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A; git commit -q -m "Stock data snapshot $(date -u +%F)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" stocks-data
+
+      - name: Use the last saved stock data
+        if: steps.fresh.outcome != 'success'
+        run: |
+          if [ "${{ steps.fresh.outcome }}" = "failure" ]; then echo "::warning::Fetching stock data failed; publishing the last saved snapshot."; fi
+          rm -rf public/stocks/data; mkdir -p public/stocks/data
+          if git fetch -q --depth=1 origin stocks-data; then
+            git archive FETCH_HEAD | tar -x -C public/stocks/data
+          else
+            echo "::warning::No stock data snapshot yet; the Ações page will be empty until the first successful fetch."
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -31,7 +91,7 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-        run: npx next build
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
