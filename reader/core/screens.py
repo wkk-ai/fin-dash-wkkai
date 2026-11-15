@@ -523,7 +523,7 @@ def parse_mercado_pago(page: Page) -> Optional[Screen]:
         return scr
     head = max(amts, key=lambda t: t.h)
     hr = reading_of(page, head)
-    # items listed under the headline, value on the right ("Investimento ... R$ 38.784,66")
+    # items listed under the headline, value on the right ("Investimento ... R$ 1.234,56")
     items = [t for t in amts if t is not head and t.y0 > head.y1 and t.x1 > 0.55 * page.width and t.h < 0.8 * head.h]
     parts = [r for r in (reading_of(page, t) for t in items) if r and r.value > 0]
     total = sum(p.value for p in parts)

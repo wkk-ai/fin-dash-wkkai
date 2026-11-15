@@ -17,5 +17,5 @@
 - To see logged-in pages without a password: Playwright with a fake `sb-<ref>-auth-token` in localStorage and `route()` mocks for `supabase.co`. Never add an auth bypass to the app.
 - 2026-11-15: William wants everything INSIDE FinTrack, not a companion app on the Mac. The print reader now runs in the browser (Tesseract + the Python engine via Pyodide). Never split a feature into a local app again without asking.
 - Tesseract tuning measured on 206 amounts: second pass = single line (PSM 7), no character whitelist, amount scaled to ~48 px high: 205/206 right. A whitelist without "%" made it worse.
-- Personal data must not go into this public repo: bond purchases, seed months, "Sara" default lines all live in Supabase (bond_purchases, net_worth, reader_settings).
+- Personal data must not go into this public repo: bond purchases, seed months, default lines with people's names, amounts in tests: all stay out; they live in Supabase (bond_purchases, net_worth, reader_settings).
 

@@ -39,7 +39,7 @@ def _parse_number(num: str) -> Optional[Amount]:
     m = re.match(r"^(.*)[.,](\d{2})$", num)
     if m and re.sub(r"[.,]", "", m.group(1)).isdigit():
         return Amount(float(re.sub(r"[.,]", "", m.group(1)) + "." + m.group(2)), False, num)
-    # 38.78466 : thousands dots, then the cents glued on (superscript cents)
+    # 12.34567 : thousands dots, then the cents glued on (superscript cents)
     m = re.match(r"^(\d{1,3}(?:\.\d{3})+)(\d{2})$", num)
     if m:
         return Amount(float(m.group(1).replace(".", "") + "." + m.group(2)), False, num)

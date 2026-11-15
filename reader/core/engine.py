@@ -242,7 +242,7 @@ def _tesouro_name(a: Asset) -> str:
 
 
 def _complete_month_year(title: str, venc: str) -> str:
-    """'LCA BTG PACTUAL - ABR/2' + maturity 2028-04-17 -> 'LCA BTG PACTUAL - ABR/2028'."""
+    """'LCA BANCO X - ABR/2' + maturity 2028-04-17 -> 'LCA BANCO X - ABR/2028'."""
     if venc and re.search(r"/\d{0,3}$", title):
         return re.sub(r"/\d{0,3}$", "/" + venc[:4], title)
     return title

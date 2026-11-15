@@ -1,5 +1,5 @@
 -- Fechamento do mês (print reader): each person's reader settings, e.g. the lines with no print
--- ("Sara" at Nubank) that come back every month. Same on every device, private to the owner.
+-- (an account with no screenshot) that come back every month. Same on every device, private to the owner.
 create table if not exists public.reader_settings (
   user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
   data jsonb not null default '{}'::jsonb,
