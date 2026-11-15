@@ -53,3 +53,6 @@ __pycache__/
 *.pyc
 .venv/
 !pipeline/data/fundamentals.json
+
+# Print reader: copied at build time
+/public/reader/

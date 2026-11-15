@@ -23,7 +23,8 @@
     "selectLanguage": "Seleccionar idioma",
     "newEntry": "Nueva entrada",
     "aiImport": "Importar IA",
-    "stocks": "Acciones"
+    "stocks": "Acciones",
+    "closing": "Cierre"
   },
   "app": {
     "title": "Panel Financiero",
@@ -382,5 +383,10 @@
     "tabList": "Mi lista",
     "tabMethod": "Método",
     "disclaimer": "Herramienta educativa, no es recomendación de inversión. Los datos son del cierre del día hábil anterior y pueden contener errores: revise los estados financieros antes de decidir."
+  },
+  "closing": {
+    "title": "Cierre del mes",
+    "short": "Capturas de los bancos",
+    "subtitle": "Suelta las capturas de todos los bancos. FinTrack las lee, compara las sumas con los totales de cada banco y registra el mes en tu patrimonio. Las capturas se quedan en este dispositivo. Las pantallas de revisión están en portugués."
   }
 }

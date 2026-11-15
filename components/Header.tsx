@@ -33,29 +33,13 @@ export default function Header() {
         setMounted(true);
     }, []);
 
-    // The print reader on the Mac sends the checked month inside the link: #reader=<csv, base64url>.
-    // It never leaves the browser until the import is confirmed in the modal.
-    useEffect(() => {
-        const m = window.location.hash.match(/^#reader=([A-Za-z0-9_-]+)$/);
-        if (!m) return;
-        window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
-        try {
-            const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
-            const bin = atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4));
-            const csv = new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setReaderCsv(csv);
-            setEntryStartAt("csv-portfolio");
-            setIsModalOpen(true);
-        } catch {
-            /* malformed link: ignore it */
-        }
-    }, []);
 
     useEffect(() => {
         const openFromElsewhere = (e: Event) => {
-            const detail = (e as CustomEvent<{ startAt?: "intent" | "ai" }>).detail;
-            openEntry(detail?.startAt ?? "intent");
+            const detail = (e as CustomEvent<{ startAt?: "intent" | "ai" | "csv-portfolio"; csv?: string }>).detail;
+            setReaderCsv(detail?.csv);
+            setEntryStartAt(detail?.startAt ?? "intent");
+            setIsModalOpen(true);
         };
         window.addEventListener("open-new-entry", openFromElsewhere);
         return () => window.removeEventListener("open-new-entry", openFromElsewhere);
@@ -85,11 +69,13 @@ export default function Header() {
         { name: t("nav.dashboard"), href: "/", icon: "home" },
         { name: t("nav.portfolio"), href: "/portfolio", icon: "account_balance_wallet" },
         { name: t("nav.movements"), href: "/movements", icon: "swap_horiz" },
+        { name: t("nav.closing"), href: "/import", icon: "document_scanner" },
         { name: t("nav.stocks"), href: "/stocks", icon: "candlestick_chart" },
         { name: t("nav.settings"), href: "/settings", icon: "settings" },
     ];
     // Phone bar has room for four: settings stays one tap away on the avatar.
-    const mobileLinks = navLinks.filter((l) => l.href !== "/settings");
+    // Fechamento is one tap away in the + button.
+    const mobileLinks = navLinks.filter((l) => l.href !== "/settings" && l.href !== "/import");
 
     return (
         <>

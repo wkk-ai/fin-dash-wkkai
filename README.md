@@ -5,6 +5,7 @@ One personal finance app, published at https://wkk-ai.github.io/fin-dash-wkkai/ 
 | Section | What it does | Where it lives |
 |---|---|---|
 | Dashboard, Carteira, Movimentações, Configurações | Net worth, holdings, movements, budgets, imports | `app/`, `components/`, `lib/` (Next.js, Supabase with row-level security) |
+| Fechamento | Drop the month's bank screenshots; it reads them, checks each list against the totals the bank shows, and loads the month into the portfolio | `app/import/` (page), `reader-ui/app.js` (screens, text reading with Tesseract), `reader/` (checking engine in Python, run in the browser by Pyodide). Screenshots never leave the device. |
 | Ações | Which Brazilian and US stocks are cheap and good today, with the reasons | `app/stocks/` (page shell and styles), `stocks/src/` (screens and charts, plain JS), `pipeline/` (daily data, Python) |
 
 ## How the stock data gets there
@@ -24,6 +25,13 @@ npm run dev        # http://localhost:3000
 ```
 
 Stock data for local work: `git fetch origin stocks-data && mkdir -p public/stocks/data && git archive FETCH_HEAD | tar -x -C public/stocks/data`.
+
+## Fechamento (print reader)
+
+- Text recognition runs in the browser (Tesseract, Portuguese). Each amount is read twice (whole screen, then the amount alone); when the readings disagree the app asks.
+- The checking engine (`reader/core`) is the same one the old Mac app used; `python3 -m pytest reader/tests` runs its tests (some need the private October readings and skip without them).
+- `npm run assets` copies the engine, Pyodide and Tesseract into `public/reader/` (all served from this site, no CDN).
+- Lines with no screenshot (kept every month) are saved per user in the `reader_settings` table.
 
 ## Privacy
 

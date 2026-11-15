@@ -17,6 +17,7 @@ import { useTranslation } from "@/lib/i18n";
 import Portal from "./Portal";
 import AIImportModal from "./AIImportModal";
 import CsvImportPanel from "./new-entry/CsvImportPanel";
+import Link from "next/link";
 import { parsePortfolioCsv } from "./new-entry/helpers";
 import {
   buildAssetRelations,
@@ -776,17 +777,15 @@ export default function NewEntryModal({ onClose, startAt = "intent", initialCsv 
                   </div>
                 </button>
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => openForm("patrimonio", "csv")}
+                  <Link
+                    href="/import"
+                    onClick={onClose}
                     className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-surface hover:border-primary/40 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-primary">upload_file</span>
-                    <span className="text-xs font-bold text-foreground text-center">
-                      {t("entry.csvPortfolio")}
-                    </span>
-                    <span className="text-[10px] text-slate-500 text-center">{t("entry.financialReader")}</span>
-                  </button>
+                    <span className="material-symbols-outlined text-primary">document_scanner</span>
+                    <span className="text-xs font-bold text-foreground text-center">{t("closing.title")}</span>
+                    <span className="text-[10px] text-slate-500 text-center">{t("closing.short")}</span>
+                  </Link>
                   <button
                     type="button"
                     onClick={() => setShowAI(true)}

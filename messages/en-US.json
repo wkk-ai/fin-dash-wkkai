@@ -23,7 +23,8 @@
     "selectLanguage": "Select language",
     "newEntry": "New Entry",
     "aiImport": "AI Import",
-    "stocks": "Stocks"
+    "stocks": "Stocks",
+    "closing": "Month close"
   },
   "app": {
     "title": "Financial Dashboard",
@@ -382,5 +383,10 @@
     "tabList": "My list",
     "tabMethod": "Method",
     "disclaimer": "Educational tool, not investment advice. Data is from the previous business day's close and may contain errors: check the company's filings before deciding."
+  },
+  "closing": {
+    "title": "Month close",
+    "short": "Bank screenshots",
+    "subtitle": "Drop the screenshots of every bank. FinTrack reads them, checks the sums against the totals each bank shows and adds the month to your portfolio. Screenshots stay on this device. The checking screens are in Portuguese."
   }
 }

@@ -23,7 +23,8 @@
     "selectLanguage": "Selecionar idioma",
     "newEntry": "Nova Entrada",
     "aiImport": "Importar IA",
-    "stocks": "Ações"
+    "stocks": "Ações",
+    "closing": "Fechamento"
   },
   "app": {
     "title": "Painel Financeiro",
@@ -382,5 +383,10 @@
     "tabList": "Minha lista",
     "tabMethod": "Método",
     "disclaimer": "Ferramenta educacional, não é recomendação de investimento. Os dados são do fechamento do dia útil anterior e podem conter erros: confira o balanço da empresa antes de decidir."
+  },
+  "closing": {
+    "title": "Fechamento do mês",
+    "short": "Prints dos bancos",
+    "subtitle": "Solte os prints de todos os bancos. O FinTrack lê cada um, confere as somas com os totais que o banco mostra e lança o mês no seu patrimônio. Os prints ficam só neste aparelho."
   }
 }
