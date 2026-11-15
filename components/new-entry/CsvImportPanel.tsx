@@ -17,6 +17,9 @@ type Props =
       onError: (msg: string) => void;
     };
 
+/** The print reader runs only on William's Mac (financial-reader/start.command). */
+const READER_URL = "http://127.0.0.1:8765/";
+
 export default function CsvImportPanel(props: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -48,6 +51,23 @@ export default function CsvImportPanel(props: Props) {
 
   return (
     <div className="space-y-3">
+      {props.kind === "portfolio" && (
+        <a
+          href={READER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors"
+        >
+          <span className="material-symbols-outlined text-primary text-2xl">document_scanner</span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-bold text-foreground">Importar prints do mês</span>
+            <span className="block text-xs text-slate-500">
+              Abre o leitor no seu Mac (start.command precisa estar aberto). Ele confere os valores e envia para cá.
+            </span>
+          </span>
+          <span className="material-symbols-outlined text-slate-400">open_in_new</span>
+        </a>
+      )}
       <div
         onDragOver={(e) => {
           e.preventDefault();

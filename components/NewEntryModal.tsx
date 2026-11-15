@@ -17,6 +17,7 @@ import { useTranslation } from "@/lib/i18n";
 import Portal from "./Portal";
 import AIImportModal from "./AIImportModal";
 import CsvImportPanel from "./new-entry/CsvImportPanel";
+import { parsePortfolioCsv } from "./new-entry/helpers";
 import {
   buildAssetRelations,
   newRowId,
@@ -30,6 +31,8 @@ interface Props {
   onClose: () => void;
   /** Open directly on a path: ai opens AI import; csv skips to CSV for portfolio */
   startAt?: "intent" | "ai" | "csv-portfolio" | "csv-movement";
+  /** A month sent by the print reader (Importar prints): shown ready to review and import. */
+  initialCsv?: string;
 }
 
 type Intent = "patrimonio" | "movimentacao";
@@ -125,7 +128,7 @@ const fieldClass =
 const labelClass =
   "text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1";
 
-export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
+export default function NewEntryModal({ onClose, startAt = "intent", initialCsv }: Props) {
   const { t, formatCurrency } = useTranslation();
 
   const now = new Date();
@@ -197,13 +200,22 @@ export default function NewEntryModal({ onClose, startAt = "intent" }: Props) {
       setIntent("patrimonio");
       setPortfolioMode("csv");
       setStep("form");
+      if (initialCsv) {
+        const result = parsePortfolioCsv(initialCsv);
+        if (result.ok) {
+          setCsvAssets(result.rows);
+          setSuccessHint(`${result.rows.length} linha(s) vindas do leitor de prints. Confira e importe.`);
+        } else {
+          setError(result.error);
+        }
+      }
     }
     if (startAt === "csv-movement") {
       setIntent("movimentacao");
       setMovementMode("csv");
       setStep("form");
     }
-  }, [startAt]);
+  }, [startAt, initialCsv]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

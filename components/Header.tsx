@@ -19,7 +19,8 @@ export default function Header() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [entryStartAt, setEntryStartAt] = useState<"intent" | "ai">("intent");
+    const [entryStartAt, setEntryStartAt] = useState<"intent" | "ai" | "csv-portfolio">("intent");
+    const [readerCsv, setReaderCsv] = useState<string | undefined>(undefined);
     const [isNavOpen, setIsNavOpen] = useState(false);
     const navMenuRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +31,25 @@ export default function Header() {
 
     useEffect(() => {
         setMounted(true);
+    }, []);
+
+    // The print reader on the Mac sends the checked month inside the link: #reader=<csv, base64url>.
+    // It never leaves the browser until the import is confirmed in the modal.
+    useEffect(() => {
+        const m = window.location.hash.match(/^#reader=([A-Za-z0-9_-]+)$/);
+        if (!m) return;
+        window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+        try {
+            const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+            const bin = atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4));
+            const csv = new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setReaderCsv(csv);
+            setEntryStartAt("csv-portfolio");
+            setIsModalOpen(true);
+        } catch {
+            /* malformed link: ignore it */
+        }
     }, []);
 
     useEffect(() => {
@@ -214,9 +234,11 @@ export default function Header() {
             {isModalOpen && (
                 <NewEntryModal
                     startAt={entryStartAt}
+                    initialCsv={readerCsv}
                     onClose={() => {
                         setIsModalOpen(false);
                         setEntryStartAt("intent");
+                        setReaderCsv(undefined);
                     }}
                 />
             )}
