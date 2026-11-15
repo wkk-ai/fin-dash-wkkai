@@ -35,7 +35,7 @@ def _parse_number(num: str) -> Optional[Amount]:
     digits = re.sub(r"[.,]", "", num)
     if not digits.isdigit():
         return None
-    # 47132,64  /  24.610.27  /  1,234.56 : last separator followed by exactly 2 digits = cents
+    # 12345,67  /  12.345.67  /  1,234.56 : last separator followed by exactly 2 digits = cents
     m = re.match(r"^(.*)[.,](\d{2})$", num)
     if m and re.sub(r"[.,]", "", m.group(1)).isdigit():
         return Amount(float(re.sub(r"[.,]", "", m.group(1)) + "." + m.group(2)), False, num)
