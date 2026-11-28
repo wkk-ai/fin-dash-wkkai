@@ -1,0 +1,20 @@
+{
+ "generated_at": "2026-11-28T04:17:30+00:00",
+ "date": "2026-11-28",
+ "counts": {
+  "BR": 248,
+  "US": 503
+ },
+ "macro": {
+  "selic": 0.1375,
+  "ipca_12m": 0.04628360717970881,
+  "us10y": 0.04935999870300293
+ },
+ "sources": {
+  "history": "CVM DFP (Brasil) e SEC XBRL (EUA), 2026-11-22T17:10:24+00:00",
+  "BR": "Fundamentus (resultado.php)",
+  "US": "Yahoo Finance via yfinance; S&P 500 list: datasets/s-and-p-500-companies",
+  "macro": "BCB SGS 432/433; US 10y: CBOE ^TNX via Yahoo"
+ },
+ "notes": []
+}
